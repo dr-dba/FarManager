@@ -5,7 +5,7 @@ LNG=$1
 L=$2
 
 cd ${LNG} || return 1
-wine "C:/Program Files (x86)/HTML Help Workshop/hhc.exe" plugins${L}.hhp
+wine "../../../tools/hh_compiler/hh_compiler.exe" plugins${L}.hhp
 
 ( \
 	cp -f FarEncyclopedia.${LNG}.chm ../../../../outfinalnew32/Encyclopedia/ && \
@@ -23,7 +23,7 @@ cd $1 || return 1
 
 python ../../../tools/convert.py "../../../enc_lua/${1}.tsi" ${2} "${1}.tsi" ${3}
 wine "C:/src/enc/tools/lua/lua.exe" "C:/src/enc/tools/lua/scripts/tp2hh.lua" "${1}.tsi" tsi "C:/src/enc/tools/lua/templates/api.tem"
-wine "C:/Program Files (x86)/HTML Help Workshop/hhc.exe" ${1}.hhp
+wine "../../../tools/hh_compiler/hh_compiler.exe" ${1}.hhp
 
 ( \
 	cp -f ${1}.chm ../../../../outfinalnew32/Encyclopedia/ && \

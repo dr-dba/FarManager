@@ -18,7 +18,7 @@ mkdir %1
 cd %1 || exit 1
 python %~dp0convert.py "..\..\..\enc_lua\%1.tsi" %2 "%1.tsi" %3
 "%~dp0lua\lua.exe" "%~dp0lua\scripts\tp2hh.lua" "%1.tsi" tsi "%~dp0lua\templates\api.tem"
-"C:\Program Files (x86)\HTML Help Workshop\hhc.exe" %1.hhp
+"%~dp0hh_compiler\hh_compiler.exe" %1.hhp
 if not exist %1.chm (
 	echo "Error: %1.chm wasn't created!"
 	exit 1
