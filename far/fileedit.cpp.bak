@@ -1,4 +1,4 @@
-﻿/*
+﻿	/*
 fileedit.cpp
 
 Редактирование файла - надстройка над editor.cpp
@@ -2467,25 +2467,15 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 	if(m_editor->EditorControlLocked()) return FALSE;
 	if (m_bClosing 
 		&& (Command != ECTL_GETINFO) 
-		&& (Command != ECTL_GETCOORD) // Give the editor position (top left corner) @Xer0X
+		// @Xer0X: Give the editor position (top left corner):
+		&& (Command != ECTL_GETCOORD) 
 		&& (Command != ECTL_GETBOOKMARKS) 
-		&& (Command != ECTL_GETFILENAME)
+		&& (Command!=ECTL_GETFILENAME)
 			)
 		return FALSE;
 
 	switch (Command)
 	{
-		// @Xer0X: Give the editor position (top left corner):
-		case ECTL_GETCOORD:
-		{
-			BOOL Result = FALSE;
-			COORD crd_editor = { 3, 5 };
-			crd_editor.X = m_Where.left;
-			crd_editor.Y = m_Where.top;
-			*static_cast<COORD*>(Param2) = crd_editor;
-			Result = TRUE;
-			return Result;
-		}	
 		case ECTL_GETFILENAME:
 		{
 			if (Param2 && static_cast<size_t>(Param1) > strFullFileName.size())
