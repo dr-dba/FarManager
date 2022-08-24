@@ -1474,6 +1474,25 @@ static int editor_GetColor(lua_State *L)
 	return 1;
 }
 
+// APi to read editor's window coordinates (@Xer0X)
+static int editor_GetCoord(lua_State *L)
+{
+	PSInfo *Info = GetPluginData(L)->Info;
+	intptr_t EditorId;
+	COORD coord;
+	EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
+	if (Info->EditorControl(EditorId, ECTL_GETCOORD, 0, &coord))
+	{
+		lua_createtable(L, 0, 2);
+		PutNumToTable(L, "X", coord.X);
+		PutNumToTable(L, "Y", coord.Y);
+		return 1;
+	}
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
 static int editor_SaveFile(lua_State *L)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
@@ -6298,6 +6317,8 @@ const luaL_Reg editor_funcs[] =
 	{"ExpandTabs",          editor_ExpandTabs},
 	{"GetBookmarks",        editor_GetBookmarks},
 	{"GetColor",            editor_GetColor},
+	// Api to read editor's window coordinates (by @Xer0X) 
+	{"GetCoord",            editor_GetCoord},
 	{"GetFileName",         editor_GetFileName},
 	{"GetInfo",             editor_GetInfo},
 	{"GetSelection",        editor_GetSelection},
