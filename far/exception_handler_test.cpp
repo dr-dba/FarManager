@@ -472,12 +472,6 @@ namespace tests
 		const volatile size_t Index = 1;
 		v.data()[Index] = 42;
 	}
-
-	static void debug_nt_assertion_failure()
-	{
-		if ([[maybe_unused]] const volatile auto Fail = true)
-			DbgRaiseAssertionFailure();
-	}
 }
 
 static bool trace()
@@ -560,7 +554,6 @@ static bool ExceptionTestHook(Manager::Key const& key)
 		{ tests::debug_bounds_check,           L"Debug bounds check"sv },
 		{ tests::debug_bounds_check_as_stack,  L"Debug bounds check stack (ASAN)"sv },
 		{ tests::debug_bounds_check_as_heap,   L"Debug bounds check heap (ASAN)"sv },
-		{ tests::debug_nt_assertion_failure,   L"Debug NT assertion failure"sv },
 	};
 
 	const auto ModalMenu = VMenu2::create(L"Test Exceptions"s, {}, ScrY - 4);
