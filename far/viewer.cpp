@@ -140,6 +140,8 @@ Viewer::Viewer(window_ptr Owner, bool bQuickView, uintptr_t aCodePage):
 	m_Wrap(Global->Opt->ViOpt.ViewerIsWrap),
 	m_WordWrap(Global->Opt->ViOpt.ViewerWrap),
 	m_DisplayMode(VMT_TEXT),
+	// @Xerox: trying to figure out cursor in viewer:
+	m_HideCursor(false), 
 	ViewerID(::ViewerID++),
 	m_bQuickView(bQuickView),
 	vread_buffer(std::max(MaxViewLineBufferSize(), size_t{ 8192 })),

@@ -207,6 +207,8 @@ void SetColor(const FarColor& Color);
 void SetRealColor(const FarColor& Color);
 void ClearScreen(const FarColor& Color);
 const FarColor& GetColor();
+/* // @Xer0X test:
+const COORD& GetCoord(); // */
 
 void Box(rectangle Where, const FarColor& Color,int Type);
 bool ScrollBarRequired(size_t Length, unsigned long long ItemsCount);

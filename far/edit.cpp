@@ -2064,6 +2064,13 @@ bool Edit::GetColor(ColorItem& col, size_t Item) const
 	return true;
 }
 
+/* // Xer0X added (some test):
+bool Edit::GetCoord(COORD& coord) const
+{
+	coord = { 111, 222 };
+	return true;
+} // */
+
 void Edit::ApplyColor(int XPos, int FocusedLeftPos, positions_cache& RealToVisual)
 {
 	const auto Width = ObjWidth();

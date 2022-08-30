@@ -178,6 +178,8 @@ public:
 	void InsertTab();
 	void AddColor(const ColorItem& col);
 	void DeleteColor(delete_color_condition Condition);
+	// @Xer0X test:
+	bool GetCoord(COORD& coord) const;
 	bool GetColor(ColorItem& col, size_t Item) const;
 	void Xlat(bool All=false);
 	void SetDialogParent(DWORD Sets);

@@ -5382,6 +5382,19 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			return true;
 		}
 
+		// @Xer0X coordinates api
+		case ECTL_GETCOORD:
+		{
+			BOOL Result = FALSE;
+			COORD crd_editor = { -1, -1 };
+			crd_editor.X = m_Where.left;
+			crd_editor.Y = m_Where.top;
+			m_Where.left = m_Where.left;
+			*static_cast<COORD*>(Param2) = crd_editor;
+			Result = TRUE;
+			return TRUE;
+		}
+
 		case ECTL_GETINFO:
 		{
 			const auto Info = static_cast<EditorInfo*>(Param2);
@@ -6089,6 +6102,13 @@ bool Editor::GetSessionBookmark(int iIdx, InternalEditorBookmark *Param)
 	return true;
 }
 
+/* // @Xer0X test:
+bool Editor::GetCoord(COORD *Param)
+{
+	Param = { 123, 45, };
+	return TRUE;
+}
+*/
 size_t Editor::GetSessionBookmarks(EditorBookmarks *Param)
 {
 	if (SessionBookmarks.empty())
