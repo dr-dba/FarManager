@@ -2064,12 +2064,83 @@ bool Edit::GetColor(ColorItem& col, size_t Item) const
 	return true;
 }
 
-/* // Xer0X added (some test):
+// [experimental@Xer0X] added GetCoord:
 bool Edit::GetCoord(COORD& coord) const
 {
-	coord = { 111, 222 };
+	coord = { m_Where.left, m_Where.top };
 	return true;
-} // */
+}
+
+// [experimental@Xer0X] Set editor's size
+bool Edit::SetSize(COORD& size2d) const
+{
+	const auto OriginalWidth = 0 + m_Where.width();
+	const auto OriginalHeight= 0 + m_Where.height();
+	int DesiredWidth = size2d.X > 0 ? size2d.X : OriginalWidth;
+	int DesiredHeight= size2d.Y > 0 ? size2d.Y : OriginalHeight;
+	if (DesiredWidth == OriginalWidth 
+	&&	DesiredHeight == OriginalHeight)
+		return true;
+	const rectangle NewWhere { m_Where.left, m_Where.top, m_Where.left + DesiredWidth - 1, m_Where.top + DesiredHeight - 1 };
+	const auto DeltaX = std::abs(DesiredWidth - OriginalWidth);
+	const auto DeltaY = std::abs(DesiredHeight - OriginalHeight);
+	const size_t CopyWidth = std::min(OriginalWidth, DesiredWidth);
+	const size_t CopyHeight = std::min(OriginalHeight, DesiredHeight);
+	if (DesiredHeight > OriginalHeight)
+	{
+		for (const auto& i : irange(CopyHeight))
+		{
+			const auto FromIndex = i * OriginalWidth;
+			const auto ToIndex = (i + DeltaY) * DesiredWidth;
+		//	std::copy_n(ScreenBuf.data() + FromIndex, CopyWidth, NewBuf.data() + ToIndex);
+		}
+	}
+	else
+	{
+		for (const auto& i : irange(CopyHeight))
+		{
+			const auto FromIndex = (i + DeltaY) * OriginalWidth;
+			const auto ToIndex = i * DesiredWidth;
+		//	std::copy_n(ScreenBuf.data() + FromIndex, CopyWidth, NewBuf.data() + ToIndex);
+		}
+	}
+	GetEditor()->SetPosition(NewWhere);
+	return true;
+} 
+
+// [experimental@Xer0X] Why using "const" modifiers?
+bool Edit::SetCoord(COORD& coord) const
+{
+	const auto old_X = 0 + m_Where.left;
+	const auto old_Y = 0 + m_Where.top;
+	int new_X = coord.X > 0 ? coord.X : m_Where.left;
+	int new_Y = coord.Y > 0 ? coord.Y : m_Where.top;
+	if (new_X == old_X
+	&&	new_Y == old_Y)
+		return true;
+	const rectangle new_where { new_X, new_Y, m_Where.right, m_Where.bottom };
+	const auto DeltaX = std::abs(new_X - old_X);
+	const auto DeltaY = std::abs(new_Y - old_Y);
+	const size_t copy_X = std::min(new_X, old_X);
+	const size_t copy_Y = std::min(new_Y, old_Y);
+	GetEditor()->SetPosition(new_where);
+	return true;
+} 
+
+// [experimental@Xer0X] the same as above, but without "const"
+bool Edit::SetWindRect(rectangle new_rect, rectangle& res_rect) // const // :!!NOT !!
+{	if ((rectangle)new_rect == (rectangle)m_Where)
+		return true;
+	const rectangle new_where {
+		new_rect.left	> 0 ? new_rect.left	: m_Where.left,
+		new_rect.top	> 0 ? new_rect.top	: m_Where.top,
+		new_rect.right	> 0 ? new_rect.right: m_Where.right,
+		new_rect.bottom > 0 ? new_rect.bottom:m_Where.bottom
+	};
+	SetPosition(new_where); // ScrObj.SetPosition(...)
+	res_rect = new_where;
+	return true;
+}
 
 void Edit::ApplyColor(int XPos, int FocusedLeftPos, positions_cache& RealToVisual)
 {
