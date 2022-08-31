@@ -2467,7 +2467,8 @@ void FileEditor::OnChangeFocus(bool focus)
 
 intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 {
-	if(m_editor->EditorControlLocked()) return FALSE;
+	if (m_editor->EditorControlLocked())
+		return FALSE;
 	if (m_bClosing 
 		&& (Command != ECTL_GETINFO) 
 		&& (Command != ECTL_GETCOORD) // Get the editor position (top left corner) @Xer0X
@@ -2476,40 +2477,8 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 		&& (Command != ECTL_GETFILENAME)
 			)
 		return FALSE;
-
 	switch (Command)
 	{
-		// @Xer0X: Give the editor position (top left corner):
-		case ECTL_GETCOORD:
-		{
-			BOOL Result = FALSE;
-			COORD crd_editor = { -1, -1 };
-			crd_editor.X = m_Where.left;
-			crd_editor.Y = m_Where.top;
-			*static_cast<COORD*>(Param2) = crd_editor;
-			Result = TRUE;
-			return Result;
-		}
-		// @Xer0X: Set the editor position (top left corner):
-		case ECTL_SETCOORD:
-		{
-			BOOL Result = FALSE;
-		//	const auto new_where = static_cast<const rectangle*>(Param2);
-		//	if (!CheckStructSize(new_where)) return false;
-			rectangle NewWhere = {
-				m_Where.top + 1,
-				m_Where.left + 1,
-				m_Where.right,
-				m_Where.bottom
-			};
-			m_Flags.Change(FFILEEDIT_FULLSCREEN, false);
-		//	*static_cast<rectangle*>(Param2) = NewWhere;
-			SetPosition(NewWhere);		
-		//	auto FileEditorPtr = std::make_shared<FileEditor>(private_tag());
-		//	FileEditorPtr->ScreenObjectWithShadow::SetPosition({ 5, 5, 50, 20 });
-			Result = TRUE;
-			return Result;
-		}
 		case ECTL_GETFILENAME:
 		{
 			if (Param2 && static_cast<size_t>(Param1) > strFullFileName.size())
@@ -2614,7 +2583,6 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 		case ECTL_SETKEYBAR:
 		{
 			const auto Kbt = static_cast<const FarSetKeyBarTitles*>(Param2);
-
 			if (!Kbt)   //восстановить изначальное
 				InitKeyBar();
 			else
@@ -2626,35 +2594,27 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 					else
 						return FALSE;
 				}
-
 				m_windowKeyBar->Show();
 			}
-
 			return TRUE;
 		}
 		case ECTL_SAVEFILE:
 		{
 			string strName = strFullFileName;
 			auto Eol = eol::none;
-			uintptr_t codepage=m_codepage;
-
+			uintptr_t codepage = m_codepage;
 			const auto esf = static_cast<const EditorSaveFile*>(Param2);
 			if (CheckStructSize(esf))
 			{
-
 				if (esf->FileName)
 					strName=esf->FileName;
-
 				if (esf->FileEOL)
 					Eol = eol::parse(esf->FileEOL);
-
 				if (esf->CodePage != CP_DEFAULT)
 					codepage=esf->CodePage;
 			}
-
 			{
 				const auto strOldFullFileName = strFullFileName;
-
 				if (SetFileName(strName))
 				{
 					if (!equal_icase(strFullFileName, strOldFullFileName))
@@ -2665,14 +2625,12 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 							return FALSE;
 						}
 					}
-
 					m_Flags.Set(FFILEEDIT_SAVEWQUESTIONS);
-					//всегда записываем в режиме save as - иначе не сменить кодировку и концы линий.
+					// всегда записываем в режиме save as - иначе не сменить кодировку и концы линий.
 					error_state_ex ErrorState;
 					return SaveFile(strName, FALSE, true, ErrorState, Eol, codepage, m_bAddSignature);
 				}
 			}
-
 			return FALSE;
 		}
 		case ECTL_QUIT:
@@ -2696,25 +2654,20 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			{
 				//return FALSE;
 			}
-
 			if (Param2)
 			{
 				const auto rec = static_cast<INPUT_RECORD*>(Param2);
-
 				for (;;)
 				{
 					const auto Key = GetInputRecord(rec);
-
 					if ((!rec->EventType || rec->EventType == KEY_EVENT) &&
 					        ((Key >= KEY_MACRO_BASE && Key <= KEY_MACRO_ENDBASE) || (Key>=KEY_OP_BASE && Key <=KEY_OP_ENDBASE))) // исключаем MACRO
 						ReProcessKey(Manager::Key(Key, *rec));
 					else
 						break;
 				}
-
 				return TRUE;
 			}
-
 			return FALSE;
 		}
 		case ECTL_PROCESSINPUT:
@@ -2722,10 +2675,8 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			if (Param2)
 			{
 				const auto& rec = *static_cast<const INPUT_RECORD*>(Param2);
-
 				if (ProcessEditorInput(rec))
 					return TRUE;
-
 				if (rec.EventType==MOUSE_EVENT)
 					ProcessMouse(&rec.Event.MouseEvent);
 				else
@@ -2733,10 +2684,8 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 					const auto Key = InputRecordToKey(&rec);
 					ReProcessKey(Manager::Key(Key, rec));
 				}
-
 				return TRUE;
 			}
-
 			return FALSE;
 		}
 		case ECTL_SETPARAM:
@@ -2756,19 +2705,48 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			}
 			break;
 		}
+		// [feature@Xer0X] Give the editor position (top left corner):
+		case ECTL_GETCOORD:
+		{
+			BOOL Result = FALSE;
+			COORD crd_editor = { -1, -1 };
+			crd_editor.X = m_Where.left;
+			crd_editor.Y = m_Where.top;
+			*static_cast<COORD*>(Param2) = crd_editor;
+			Result = TRUE;
+			return Result;
+		}
+		// [feature@Xer0X]: Set the editor position (top left corner):
+		case ECTL_SETCOORD:
+		{
+			BOOL Result = FALSE;
+			//	const auto new_where = static_cast<const rectangle*>(Param2);
+			//	if (!CheckStructSize(new_where)) return false;
+			rectangle NewWhere = {
+				m_Where.top + 1,
+				m_Where.left + 1,
+				m_Where.right,
+				m_Where.bottom
+			};
+			m_Flags.Change(FFILEEDIT_FULLSCREEN, false);
+			//	*static_cast<rectangle*>(Param2) = NewWhere;
+			SetPosition(NewWhere);
+			//	auto FileEditorPtr = std::make_shared<FileEditor>(private_tag());
+			//	FileEditorPtr->ScreenObjectWithShadow::SetPosition({ 5, 5, 50, 20 });
+			Result = TRUE;
+			return Result;
+		}
 	}
-
 	const auto result = m_editor->EditorControl(Command, Param1, Param2);
-	if (result&&ECTL_GETINFO==Command)
+	if (result && Command == ECTL_GETINFO)
 	{
-		const auto Info=static_cast<EditorInfo*>(Param2);
+		const auto Info = static_cast<EditorInfo*>(Param2);
 		if (m_bAddSignature)
 			Info->Options|=EOPT_BOM;
 		if (Global->Opt->EdOpt.ShowTitleBar)
 			Info->Options|=EOPT_SHOWTITLEBAR;
 		if (Global->Opt->EdOpt.ShowKeyBar)
 			Info->Options|=EOPT_SHOWKEYBAR;
-
 	}
 	return result;
 }

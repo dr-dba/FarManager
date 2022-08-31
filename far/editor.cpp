@@ -5238,77 +5238,60 @@ void Editor::VBlockShift(int Left)
 
 int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 {
-	if(EditorControlLocked())
+	if (EditorControlLocked())
 		return FALSE;
-
 	switch (Command)
 	{
-		case ECTL_GETSTRING:
+	case ECTL_GETSTRING:
+	{
+		const auto GetString = static_cast<EditorGetString*>(Param2);
+		if (!CheckStructSize(GetString))
+			return false;
+		const auto CurPtr = GetStringByNumber(GetString->StringNumber);
+		if (CurPtr == Lines.end())
+			return false;
+		const auto& Str = CurPtr->GetString();
+		GetString->StringText = Str.data();
+		GetString->StringEOL = CurPtr->GetEOL().str().data();
+		GetString->StringLength = Str.size();
+		GetString->SelStart = -1;
+		GetString->SelEnd = 0;
+		const auto DestLine = GetString->StringNumber != -1? GetString->StringNumber : m_it_CurLine.Number();
+		if (IsStreamSelection())
 		{
-			const auto GetString = static_cast<EditorGetString*>(Param2);
-
-			if (!CheckStructSize(GetString))
-				return false;
-
-			const auto CurPtr = GetStringByNumber(GetString->StringNumber);
-
-			if (CurPtr == Lines.end())
-				return false;
-
-			const auto& Str = CurPtr->GetString();
-			GetString->StringText = Str.data();
-			GetString->StringEOL = CurPtr->GetEOL().str().data();
-			GetString->StringLength = Str.size();
-			GetString->SelStart = -1;
-			GetString->SelEnd = 0;
-
-			const auto DestLine = GetString->StringNumber != -1? GetString->StringNumber : m_it_CurLine.Number();
-			if (IsStreamSelection())
-			{
-				CurPtr->GetRealSelection(GetString->SelStart,GetString->SelEnd);
-			}
-			else if (IsVerticalSelection() && DestLine >= m_it_AnyBlockStart.Number() && DestLine < m_it_AnyBlockStart.Number() + VBlockSizeY)
-			{
-				GetString->SelStart = CurPtr->VisualPosToReal(VBlockX);
-				GetString->SelEnd = GetString->SelStart + CurPtr->VisualPosToReal(VBlockX + VBlockSizeX) - CurPtr->VisualPosToReal(VBlockX);
-			}
-
-			return true;
+			CurPtr->GetRealSelection(GetString->SelStart, GetString->SelEnd);
 		}
-
-		case ECTL_INSERTSTRING:
+		else if (IsVerticalSelection() && DestLine >= m_it_AnyBlockStart.Number() && DestLine < m_it_AnyBlockStart.Number() + VBlockSizeY)
 		{
-			if (m_Flags.Check(FEDITOR_LOCKMODE))
-				return false;
-
-			TurnOffMarkingBlock();
-			const auto Indent = Param2 && *static_cast<int*>(Param2) != false;
-
-			if (!Indent)
-				++Pasting;
-
-			m_Flags.Set(FEDITOR_NEWUNDO);
-			InsertString();
-
-			if (!Indent)
-				--Pasting;
-
-			return true;
+			GetString->SelStart = CurPtr->VisualPosToReal(VBlockX);
+			GetString->SelEnd = GetString->SelStart + CurPtr->VisualPosToReal(VBlockX + VBlockSizeX) - CurPtr->VisualPosToReal(VBlockX);
 		}
-
-		case ECTL_INSERTTEXT:
-		{
+		return true;
+	}
+	case ECTL_INSERTSTRING:
+	{
+		if (m_Flags.Check(FEDITOR_LOCKMODE))
+			return false;
+		TurnOffMarkingBlock();
+		const auto Indent = Param2 && *static_cast<int*>(Param2) != false;
+		if (!Indent)
+			++Pasting;
+		m_Flags.Set(FEDITOR_NEWUNDO);
+		InsertString();
+		if (!Indent)
+			--Pasting;
+		return true;
+	}
+	case ECTL_INSERTTEXT:
+	{
 			if (!Param2)
 				return false;
-
 			if (m_Flags.Check(FEDITOR_LOCKMODE))
 				return false;
-
 			TurnOffMarkingBlock();
 			bool RefreshMe = false;
 			auto Str = static_cast<const wchar_t*>(Param2);
 			++Pasting;
-
 			while (*Str)
 			{
 				if (L'\n' == *Str)
@@ -5325,12 +5308,10 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			}
 			--Pasting;
 			Refresh();
-
 			return true;
 		}
-
-		case ECTL_SETSTRING:
-		{
+	case ECTL_SETSTRING:
+	{
 			const auto SetString = static_cast<const EditorSetString*>(Param2);
 			if (!CheckStructSize(SetString))
 				return false;
@@ -5358,9 +5339,8 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 
 			return true;
 		}
-
-		case ECTL_DELETESTRING:
-		{
+	case ECTL_DELETESTRING:
+	{
 			if (m_Flags.Check(FEDITOR_LOCKMODE))
 				return false;
 
@@ -5369,238 +5349,177 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 
 			return true;
 		}
-
-		case ECTL_DELETECHAR:
-		{
+	case ECTL_DELETECHAR:
+	{
 			if (m_Flags.Check(FEDITOR_LOCKMODE))
 				return false;
-
 			TurnOffMarkingBlock();
 			++Pasting;
 			ProcessKey(Manager::Key(KEY_DEL));
 			--Pasting;
 			return true;
 		}
-
-		// [feature@Xer0X] window coordinates api
-		case ECTL_GETCOORD:
-		{
-			BOOL Result = FALSE;
-			COORD crd_editor = { -1, -1 };
-			crd_editor.X = m_Where.left;
-			crd_editor.Y = m_Where.top;
-			m_Where.left = m_Where.left;
-			*static_cast<COORD*>(Param2) = crd_editor;
-			Result = TRUE;
-			return Result;
-		}
-
-		// [feature@Xer0X] set editor window top-left coordinate
-		case ECTL_SETCOORD:
-		{
-			BOOL Result = FALSE;
-			const auto new_where = static_cast<const rectangle*>(Param2);
-		//	if (!CheckStructSize(new_where)) return false;
-			rectangle NewWhere = {
-				m_Where.top + 1,
-				m_Where.left + 1,
-				m_Where.right,
-				m_Where.bottom
-			};
-			*static_cast<rectangle*>(Param2) = NewWhere;
-			SetPosition(NewWhere);
-			Result = TRUE;
-			return Result;
-		}
-
-		case ECTL_GETINFO:
-		{
+	case ECTL_GETINFO:
+	{
 			const auto Info = static_cast<EditorInfo*>(Param2);
 			if (!CheckStructSize(Info))
 				return false;
 
 			Info->EditorID = EditorID;
-			Info->WindowSizeX=ObjWidth();
+			Info->WindowSizeX = ObjWidth();
 			Info->WindowSizeY = ObjHeight();
 			Info->TotalLines = Lines.size();
 			Info->CurLine = m_it_CurLine.Number();
-			Info->CurPos=m_it_CurLine->GetCurPos();
-			Info->CurTabPos=m_it_CurLine->GetTabCurPos();
+			Info->CurPos = m_it_CurLine->GetCurPos();
+			Info->CurTabPos = m_it_CurLine->GetTabCurPos();
 			Info->TopScreenLine = m_it_CurLine.Number() - CalcDistance(m_it_TopScreen, m_it_CurLine);
-			Info->LeftPos=m_it_CurLine->GetLeftPos();
-			Info->Overtype=m_Flags.Check(FEDITOR_OVERTYPE);
+			Info->LeftPos = m_it_CurLine->GetLeftPos();
+			Info->Overtype = m_Flags.Check(FEDITOR_OVERTYPE);
 			Info->BlockType = IsVerticalSelection()? BTYPE_COLUMN : IsStreamSelection()? BTYPE_STREAM : BTYPE_NONE;
 			Info->BlockStartLine = Info->BlockType == BTYPE_NONE? 0 : m_it_AnyBlockStart.Number();
-			Info->Options=0;
+			Info->Options = 0;
 
 			if (EdOpt.ExpandTabs == EXPAND_ALLTABS)
-				Info->Options|=EOPT_EXPANDALLTABS;
+				Info->Options |= EOPT_EXPANDALLTABS;
 
 			if (EdOpt.ExpandTabs == EXPAND_NEWTABS)
-				Info->Options|=EOPT_EXPANDONLYNEWTABS;
+				Info->Options |= EOPT_EXPANDONLYNEWTABS;
 
 			if (EdOpt.PersistentBlocks)
-				Info->Options|=EOPT_PERSISTENTBLOCKS;
+				Info->Options |= EOPT_PERSISTENTBLOCKS;
 
 			if (EdOpt.DelRemovesBlocks)
-				Info->Options|=EOPT_DELREMOVESBLOCKS;
+				Info->Options |= EOPT_DELREMOVESBLOCKS;
 
 			if (EdOpt.AutoIndent)
-				Info->Options|=EOPT_AUTOINDENT;
+				Info->Options |= EOPT_AUTOINDENT;
 
 			if (EdOpt.SavePos)
-				Info->Options|=EOPT_SAVEFILEPOSITION;
+				Info->Options |= EOPT_SAVEFILEPOSITION;
 
 			if (EdOpt.AutoDetectCodePage)
-				Info->Options|=EOPT_AUTODETECTCODEPAGE;
+				Info->Options |= EOPT_AUTODETECTCODEPAGE;
 
 			if (EdOpt.CursorBeyondEOL)
-				Info->Options|=EOPT_CURSORBEYONDEOL;
+				Info->Options |= EOPT_CURSORBEYONDEOL;
 
 			if (EdOpt.ShowWhiteSpace)
 			{
-				Info->Options|=EOPT_SHOWWHITESPACE;
+				Info->Options |= EOPT_SHOWWHITESPACE;
 
-				if (EdOpt.ShowWhiteSpace==1)
-					Info->Options|=EOPT_SHOWLINEBREAK;
+				if (EdOpt.ShowWhiteSpace == 1)
+					Info->Options |= EOPT_SHOWLINEBREAK;
 			}
 
 			if (EdOpt.ShowScrollBar && ScrollBarRequired(ObjHeight(), Lines.size()))
 				Info->Options |= EOPT_SHOWSCROLLBAR;
 
-			Info->TabSize=EdOpt.TabSize;
-			Info->BookmarkCount=BOOKMARK_COUNT;
-			Info->SessionBookmarkCount=GetSessionBookmarks(nullptr);
-			Info->CurState=m_Flags.Check(FEDITOR_LOCKMODE)?ECSTATE_LOCKED:0;
-			Info->CurState|=!m_Flags.Check(FEDITOR_MODIFIED)?ECSTATE_SAVED:0;
-			Info->CurState|=m_Flags.Check(FEDITOR_MODIFIED|FEDITOR_WASCHANGED)?ECSTATE_MODIFIED:0;
-			Info->CodePage=m_codepage;
+			Info->TabSize = EdOpt.TabSize;
+			Info->BookmarkCount = BOOKMARK_COUNT;
+			Info->SessionBookmarkCount = GetSessionBookmarks(nullptr);
+			Info->CurState = m_Flags.Check(FEDITOR_LOCKMODE)?ECSTATE_LOCKED:0;
+			Info->CurState |= !m_Flags.Check(FEDITOR_MODIFIED)?ECSTATE_SAVED:0;
+			Info->CurState |= m_Flags.Check(FEDITOR_MODIFIED | FEDITOR_WASCHANGED)?ECSTATE_MODIFIED:0;
+			Info->CodePage = m_codepage;
 
 			return true;
 		}
-
-		case ECTL_SETPOSITION:
+	case ECTL_SETPOSITION:
+	{
+		const auto Pos = static_cast<const EditorSetPosition*>(Param2);
+		if (!CheckStructSize(Pos))
+			return false;
+		// выставим флаг об изменении поз
+		m_Flags.Set(FEDITOR_CURPOSCHANGEDBYPLUGIN);
+		if (Pos->CurLine >= 0) // поменяем строку
 		{
-			const auto Pos = static_cast<const EditorSetPosition*>(Param2);
-			if (!CheckStructSize(Pos))
-				return false;
-
-			// выставим флаг об изменении поз
-			m_Flags.Set(FEDITOR_CURPOSCHANGEDBYPLUGIN);
-
-			if (Pos->CurLine >= 0) // поменяем строку
-			{
-				if (Pos->CurLine == m_it_CurLine.Number() - 1)
-					Up();
-				else if (Pos->CurLine == m_it_CurLine.Number() + 1)
-					Down();
-				else
-					GoToLine(Pos->CurLine);
-			}
-
-			if (Pos->TopScreenLine >= 0 && Pos->TopScreenLine <= m_it_CurLine.Number())
-			{
-				m_it_TopScreen=m_it_CurLine;
-
-				for (int I = m_it_CurLine.Number(); I > 0 && m_it_CurLine.Number() - I < m_Where.height() - 1 && I != Pos->TopScreenLine; --I)
-					--m_it_TopScreen;
-			}
-
-			if (Pos->CurPos >= 0)
-				m_it_CurLine->SetCurPos(Pos->CurPos);
-
-			if (Pos->CurTabPos >= 0)
-				m_it_CurLine->SetTabCurPos(Pos->CurTabPos);
-
-			if (Pos->LeftPos >= 0)
-				m_it_CurLine->SetLeftPos(Pos->LeftPos);
-
-			m_it_CurLine->SetRightCoord(XX2);
-			m_it_CurLine->FixLeftPos();
-
-			/* $ 30.08.2001 IS
-			   Изменение режима нужно выставлять сразу, в противном случае приходят
-			   глюки, т.к. плагинописатель думает, что режим изменен, и ведет себя
-			   соответственно, в результате чего получает неопределенное поведение.
-			*/
-			if (Pos->Overtype >= 0)
-			{
-				m_Flags.Change(FEDITOR_OVERTYPE,Pos->Overtype!=0);
-				m_it_CurLine->SetOvertypeMode(m_Flags.Check(FEDITOR_OVERTYPE));
-			}
-
-			return true;
+			if (Pos->CurLine == m_it_CurLine.Number() - 1)
+				Up();
+			else if (Pos->CurLine == m_it_CurLine.Number() + 1)
+				Down();
+			else
+				GoToLine(Pos->CurLine);
 		}
-
-		case ECTL_SELECT:
+		if (Pos->TopScreenLine >= 0 && Pos->TopScreenLine <= m_it_CurLine.Number())
 		{
-			const auto Sel = static_cast<const EditorSelect*>(Param2);
-			if (!CheckStructSize(Sel))
+			m_it_TopScreen = m_it_CurLine;
+			for (int I = m_it_CurLine.Number(); I > 0 && m_it_CurLine.Number() - I < m_Where.height() - 1 && I != Pos->TopScreenLine; --I)
+				--m_it_TopScreen;
+		}
+		if (Pos->CurPos >= 0)
+			m_it_CurLine->SetCurPos(Pos->CurPos);
+		if (Pos->CurTabPos >= 0)
+			m_it_CurLine->SetTabCurPos(Pos->CurTabPos);
+		if (Pos->LeftPos >= 0)
+			m_it_CurLine->SetLeftPos(Pos->LeftPos);
+		m_it_CurLine->SetRightCoord(XX2);
+		m_it_CurLine->FixLeftPos();
+		/* $ 30.08.2001 IS
+		   Изменение режима нужно выставлять сразу, в противном случае приходят
+		   глюки, т.к. плагинописатель думает, что режим изменен, и ведет себя
+		   соответственно, в результате чего получает неопределенное поведение.
+		*/
+		if (Pos->Overtype >= 0)
+		{
+			m_Flags.Change(FEDITOR_OVERTYPE, Pos->Overtype != 0);
+			m_it_CurLine->SetOvertypeMode(m_Flags.Check(FEDITOR_OVERTYPE));
+		}
+		return true;
+	}
+	case ECTL_SELECT:
+	{
+		const auto Sel = static_cast<const EditorSelect*>(Param2);
+		if (!CheckStructSize(Sel))
 				return false;
-
-			if (Sel->BlockType==BTYPE_NONE || Sel->BlockStartPos==-1)
-			{
-				UnmarkBlock();
-				return true;
-			}
-
-			if (Sel->BlockHeight < 1)
-				return false;
-
-			auto CurPtr = GetStringByNumber(Sel->BlockStartLine);
-			if (CurPtr == Lines.end())
-				return false;
-
+		if (Sel->BlockType == BTYPE_NONE || Sel->BlockStartPos == -1)
+		{
 			UnmarkBlock();
-
-			m_Flags.Set(FEDITOR_CURPOSCHANGEDBYPLUGIN);
-
-			if (Sel->BlockType == BTYPE_STREAM)
-			{
-				BeginStreamMarking(CurPtr);
-
-				for (const auto& i: irange(Sel->BlockHeight))
-				{
-					const auto SelStart = i? 0 : Sel->BlockStartPos;
-					const auto SelEnd = (i < Sel->BlockHeight - 1)? -1 : Sel->BlockStartPos + Sel->BlockWidth;
-					CurPtr->Select(SelStart, SelEnd);
-					++CurPtr;
-
-					if (CurPtr == Lines.end())
-						return true; // ранее было FALSE
-				}
-			}
-			else if (Sel->BlockType == BTYPE_COLUMN)
-			{
-				BeginVBlockMarking(CurPtr);
-
-				VBlockX = Sel->BlockStartPos;
-
-				VBlockSizeX = Sel->BlockWidth;
-				VBlockSizeY = Sel->BlockHeight;
-
-				if (VBlockSizeX < 0)
-				{
-					VBlockSizeX = -VBlockSizeX;
-					VBlockX -= VBlockSizeX;
-
-					if (VBlockX < 0)
-						VBlockX = 0;
-				}
-			}
-
 			return true;
 		}
-
-		case ECTL_REDRAW:
+		if (Sel->BlockHeight < 1)
+			return false;
+		auto CurPtr = GetStringByNumber(Sel->BlockStartLine);
+		if (CurPtr == Lines.end())
+			return false;
+		UnmarkBlock();
+		m_Flags.Set(FEDITOR_CURPOSCHANGEDBYPLUGIN);
+		if (Sel->BlockType == BTYPE_STREAM)
 		{
-			Show();
-			Global->ScrBuf->Flush();
-			return true;
+			BeginStreamMarking(CurPtr);
+			for (const auto& i : irange(Sel->BlockHeight))
+			{
+				const auto SelStart = i? 0 : Sel->BlockStartPos;
+				const auto SelEnd = (i < Sel->BlockHeight - 1)? -1 : Sel->BlockStartPos + Sel->BlockWidth;
+				CurPtr->Select(SelStart, SelEnd);
+				++CurPtr;
+				if (CurPtr == Lines.end())
+					return true; // ранее было FALSE
+			}
 		}
-
-		case ECTL_TABTOREAL:
+		else if (Sel->BlockType == BTYPE_COLUMN)
 		{
+			BeginVBlockMarking(CurPtr);
+			VBlockX = Sel->BlockStartPos;
+			VBlockSizeX = Sel->BlockWidth;
+			VBlockSizeY = Sel->BlockHeight;
+			if (VBlockSizeX < 0)
+			{
+				VBlockSizeX = -VBlockSizeX;
+				VBlockX -= VBlockSizeX;
+				if (VBlockX < 0)
+					VBlockX = 0;
+			}
+		}
+		return true;
+	}
+	case ECTL_REDRAW:
+	{
+		Show();
+		Global->ScrBuf->Flush();
+		return true;
+	}
+	case ECTL_TABTOREAL:
+	{
 			const auto ecp = static_cast<EditorConvertPos*>(Param2);
 			if (!CheckStructSize(ecp))
 				return false;
@@ -5609,136 +5528,109 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			if (CurPtr == Lines.end())
 				return false;
 
-			ecp->DestPos=CurPtr->VisualPosToReal(ecp->SrcPos);
+			ecp->DestPos = CurPtr->VisualPosToReal(ecp->SrcPos);
 			return true;
 		}
-
-		case ECTL_REALTOTAB:
-		{
-			const auto ecp = static_cast<EditorConvertPos*>(Param2);
-			if (!CheckStructSize(ecp))
-				return false;
-
-			const auto CurPtr = GetStringByNumber(ecp->StringNumber);
-			if (CurPtr == Lines.end())
-				return false;
-
-			ecp->DestPos = CurPtr->RealPosToVisual(ecp->SrcPos);
-			return true;
-		}
-
-		case ECTL_EXPANDTABS:
-		{
-			if (m_Flags.Check(FEDITOR_LOCKMODE))
-				return false;
-
-			const auto StringNumber = *static_cast<intptr_t*>(Param2);
-			const auto CurPtr = GetStringByNumber(StringNumber);
-
-			if (CurPtr == Lines.end())
-				return false;
-
-			AddUndoData(undo_type::edit, CurPtr->GetString(), CurPtr->GetEOL(), StringNumber, CurPtr->GetCurPos());
-			if(CurPtr->ReplaceTabs())
-				Change(ECTYPE_CHANGED, StringNumber);
-
-			return true;
-		}
-
-		// TODO: Если DI_MEMOEDIT не будет юзать раскраску, то должно выполняется в FileEditor::EditorControl(), в диалоге - нафиг ненать
-		case ECTL_ADDCOLOR:
-		{
-			const auto col = static_cast<const EditorColor*>(Param2);
-			if (!CheckStructSize(col))
-				return false;
-
-			const auto CurPtr = GetStringByNumber(col->StringNumber);
-			if (CurPtr == Lines.end())
-				return false;
-
-			ColorItem newcol;
-			newcol.StartPos=col->StartPos;
-			newcol.EndPos=col->EndPos;
-			newcol.SetColor(col->Color);
-			newcol.Flags=col->Flags;
-			newcol.SetOwner(col->Owner);
-			newcol.Priority=col->Priority;
-
-			CurPtr->AddColor(newcol);
-			if (col->Flags & ECF_AUTODELETE)
-				m_AutoDeletedColors.emplace(&*CurPtr);
-
-			return true;
-		}
-
-		// TODO: Если DI_MEMOEDIT не будет юзать раскраску, то должно выполняется в FileEditor::EditorControl(), в диалоге - нафиг ненать
-		case ECTL_GETCOLOR:
-		{
-			const auto col = static_cast<EditorColor*>(Param2);
-			if (!CheckStructSize(col))
-				return false;
-
-			const auto CurPtr = GetStringByNumber(col->StringNumber);
-			if (CurPtr == Lines.end())
-				return false;
-
-			ColorItem curcol;
-			if (!CurPtr->GetColor(curcol, col->ColorItem))
-				return false;
-
-			col->StartPos = curcol.StartPos;
-			col->EndPos = curcol.EndPos;
-			col->Color=curcol.GetColor();
-			col->Flags=curcol.Flags;
-			col->Owner=curcol.GetOwner();
-			col->Priority=curcol.Priority;
-
-			return true;
-		}
-
-		case ECTL_DELCOLOR:
-		{
-			const auto col = static_cast<const EditorDeleteColor*>(Param2);
-			if (!CheckStructSize(col))
-				return false;
-
-			const auto CurPtr = GetStringByNumber(col->StringNumber);
-			if (CurPtr == Lines.end())
-				return false;
-
-			CurPtr->DeleteColor([&](const ColorItem& Item)
+	case ECTL_REALTOTAB:
+	{
+		const auto ecp = static_cast<EditorConvertPos*>(Param2);
+		if (!CheckStructSize(ecp))
+			return false;
+		const auto CurPtr = GetStringByNumber(ecp->StringNumber);
+		if (CurPtr == Lines.end())
+			return false;
+		ecp->DestPos = CurPtr->RealPosToVisual(ecp->SrcPos);
+		return true;
+	}
+	case ECTL_EXPANDTABS:
+	{
+		if (m_Flags.Check(FEDITOR_LOCKMODE))
+			return false;
+		const auto StringNumber = *static_cast<intptr_t*>(Param2);
+		const auto CurPtr = GetStringByNumber(StringNumber);
+		if (CurPtr == Lines.end())
+			return false;
+		AddUndoData(undo_type::edit, CurPtr->GetString(), CurPtr->GetEOL(), StringNumber, CurPtr->GetCurPos());
+		if (CurPtr->ReplaceTabs())
+			Change(ECTYPE_CHANGED, StringNumber);
+		return true;
+	}
+	// TODO: Если DI_MEMOEDIT не будет юзать раскраску, то должно выполняется в FileEditor::EditorControl(), в диалоге - нафиг ненать
+	case ECTL_ADDCOLOR:
+	{
+		const auto col = static_cast<const EditorColor*>(Param2);
+		if (!CheckStructSize(col))
+			return false;
+		const auto CurPtr = GetStringByNumber(col->StringNumber);
+		if (CurPtr == Lines.end())
+			return false;
+		ColorItem newcol;
+		newcol.StartPos = col->StartPos;
+		newcol.EndPos = col->EndPos;
+		newcol.SetColor(col->Color);
+		newcol.Flags = col->Flags;
+		newcol.SetOwner(col->Owner);
+		newcol.Priority = col->Priority;
+		CurPtr->AddColor(newcol);
+		if (col->Flags & ECF_AUTODELETE)
+			m_AutoDeletedColors.emplace(&*CurPtr);
+		return true;
+	}
+	// TODO: Если DI_MEMOEDIT не будет юзать раскраску, то должно выполняется в FileEditor::EditorControl(), в диалоге - нафиг ненать
+	case ECTL_GETCOLOR:
+	{
+		const auto col = static_cast<EditorColor*>(Param2);
+		if (!CheckStructSize(col))
+			return false;
+		const auto CurPtr = GetStringByNumber(col->StringNumber);
+		if (CurPtr == Lines.end())
+			return false;
+		ColorItem curcol;
+		if (!CurPtr->GetColor(curcol, col->ColorItem))
+			return false;
+		col->StartPos = curcol.StartPos;
+		col->EndPos = curcol.EndPos;
+		col->Color = curcol.GetColor();
+		col->Flags = curcol.Flags;
+		col->Owner = curcol.GetOwner();
+		col->Priority = curcol.Priority;
+		return true;
+	}
+	case ECTL_DELCOLOR:
+	{
+		const auto col = static_cast<const EditorDeleteColor*>(Param2);
+		if (!CheckStructSize(col))
+			return false;
+		const auto CurPtr = GetStringByNumber(col->StringNumber);
+		if (CurPtr == Lines.end())
+			return false;
+		CurPtr->DeleteColor([&](const ColorItem& Item)
 			{
 				return (col->StartPos == -1 || col->StartPos == Item.StartPos) && col->Owner == Item.GetOwner();
 			});
-
-			return true;
-		}
-
-		/* $ 16.02.2001 IS
-		     Изменение некоторых внутренних настроек редактора. Param2 указывает на
-		     структуру EditorSetParameter
-		*/
-		case ECTL_SETPARAM:
-		{
+		return true;
+	}
+	/* $ 16.02.2001 IS
+		 Изменение некоторых внутренних настроек редактора.
+		 Param2 указывает на структуру EditorSetParameter
+	*/
+	case ECTL_SETPARAM:
+	{
 			const auto espar = static_cast<const EditorSetParameter*>(Param2);
 			if (!CheckStructSize(espar))
 				return false;
-
 			switch (espar->Type)
 			{
 			case ESPT_GETWORDDIV:
 				if (espar->wszParam && espar->Size)
-					xwcsncpy(espar->wszParam,EdOpt.strWordDiv.c_str(), espar->Size);
+					xwcsncpy(espar->wszParam, EdOpt.strWordDiv.c_str(), espar->Size);
 				return static_cast<int>(EdOpt.strWordDiv.Get().size()) + 1;
-
 			case ESPT_SETWORDDIV:
 				SetWordDiv(espar->wszParam && *espar->wszParam? string_view(espar->wszParam) : Global->Opt->EdOpt.strWordDiv);
 				return true;
-
 			case ESPT_TABSIZE:
 				SetTabSize(espar->iParam);
 				return true;
-
 			case ESPT_EXPANDTABS:
 				SetConvertTabs(espar->iParam);
 				return true;
@@ -5754,99 +5646,110 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			case ESPT_CHARCODEBASE:
 				SetCharCodeBase(espar->iParam);
 				return true;
-
 			case ESPT_CODEPAGE:
-			{
-				const uintptr_t cp = espar->iParam;
-				// BUGBUG
-				if (const auto HostFileEditor = std::dynamic_pointer_cast<FileEditor>(m_Owner.lock()))
 				{
-					if (!HostFileEditor->SetCodePageEx(cp))
-						return false;
+					const uintptr_t cp = espar->iParam;
+					// BUGBUG
+					if (const auto HostFileEditor = std::dynamic_pointer_cast<FileEditor>(m_Owner.lock()))
+					{
+						if (!HostFileEditor->SetCodePageEx(cp))
+							return false;
+					}
+					else
+					{
+						if (cp == CP_DEFAULT || !codepages::IsCodePageSupported(cp) || !SetCodePage(cp))
+							return false;
+					}
+					Show();
+					return true;
 				}
-				else
-				{
-					if (cp == CP_DEFAULT || !codepages::IsCodePageSupported(cp) || !SetCodePage(cp))
-						return false;
-				}
-				Show();
-				return true;
-			}
-
-			/* $ 29.10.2001 IS изменение настройки "Сохранять позицию файла" */
+				/* $ 29.10.2001 IS изменение настройки "Сохранять позицию файла" */
 			case ESPT_SAVEFILEPOSITION:
 				SetSavePosMode(espar->iParam, -1);
 				return true;
-
 				/* $ 23.03.2002 IS запретить/отменить изменение файла */
 			case ESPT_LOCKMODE:
-				m_Flags.Change(FEDITOR_LOCKMODE, espar->iParam!=0);
+				m_Flags.Change(FEDITOR_LOCKMODE, espar->iParam != 0);
 				return true;
-
 			case ESPT_SHOWWHITESPACE:
 				SetShowWhiteSpace(espar->iParam);
 				return true;
-
 			default:
 				return false;
 			}
 		}
-
-		case ECTL_DELETEBLOCK:
-		{
+	case ECTL_DELETEBLOCK:
+	{
 			if (m_Flags.Check(FEDITOR_LOCKMODE) || !IsAnySelection())
 				return false;
-
-
 			TurnOffMarkingBlock();
 			DeleteBlock();
 			Show();
 			return true;
 		}
-
-		case ECTL_UNDOREDO:
-		{
+	case ECTL_UNDOREDO:
+	{
 			const auto eur = static_cast<const EditorUndoRedo*>(Param2);
 			if (!CheckStructSize(eur))
 				return false;
-
 			switch (eur->Command)
 			{
 			case EUR_BEGIN:
 				AddUndoData(undo_type::begin);
 				return true;
-
 			case EUR_END:
 				AddUndoData(undo_type::end);
 				return true;
-
 			case EUR_UNDO:
 			case EUR_REDO:
 				Undo(eur->Command == EUR_REDO);
 				Refresh();
 				return true;
-
 			default:
 				return false;
 			}
 		}
-
-		case ECTL_SUBSCRIBECHANGEEVENT:
-		case ECTL_UNSUBSCRIBECHANGEEVENT:
-		{
-			const auto esce = static_cast<const EditorSubscribeChangeEvent*>(Param2);
-			if (!CheckStructSize(esce))
-				return false;
-
-			if (Command == ECTL_SUBSCRIBECHANGEEVENT)
-				ChangeEventSubscribers.emplace(esce->PluginId);
-			else
-				ChangeEventSubscribers.erase(esce->PluginId);
-
-			return true;
-		}
+	case ECTL_SUBSCRIBECHANGEEVENT:
+	case ECTL_UNSUBSCRIBECHANGEEVENT:
+	{
+		const auto esce = static_cast<const EditorSubscribeChangeEvent*>(Param2);
+		if (!CheckStructSize(esce))
+			return false;
+					if (Command == ECTL_SUBSCRIBECHANGEEVENT)
+			ChangeEventSubscribers.emplace(esce->PluginId);
+		else
+			ChangeEventSubscribers.erase(esce->PluginId);
+		return true;
 	}
-
+	// [feature@Xer0X] window coordinates api:
+	case ECTL_GETCOORD:
+	{
+		BOOL Result = FALSE;
+		COORD crd_editor = { -1, -1 };
+		crd_editor.X = m_Where.left;
+		crd_editor.Y = m_Where.top;
+		m_Where.left = m_Where.left;
+		*static_cast<COORD*>(Param2) = crd_editor;
+		Result = TRUE;
+		return Result;
+	}
+	// [feature@Xer0X] set editor window top-left coordinate
+	case ECTL_SETCOORD:
+	{
+		BOOL Result = FALSE;
+		const auto new_where = static_cast<const rectangle*>(Param2);
+	//	if (!CheckStructSize(new_where)) return false;
+		rectangle NewWhere = {
+			m_Where.top + 1,
+			m_Where.left + 1,
+			m_Where.right,
+			m_Where.bottom
+		};
+		*static_cast<rectangle*>(Param2) = NewWhere;
+		SetPosition(NewWhere);
+		Result = TRUE;
+		return Result;
+	}}
 	return false;
 }
 
