@@ -1493,6 +1493,29 @@ static int editor_GetCoord(lua_State *L)
 	return 1;
 }
 
+// [feature@Xer0X] editor control update the screen coordinates
+static int editor_SetCoord(lua_State* L) //, struct COORD* new_coord)
+{
+	PSInfo* Info = GetPluginData(L)->Info;
+	intptr_t EditorId;
+	SMALL_RECT res_rect =
+		{ 1, 1, 1, 1 };
+	//	{ new_coord->X, new_coord->Y, -1, -1 };
+	EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
+	if (Info->EditorControl(EditorId, ECTL_SETCOORD, 0, &res_rect))
+	{
+		lua_createtable(L, 0, 4);
+	//	PutNumToTable(L, "Left"	, res_rect.Left	);
+	//	PutNumToTable(L, "Top"	, res_rect.Top	);
+	//	PutNumToTable(L, "Right", res_rect.Right);
+	//	PutNumToTable(L, "Bottom",res_rect.Bottom);
+		return 1;
+	}
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
 static int editor_SaveFile(lua_State *L)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
@@ -6319,6 +6342,7 @@ const luaL_Reg editor_funcs[] =
 	{"GetColor",            editor_GetColor},
 	// Api to read editor's window coordinates (by @Xer0X) 
 	{"GetCoord",            editor_GetCoord},
+	{"SetCoord",			editor_SetCoord},
 	{"GetFileName",         editor_GetFileName},
 	{"GetInfo",             editor_GetInfo},
 	{"GetSelection",        editor_GetSelection},
