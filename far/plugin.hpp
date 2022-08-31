@@ -1670,8 +1670,9 @@ enum EDITOR_CONTROL_COMMANDS
 	ECTL_SUBSCRIBECHANGEEVENT       = 36,
 	ECTL_UNSUBSCRIBECHANGEEVENT     = 37,
 	ECTL_GETTITLE                   = 38,
-	// @Xer0X added:
+	// [feature@Xer0X] editor control Get/Set screen coordinates commands
 	ECTL_GETCOORD					= 101,
+	ECTL_SETCOORD					= 102
 };
 
 enum EDITOR_SETPARAMETER_TYPES

@@ -1175,8 +1175,9 @@ PACK_PUSH(2)
 		ECTL_DELETESTACKBOOKMARK,
 		ECTL_GETSTACKBOOKMARKS,
 		ECTL_SERVICEREGION,
-		// @Xer0X added:
+		// [feature@Xer0X] editor control Get / Set screen coordinates commands
 		ECTL_GETCOORD,
+		ECTL_SETCOORD
 	};
 
 	enum EDITOR_SETPARAMETER_TYPES
