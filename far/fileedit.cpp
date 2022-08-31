@@ -289,8 +289,6 @@ static intptr_t hndSaveFileAs(Dialog* Dlg, intptr_t msg, intptr_t param1, void* 
 	return Dlg->DefProc(msg, param1, param2);
 }
 
-
-
 static bool dlgSaveFileAs(string &strFileName, eol& Eol, uintptr_t &codepage, bool &AddSignature)
 {
 	const auto ucp = IsUnicodeOrUtfCodePage(codepage);
@@ -2140,6 +2138,12 @@ void FileEditor::SetScreenPosition()
 	}
 }
 
+// [experimental@Xer0X] trying to figure out the mess with OOP, editor text position, editor screen position ("geography")
+void FileEditor::SetScreenPosition_own(rectangle NewWhere)
+{
+		SetPosition(NewWhere);
+}
+
 void FileEditor::OnDestroy()
 {
 	//AY: флаг оповещающий закрытие редактора.
@@ -2461,13 +2465,13 @@ void FileEditor::OnChangeFocus(bool focus)
 	}
 }
 
-
 intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 {
 	if(m_editor->EditorControlLocked()) return FALSE;
 	if (m_bClosing 
 		&& (Command != ECTL_GETINFO) 
-		&& (Command != ECTL_GETCOORD) // Give the editor position (top left corner) @Xer0X
+		&& (Command != ECTL_GETCOORD) // Get the editor position (top left corner) @Xer0X
+		&& (Command != ECTL_SETCOORD) // Set the editor position (top left corner) @Xer0X
 		&& (Command != ECTL_GETBOOKMARKS) 
 		&& (Command != ECTL_GETFILENAME)
 			)
@@ -2479,13 +2483,33 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 		case ECTL_GETCOORD:
 		{
 			BOOL Result = FALSE;
-			COORD crd_editor = { 3, 5 };
+			COORD crd_editor = { -1, -1 };
 			crd_editor.X = m_Where.left;
 			crd_editor.Y = m_Where.top;
 			*static_cast<COORD*>(Param2) = crd_editor;
 			Result = TRUE;
 			return Result;
-		}	
+		}
+		// @Xer0X: Set the editor position (top left corner):
+		case ECTL_SETCOORD:
+		{
+			BOOL Result = FALSE;
+		//	const auto new_where = static_cast<const rectangle*>(Param2);
+		//	if (!CheckStructSize(new_where)) return false;
+			rectangle NewWhere = {
+				m_Where.top + 1,
+				m_Where.left + 1,
+				m_Where.right,
+				m_Where.bottom
+			};
+			m_Flags.Change(FFILEEDIT_FULLSCREEN, false);
+		//	*static_cast<rectangle*>(Param2) = NewWhere;
+			SetPosition(NewWhere);		
+		//	auto FileEditorPtr = std::make_shared<FileEditor>(private_tag());
+		//	FileEditorPtr->ScreenObjectWithShadow::SetPosition({ 5, 5, 50, 20 });
+			Result = TRUE;
+			return Result;
+		}
 		case ECTL_GETFILENAME:
 		{
 			if (Param2 && static_cast<size_t>(Param1) > strFullFileName.size())
