@@ -5715,7 +5715,7 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 		const auto esce = static_cast<const EditorSubscribeChangeEvent*>(Param2);
 		if (!CheckStructSize(esce))
 			return false;
-					if (Command == ECTL_SUBSCRIBECHANGEEVENT)
+		if (Command == ECTL_SUBSCRIBECHANGEEVENT)
 			ChangeEventSubscribers.emplace(esce->PluginId);
 		else
 			ChangeEventSubscribers.erase(esce->PluginId);
