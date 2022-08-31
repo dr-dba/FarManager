@@ -119,7 +119,7 @@ public:
 	// [experimental@Xer0X] moved to "pubic" decl from "private" decl:
 	void SetScreenPosition() override; // @Xer0X
 	void SetScreenPosition(rectangle NewWhere) { SetPosition(NewWhere); }
-	// [experimental@Xer0X] C++ reinventing wheels, OOP strugle::
+	// [experimental@Xer0X] reinventing wheels, C++ OOP strugle::
 	void SetScreenPosition_own(rectangle NewWhere);
 
 private:
