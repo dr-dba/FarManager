@@ -365,15 +365,17 @@ namespace tests
 
 	static void seh_stack_overflow()
 	{
-		[[maybe_unused]]
 		volatile char Buffer[10240];
+		Buffer[0] = 1;
 
 		// Prevent the compiler from detecting recursion on all control paths:
-		if ([[maybe_unused]] volatile const auto Condition = true)
+		volatile const auto Condition = true;
+		if (Condition)
 			seh_stack_overflow();
 
+		// A "side effect" to prevent deletion of this function call due to C4718.
 		// After the recursive call to prevent the tail call optimisation.
-		Buffer[0] = 1;
+		Sleep(Buffer[0]);
 	}
 
 	[[noreturn]]
@@ -470,12 +472,6 @@ namespace tests
 		const volatile size_t Index = 1;
 		v.data()[Index] = 42;
 	}
-
-	static void debug_nt_assertion_failure()
-	{
-		if ([[maybe_unused]] volatile const auto Condition = true)
-			DbgRaiseAssertionFailure();
-	}
 }
 
 static bool trace()
@@ -558,7 +554,6 @@ static bool ExceptionTestHook(Manager::Key const& key)
 		{ tests::debug_bounds_check,           L"Debug bounds check"sv },
 		{ tests::debug_bounds_check_as_stack,  L"Debug bounds check stack (ASAN)"sv },
 		{ tests::debug_bounds_check_as_heap,   L"Debug bounds check heap (ASAN)"sv },
-		{ tests::debug_nt_assertion_failure,   L"Debug NT assertion failure"sv },
 	};
 
 	const auto ModalMenu = VMenu2::create(L"Test Exceptions"s, {}, ScrY - 4);
