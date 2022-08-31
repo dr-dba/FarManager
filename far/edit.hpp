@@ -178,7 +178,7 @@ public:
 	void InsertTab();
 	void AddColor(const ColorItem& col);
 	void DeleteColor(delete_color_condition Condition);
-	// @Xer0X test:
+	// [experimental@Xer0X] editor window "geography"
 	bool GetCoord(COORD& coord) const;
 	bool SetSize(COORD& size2d) const;
 	bool SetCoord(COORD& coord) const;
