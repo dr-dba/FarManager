@@ -5382,7 +5382,7 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			return true;
 		}
 
-		// @Xer0X coordinates api
+		// [feature@Xer0X] window coordinates api
 		case ECTL_GETCOORD:
 		{
 			BOOL Result = FALSE;
@@ -5392,7 +5392,25 @@ int Editor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			m_Where.left = m_Where.left;
 			*static_cast<COORD*>(Param2) = crd_editor;
 			Result = TRUE;
-			return TRUE;
+			return Result;
+		}
+
+		// [feature@Xer0X] set editor window top-left coordinate
+		case ECTL_SETCOORD:
+		{
+			BOOL Result = FALSE;
+			const auto new_where = static_cast<const rectangle*>(Param2);
+		//	if (!CheckStructSize(new_where)) return false;
+			rectangle NewWhere = {
+				m_Where.top + 1,
+				m_Where.left + 1,
+				m_Where.right,
+				m_Where.bottom
+			};
+			*static_cast<rectangle*>(Param2) = NewWhere;
+			SetPosition(NewWhere);
+			Result = TRUE;
+			return Result;
 		}
 
 		case ECTL_GETINFO:
