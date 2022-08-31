@@ -67,7 +67,6 @@ void SimpleScreenObject::SetScreenPosition()
 	m_Flags.Clear(FSCROBJ_SETPOSITIONDONE);
 }
 
-
 rectangle SimpleScreenObject::GetPosition() const
 {
 	return m_Where;
@@ -151,10 +150,8 @@ void ScreenObject::SetPosition(rectangle Where)
 	изображения в новом месте.
 	*/
 	SaveScr.reset();
-
 	SimpleScreenObject::SetPosition(Where);
 }
-
 
 ScreenObjectWithShadow::ScreenObjectWithShadow(window_ptr Owner): ScreenObject(std::move(Owner))
 {

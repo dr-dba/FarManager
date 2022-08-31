@@ -74,7 +74,7 @@ public:
 
 	virtual void Hide();
 	virtual void Show();
-	virtual void ShowConsoleTitle() {}
+	virtual void ShowConsoleTitle() { }
 	virtual void SetPosition(rectangle Where);
 	virtual rectangle GetPosition() const;
 	virtual void SetScreenPosition();
