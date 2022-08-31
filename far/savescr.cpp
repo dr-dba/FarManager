@@ -87,9 +87,7 @@ void SaveScreen::RestoreArea(int RestoreCursor)
 {
 	if (ScreenBuf.empty())
 		return;
-
 	PutText(m_Where, ScreenBuf.data());
-
 	if (RestoreCursor)
 	{
 		SetCursorType(CurVisible,CurSize);
@@ -101,9 +99,7 @@ void SaveScreen::RestoreArea(int RestoreCursor)
 void SaveScreen::SaveArea(rectangle Where)
 {
 	fix_coordinates(Where);
-
 	m_Where = Where;
-
 	ScreenBuf.allocate(height(), width());
 	SaveArea();
 }
@@ -112,7 +108,6 @@ void SaveScreen::SaveArea()
 {
 	if (ScreenBuf.empty())
 		return;
-
 	GetText(m_Where, ScreenBuf);
 	m_Cursor = GetCursorPos();
 	GetCursorType(CurVisible,CurSize);
