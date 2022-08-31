@@ -180,6 +180,9 @@ public:
 	void DeleteColor(delete_color_condition Condition);
 	// @Xer0X test:
 	bool GetCoord(COORD& coord) const;
+	bool SetSize(COORD& size2d) const;
+	bool SetCoord(COORD& coord) const;
+	bool SetWindRect(rectangle new_rect, rectangle& res_rect);
 	bool GetColor(ColorItem& col, size_t Item) const;
 	void Xlat(bool All=false);
 	void SetDialogParent(DWORD Sets);
@@ -188,6 +191,9 @@ public:
 	bool GetReadOnly() const {return m_Flags.Check(FEDITLINE_READONLY);}
 	void SetReadOnly(bool NewReadOnly) {m_Flags.Change(FEDITLINE_READONLY,NewReadOnly);}
 	void SetHorizontalPosition(int X1, int X2) { SetPosition({ X1, m_Where.top, X2, m_Where.bottom }); }
+	// Moved here from private declarations: (by @Xer0X)
+	void SetWindRectCoordRight(int Value) { SetPosition({ m_Where.left, m_Where.top, Value, m_Where.bottom }); }
+	void SetWindRectPosition(rectangle rectWhere) { SetPosition(rectWhere); };
 	static bool is_clear_selection_key(unsigned Key);
 
 protected:
@@ -229,9 +235,10 @@ private:
 	int GetNextCursorPos(int Position,int Where) const;
 	static bool CharInMask(wchar_t Char, wchar_t Mask);
 	bool ProcessCtrlQ();
-	bool ProcessInsPath(unsigned int Key,int PrevSelStart=-1,int PrevSelEnd=0);
-	void FixLeftPos(int TabCurPos=-1);
+	bool ProcessInsPath(unsigned int Key,int PrevSelStart = -1, int PrevSelEnd = 0);
+	void FixLeftPos(int TabCurPos = -1);	
 	void SetRightCoord(int Value) { SetPosition({ m_Where.left, m_Where.top, Value, m_Where.bottom }); }
+//	void SetWindRect(rectangle new_where) { SetPosition(new_where); }
 	Editor* GetEditor() const;
 
 	bool is_valid_surrogate_pair_at(size_t Position) const;
