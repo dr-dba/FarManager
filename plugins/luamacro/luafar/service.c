@@ -229,12 +229,10 @@ static UINT64 get_env_flag(lua_State *L, int pos, int *success)
 	int dummy;
 	const char *str;
 	INT64 ret = 0;
-
 	if (success)
 		*success = TRUE;
 	else
 		success = &dummy;
-
 	switch(lua_type(L, pos))
 	{
 		case LUA_TNONE:
@@ -258,7 +256,6 @@ static UINT64 get_env_flag(lua_State *L, int pos, int *success)
 				*success = FALSE;
 			break;
 	}
-
 	return ret;
 }
 
@@ -266,7 +263,6 @@ static UINT64 check_env_flag(lua_State *L, int pos)
 {
 	int success = FALSE;
 	UINT64 ret = lua_isnoneornil(L, pos) ? 0 : get_env_flag(L, pos, &success);
-
 	if (!success)
 	{
 		if (lua_isstring(L, pos))
@@ -277,40 +273,40 @@ static UINT64 check_env_flag(lua_State *L, int pos)
 		else
 			luaL_argerror(L, pos, "invalid flag");
 	}
-
 	return ret;
 }
 
 UINT64 GetFlagCombination(lua_State *L, int pos, int *success)
 {
 	UINT64 ret = 0;
-
-	if(lua_type(L, pos) == LUA_TTABLE)
+	if (lua_type(L, pos) == LUA_TTABLE)
 	{
-		if(success)
+		if (success)
 			*success = TRUE;
-
 		pos = abs_index(L, pos);
 		lua_pushnil(L);
-
 		while(lua_next(L, pos))
 		{
 			if(lua_type(L,-2)==LUA_TSTRING && lua_toboolean(L,-1))
 			{
 				UINT64 flag = get_env_flag(L, -2, success);
-
-				if(success == NULL || *success)
+				if (success == NULL || *success)
+				{
 					ret |= flag;
+				}
 				else
-					{ lua_pop(L,2); return ret; }
+				{
+					lua_pop(L, 2);
+					return ret;
+				}
 			}
-
 			lua_pop(L, 1);
 		}
 	}
 	else
+	{
 		ret = get_env_flag(L, pos, success);
-
+	}
 	return ret;
 }
 
@@ -318,10 +314,8 @@ static UINT64 CheckFlags(lua_State* L, int pos)
 {
 	int success = FALSE;
 	UINT64 Flags = lua_isnoneornil(L, pos) ? 0 : GetFlagCombination(L, pos, &success);
-
-	if(!success)
+	if (!success)
 		luaL_error(L, "invalid flag combination");
-
 	return Flags;
 }
 
@@ -403,28 +397,27 @@ void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target)
 	int type = lua_type(L, pos);
 	pos = abs_index(L, pos);
 	target->Type = FMVT_UNKNOWN;
-
-	if(type == LUA_TNUMBER)
+	if (type == LUA_TNUMBER)
 	{
 		target->Type = FMVT_DOUBLE;
 		target->Value.Double = lua_tonumber(L, pos);
 	}
-	else if(type == LUA_TSTRING)
+	else if (type == LUA_TSTRING)
 	{
 		target->Type = FMVT_STRING;
 		target->Value.String = check_utf8_string(L, pos, NULL);
 	}
-	else if(type == LUA_TTABLE)
+	else if (type == LUA_TTABLE)
 	{
-		lua_rawgeti(L,pos,1);
-		if (lua_type(L,-1) == LUA_TSTRING)
+		lua_rawgeti(L, pos, 1);
+		if (lua_type(L, -1) == LUA_TSTRING)
 		{
 			target->Type = FMVT_BINARY;
 			target->Value.Binary.Data = (void*)lua_tolstring(L, -1, &target->Value.Binary.Size);
 		}
-		lua_pop(L,1);
+		lua_pop(L, 1);
 	}
-	else if(type == LUA_TBOOLEAN)
+	else if (type == LUA_TBOOLEAN)
 	{
 		target->Type = FMVT_BOOLEAN;
 		target->Value.Boolean = lua_toboolean(L, pos);
@@ -450,12 +443,10 @@ static int far_GetFileOwner(lua_State *L)
 	wchar_t Owner[512];
 	const wchar_t *Computer = opt_utf8_string(L, 1, NULL);
 	const wchar_t *Name = check_utf8_string(L, 2, NULL);
-
 	if(GetPluginData(L)->FSF->GetFileOwner(Computer, Name, Owner, ARRSIZE(Owner)))
 		push_utf8_string(L, Owner, -1);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -468,7 +459,7 @@ static int far_GetNumberOfLinks(lua_State *L)
 
 static int far_GetLuafarVersion(lua_State *L)
 {
-	if(lua_toboolean(L, 1))
+	if (lua_toboolean(L, 1))
 	{
 		lua_pushinteger(L, 3);
 		lua_pushinteger(L, 0);
@@ -476,30 +467,28 @@ static int far_GetLuafarVersion(lua_State *L)
 		lua_pushinteger(L, PLUGIN_BUILD);
 		return 4;
 	}
-
 	lua_pushfstring(L, "3.0.0.%d", (int)PLUGIN_BUILD);
 	return 1;
 }
 
 static void GetMouseEvent(lua_State *L, MOUSE_EVENT_RECORD* rec)
 {
-	rec->dwMousePosition.X = GetOptIntFromTable(L, "MousePositionX", 0);
-	rec->dwMousePosition.Y = GetOptIntFromTable(L, "MousePositionY", 0);
-	rec->dwButtonState = GetOptIntFromTable(L, "ButtonState", 0);
-	rec->dwControlKeyState = GetOptIntFromTable(L, "ControlKeyState", 0);
-	rec->dwEventFlags = GetOptIntFromTable(L, "EventFlags", 0);
+	rec->dwMousePosition.X	= GetOptIntFromTable(L, "MousePositionX", 0);
+	rec->dwMousePosition.Y	= GetOptIntFromTable(L, "MousePositionY", 0);
+	rec->dwButtonState		= GetOptIntFromTable(L, "ButtonState"	, 0);
+	rec->dwControlKeyState	= GetOptIntFromTable(L, "ControlKeyState",0);
+	rec->dwEventFlags		= GetOptIntFromTable(L, "EventFlags"	, 0);
 }
 
 void PutMouseEvent(lua_State *L, const MOUSE_EVENT_RECORD* rec, BOOL table_exist)
 {
-	if(!table_exist)
+	if (!table_exist)
 		lua_createtable(L, 0, 5);
-
-	PutNumToTable(L, "MousePositionX", rec->dwMousePosition.X);
-	PutNumToTable(L, "MousePositionY", rec->dwMousePosition.Y);
-	PutNumToTable(L, "ButtonState", rec->dwButtonState);
+	PutNumToTable(L, "MousePositionX",	rec->dwMousePosition.X);
+	PutNumToTable(L, "MousePositionY",	rec->dwMousePosition.Y);
+	PutNumToTable(L, "ButtonState"	,	rec->dwButtonState);
 	PutNumToTable(L, "ControlKeyState", rec->dwControlKeyState);
-	PutNumToTable(L, "EventFlags", rec->dwEventFlags);
+	PutNumToTable(L, "EventFlags"	,	rec->dwEventFlags);
 }
 
 // convert a string from utf-8 to wide char and put it into a table,
@@ -524,12 +513,12 @@ static void PushEditorSetPosition(lua_State *L, const struct EditorSetPosition *
 
 static void FillEditorSetPosition(lua_State *L, struct EditorSetPosition *esp)
 {
-	esp->CurLine   = GetOptIntFromTable(L, "CurLine", 0) - 1;
-	esp->CurPos    = GetOptIntFromTable(L, "CurPos", 0) - 1;
-	esp->CurTabPos = GetOptIntFromTable(L, "CurTabPos", 0) - 1;
-	esp->TopScreenLine = GetOptIntFromTable(L, "TopScreenLine", 0) - 1;
-	esp->LeftPos   = GetOptIntFromTable(L, "LeftPos", 0) - 1;
-	esp->Overtype  = GetOptIntFromTable(L, "Overtype", -1);
+	esp->CurLine		= GetOptIntFromTable(L, "CurLine"		, 0) - 1;
+	esp->CurPos			= GetOptIntFromTable(L, "CurPos"		, 0) - 1;
+	esp->CurTabPos		= GetOptIntFromTable(L, "CurTabPos"		, 0) - 1;
+	esp->TopScreenLine	= GetOptIntFromTable(L, "TopScreenLine"	, 0) - 1;
+	esp->LeftPos		= GetOptIntFromTable(L, "LeftPos"		, 0) - 1;
+	esp->Overtype		= GetOptIntFromTable(L, "Overtype"		, -1);
 }
 
 void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem, int NoUserData)
@@ -547,27 +536,20 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem, int No
 	PutFlagsToTable    (L, "Flags",             PanelItem->Flags);
 	PutNumToTable      (L, "NumberOfLinks",     (double)PanelItem->NumberOfLinks);
 	PutNumToTable      (L, "CRC32",             (double)PanelItem->CRC32);
-
 	PutAttrToTable(L, (int)PanelItem->FileAttributes);
-
-	if(PanelItem->Description)
+	if (PanelItem->Description)
 		PutWStrToTable(L, "Description", PanelItem->Description, -1);
-
-	if(PanelItem->Owner)
+	if (PanelItem->Owner)
 		PutWStrToTable(L, "Owner", PanelItem->Owner, -1);
-
 	/* not clear why custom columns are defined on per-file basis */
-	if(PanelItem->CustomColumnNumber > 0)
+	if (PanelItem->CustomColumnNumber > 0)
 	{
 		int j;
 		lua_createtable(L, (int)PanelItem->CustomColumnNumber, 0);
-
-		for(j=0; j < (int)PanelItem->CustomColumnNumber; j++)
-			PutWStrToArray(L, j+1, PanelItem->CustomColumnData[j], -1);
-
+		for(j = 0; j < (int)PanelItem->CustomColumnNumber; j++)
+			PutWStrToArray(L, j + 1, PanelItem->CustomColumnData[j], -1);
 		lua_setfield(L, -2, "CustomColumnData");
 	}
-
 	if (PanelItem->UserData.Data)
 	{
 		if (!NoUserData)
@@ -576,7 +558,6 @@ void PushPanelItem(lua_State *L, const struct PluginPanelItem *PanelItem, int No
 			{
 				// This is a panel of a LuaFAR plugin
 				FarPanelItemUserData* ud = (FarPanelItemUserData*)PanelItem->UserData.Data;
-
 				// Compare registries rather than Lua states to allow for different coroutines of the same state
 				if(lua_topointer(ud->L, LUA_REGISTRYINDEX) == lua_topointer(L, LUA_REGISTRYINDEX))
 				{
@@ -600,8 +581,7 @@ void PushPanelItems(lua_State *L, const struct PluginPanelItem *PanelItems, size
 {
 	int i;
 	lua_createtable(L, (int)ItemsNumber, 0); // "PanelItems"
-
-	for(i=0; i < (int)ItemsNumber; i++)
+	for (i = 0; i < (int)ItemsNumber; i++)
 	{
 		PushPanelItem(L, PanelItems + i, NoUserData);
 		lua_rawseti(L, -2, i+1);
@@ -616,15 +596,13 @@ static int far_PluginStartupInfo(lua_State *L)
 	TPluginData *pd = GetPluginData(L);
 	lua_createtable(L, 0, 4);
 	PutWStrToTable(L, "ModuleName", pd->Info->ModuleName, -1);
-
-	for(p=pd->Info->ModuleName; *p; p++)
+	for (p = pd->Info->ModuleName; *p; p++)
 	{
-		if(*p==L'\\') len = p - pd->Info->ModuleName;
+		if (*p == L'\\')
+			len = p - pd->Info->ModuleName;
 	}
-
 	PutWStrToTable(L, "ModuleDir", pd->Info->ModuleName, len+1);
 	PutLStrToTable(L, "PluginGuid", pd->PluginId, sizeof(GUID));
-
 	return 1;
 }
 
@@ -643,24 +621,21 @@ static int push_ev_filename(lua_State *L, int isEditor, intptr_t Id)
 	wchar_t* fname;
 	size_t size;
 	PSInfo *Info = GetPluginData(L)->Info;
-	size = isEditor ?
-	       Info->EditorControl(Id, ECTL_GETFILENAME, 0, 0) :
-	       Info->ViewerControl(Id, VCTL_GETFILENAME, 0, 0);
-
-	if(!size) return 0;
-
+	size = isEditor
+		? Info->EditorControl(Id, ECTL_GETFILENAME, 0, 0)
+		: Info->ViewerControl(Id, VCTL_GETFILENAME, 0, 0);
+	if (!size)
+		return 0;
 	fname = (wchar_t*)lua_newuserdata(L, size * sizeof(wchar_t));
-	size = isEditor ?
-	       Info->EditorControl(Id, ECTL_GETFILENAME, size, fname) :
-	       Info->ViewerControl(Id, VCTL_GETFILENAME, size, fname);
-
-	if(size)
+	size = isEditor
+		? Info->EditorControl(Id, ECTL_GETFILENAME, size, fname)
+		: Info->ViewerControl(Id, VCTL_GETFILENAME, size, fname);
+	if (size)
 	{
 		push_utf8_string(L, fname, -1);
 		lua_remove(L, -2);
 		return 1;
 	}
-
 	lua_pop(L,1);
 	return 0;
 }
@@ -668,9 +643,8 @@ static int push_ev_filename(lua_State *L, int isEditor, intptr_t Id)
 static int editor_GetFileName(lua_State *L)
 {
 	intptr_t EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
-
-	if(!push_ev_filename(L, 1, EditorId)) lua_pushnil(L);
-
+	if (!push_ev_filename(L, 1, EditorId))
+		lua_pushnil(L);
 	return 1;
 }
 
@@ -680,16 +654,12 @@ static int editor_GetInfo(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	struct EditorInfo ei;
 	ei.StructSize = sizeof(ei);
-
-	if(!Info->EditorControl(EditorId, ECTL_GETINFO, 0, &ei))
+	if (!Info->EditorControl(EditorId, ECTL_GETINFO, 0, &ei))
 		return lua_pushnil(L), 1;
-
 	lua_createtable(L, 0, 18);
 	PutNumToTable(L, "EditorID", (double)ei.EditorID);
-
-	if(push_ev_filename(L, 1, EditorId))
+	if (push_ev_filename(L, 1, EditorId))
 		lua_setfield(L, -2, "FileName");
-
 	PutNumToTable(L, "WindowSizeX", (double) ei.WindowSizeX);
 	PutNumToTable(L, "WindowSizeY", (double) ei.WindowSizeY);
 	PutNumToTable(L, "TotalLines", (double) ei.TotalLines);
@@ -732,10 +702,8 @@ static BOOL FastGetString(intptr_t EditorId, intptr_t string_num,
 	esp.TopScreenLine = -1;
 	esp.LeftPos   = -1;
 	esp.Overtype  = -1;
-
 	if(!Info->EditorControl(EditorId, ECTL_SETPOSITION, 0, &esp))
 		return FALSE;
-
 	egs->StringNumber = string_num;
 	return Info->EditorControl(EditorId, ECTL_GETSTRING, 0, egs) != 0;
 }
@@ -760,20 +728,21 @@ static int _EditorGetString(lua_State *L, int is_wide)
 	BOOL res = 0;
 	struct EditorGetString egs;
 	egs.StructSize = sizeof(egs);
-
-	if(mode == 0 || mode == 3)
+	if (mode == 0 || mode == 3)
 	{
 		egs.StringNumber = line_num;
 		res = Info->EditorControl(EditorId, ECTL_GETSTRING, 0, &egs) != 0;
 	}
-	else if(mode == 1 || mode == 2)
+	else
+	if (mode == 1 || mode == 2)
+	{
 		res = FastGetString(EditorId, line_num, &egs, Info);
-
-	if(res)
+	}
+	if (res)
 	{
 		if(mode == 2 || mode == 3)
 		{
-			if(is_wide)
+			if (is_wide)
 			{
 				push_utf16_string(L, egs.StringText, egs.StringLength);
 				push_utf16_string(L, egs.StringEOL, -1);
@@ -783,18 +752,16 @@ static int _EditorGetString(lua_State *L, int is_wide)
 				push_utf8_string(L, egs.StringText, egs.StringLength);
 				push_utf8_string(L, egs.StringEOL, -1);
 			}
-
 			return 2;
 		}
 		else
 		{
 			lua_createtable(L, 0, 6);
-			PutNumToTable(L, "StringNumber", (double)egs.StringNumber+1);
-			PutNumToTable(L, "StringLength", (double)egs.StringLength);
-			PutNumToTable(L, "SelStart", (double)egs.SelStart+1);
-			PutNumToTable(L, "SelEnd", (double)egs.SelEnd);
-
-			if(is_wide)
+			PutNumToTable(L, "StringNumber"	, (double)egs.StringNumber+1);
+			PutNumToTable(L, "StringLength"	, (double)egs.StringLength);
+			PutNumToTable(L, "SelStart"		, (double)egs.SelStart+1);
+			PutNumToTable(L, "SelEnd"		, (double)egs.SelEnd);
+			if (is_wide)
 			{
 				push_utf16_string(L, egs.StringText, egs.StringLength);
 				lua_setfield(L, -2, "StringText");
@@ -807,14 +774,13 @@ static int _EditorGetString(lua_State *L, int is_wide)
 				PutWStrToTable(L, "StringEOL",   egs.StringEOL, -1);
 			}
 		}
-
 		return 1;
 	}
-
 	return lua_pushnil(L), 1;
 }
 
 static int editor_GetString(lua_State *L) { return _EditorGetString(L, 0); }
+
 static int editor_GetStringW(lua_State *L) { return _EditorGetString(L, 1); }
 
 static int _EditorSetString(lua_State *L, int is_wide)
@@ -825,13 +791,11 @@ static int _EditorSetString(lua_State *L, int is_wide)
 	size_t len;
 	ess.StructSize = sizeof(ess);
 	ess.StringNumber = luaL_optinteger(L, 2, 0) - 1;
-
 	if(is_wide)
 	{
 		ess.StringText = check_utf16_string(L, 3, &len);
 		ess.StringEOL = opt_utf16_string(L, 4, NULL);
-
-		if(ess.StringEOL)
+		if (ess.StringEOL)
 		{
 			lua_pushvalue(L, 4);
 			lua_pushliteral(L, "\0\0");
@@ -844,13 +808,13 @@ static int _EditorSetString(lua_State *L, int is_wide)
 		ess.StringText = check_utf8_string(L, 3, &len);
 		ess.StringEOL = opt_utf8_string(L, 4, NULL);
 	}
-
 	ess.StringLength = len;
 	lua_pushboolean(L, Info->EditorControl(EditorId, ECTL_SETSTRING, 0, &ess) != 0);
 	return 1;
 }
 
 static int editor_SetString(lua_State *L) { return _EditorSetString(L, 0); }
+
 static int editor_SetStringW(lua_State *L) { return _EditorSetString(L, 1); }
 
 static int editor_InsertString(lua_State *L)
@@ -878,16 +842,17 @@ static int _EditorInsertText(lua_State *L, int is_wide)
 	if (is_wide)
 	{
 		size_t len;
-		const char *s = luaL_checklstring(L,2,&len);
+		const char* s = luaL_checklstring(L, 2, &len);
 		int needZero = 0;
 		if (len % sizeof(wchar_t))
 		{
-			if (s[len-1] && --len)
+			if (s[len - 1] && --len)
 				needZero = 1;
 		}
 		else
-			needZero = len && (s[len-2] || s[len-1]);
-
+		{
+			needZero = len && (s[len - 2] || s[len - 1]);
+		}
 		if (needZero)
 		{
 			lua_pushlstring(L, s, len);
@@ -896,7 +861,9 @@ static int _EditorInsertText(lua_State *L, int is_wide)
 			text = (const wchar_t*)lua_tostring(L, -1);
 		}
 		else
+		{
 			text = len ? (const wchar_t*)s : L"";
+		}
 	}
 	else
 	{
@@ -907,6 +874,7 @@ static int _EditorInsertText(lua_State *L, int is_wide)
 }
 
 static int editor_InsertText(lua_State *L) { return _EditorInsertText(L, 0); }
+
 static int editor_InsertTextW(lua_State *L) { return _EditorInsertText(L, 1); }
 
 static int editor_DeleteChar(lua_State *L)
@@ -948,18 +916,15 @@ static void FillKeyBarTitles(lua_State *L, int src_pos, struct KeyBarTitles *kbt
 	size = kbt->CountLabels * sizeof(struct KeyBarLabel);
 	kbt->Labels = (struct KeyBarLabel*)lua_newuserdata(L, size);
 	memset(kbt->Labels, 0, size);
-
-	for(i=0; i < (int)kbt->CountLabels; i++)
+	for(i = 0; i < (int)kbt->CountLabels; i++)
 	{
 		lua_rawgeti(L, src_pos, i+1);
-
 		if(!lua_istable(L, -1))
 		{
 			kbt->CountLabels = i;
 			lua_pop(L, 1);
 			break;
 		}
-
 		kbt->Labels[i].Key.VirtualKeyCode = GetOptIntFromTable(L, "VirtualKeyCode", 0);
 		kbt->Labels[i].Key.ControlKeyState = CAST(DWORD,CheckFlagsFromTable(L, -1, "ControlKeyState"));
 		//-----------------------------------------------------------------------
@@ -981,15 +946,14 @@ static int SetKeyBar(lua_State *L, BOOL editor)
 	struct FarSetKeyBarTitles skbt;
 	intptr_t Id = luaL_optinteger(L, 1, -1);
 	PSInfo *Info = GetPluginData(L)->Info;
-	enum { REDRAW=-1, RESTORE=0 }; // corresponds to FAR API
+	enum { REDRAW = -1, RESTORE = 0 }; // corresponds to FAR API
 	BOOL argfail = FALSE;
-
-	if(lua_isstring(L,2))
+	if (lua_isstring(L, 2))
 	{
-		const char* p = lua_tostring(L,2);
-
-		if(0 == strcmp("redraw", p)) param = (void*)REDRAW;
-		else if(0 == strcmp("restore", p)) param = (void*)RESTORE;
+		const char* p = lua_tostring(L, 2);
+		if (0 == strcmp("redraw", p)) param = (void*)REDRAW;
+		else
+		if (0 == strcmp("restore",p)) param = (void*)RESTORE;
 		else argfail = TRUE;
 	}
 	else if(lua_istable(L,2))
@@ -1000,13 +964,14 @@ static int SetKeyBar(lua_State *L, BOOL editor)
 		skbt.Titles = &kbt;
 	}
 	else
+	{
 		argfail = TRUE;
-
-	if(argfail)
+	}
+	if (argfail)
 		return luaL_argerror(L, 2, "must be 'redraw', 'restore', or table");
-
-	result = editor ? Info->EditorControl(Id, ECTL_SETKEYBAR, 0, param) :
-	         Info->ViewerControl(Id, VCTL_SETKEYBAR, 0, param);
+	result = editor
+		? Info->EditorControl(Id, ECTL_SETKEYBAR, 0, param)
+		: Info->ViewerControl(Id, VCTL_SETKEYBAR, 0, param);
 	lua_pushboolean(L, result != 0);
 	return 1;
 }
@@ -1033,33 +998,27 @@ static int editor_SetParam(lua_State *L)
 	esp.StructSize = sizeof(esp);
 	esp.Type = check_env_flag(L,2);
 	//-----------------------------------------------------
-	tp = lua_type(L,3);
-
-	if(tp == LUA_TNUMBER)
-		esp.Param.iParam = lua_tointeger(L,3);
-	else if(tp == LUA_TBOOLEAN)
-		esp.Param.iParam = lua_toboolean(L,3);
-	else if(tp == LUA_TSTRING)
-		esp.Param.wszParam = (wchar_t*)check_utf8_string(L,3,NULL);
-
+	tp = lua_type(L, 3);
+	if (tp == LUA_TNUMBER) esp.Param.iParam = lua_tointeger(L,3);
+	else
+	if (tp == LUA_TBOOLEAN)esp.Param.iParam = lua_toboolean(L,3);
+	else
+	if (tp == LUA_TSTRING) esp.Param.wszParam = (wchar_t*)check_utf8_string(L, 3, NULL);
 	//-----------------------------------------------------
-	if(esp.Type == ESPT_GETWORDDIV)
+	if (esp.Type == ESPT_GETWORDDIV)
 	{
 		esp.Param.wszParam = buf;
 		esp.Size = ARRSIZE(buf);
 	}
-
 	//-----------------------------------------------------
 	esp.Flags = GetFlagCombination(L, 4, NULL);
 	//-----------------------------------------------------
 	result = Info->EditorControl(EditorId, ECTL_SETPARAM, 0, &esp);
 	lua_pushboolean(L, result != 0);
-
 	if(result && esp.Type == ESPT_GETWORDDIV)
 	{
 		push_utf8_string(L,buf,-1); return 2;
 	}
-
 	return 1;
 }
 
@@ -1069,22 +1028,20 @@ static int editor_SetPosition(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	struct EditorSetPosition esp;
 	esp.StructSize = sizeof(esp);
-
-	if(lua_istable(L, 2))
+	if (lua_istable(L, 2))
 	{
 		lua_settop(L, 2);
 		FillEditorSetPosition(L, &esp);
 	}
 	else
 	{
-		esp.CurLine   = luaL_optinteger(L,2,0) - 1;
-		esp.CurPos    = luaL_optinteger(L,3,0) - 1;
-		esp.CurTabPos = luaL_optinteger(L,4,0) - 1;
-		esp.TopScreenLine = luaL_optinteger(L,5,0) - 1;
-		esp.LeftPos   = luaL_optinteger(L,6,0) - 1;
-		esp.Overtype  = luaL_optinteger(L,7,-1);
+		esp.CurLine		= luaL_optinteger(L, 2, 0) - 1;
+		esp.CurPos		= luaL_optinteger(L, 3, 0) - 1;
+		esp.CurTabPos	= luaL_optinteger(L, 4, 0) - 1;
+		esp.TopScreenLine=luaL_optinteger(L, 5, 0) - 1;
+		esp.LeftPos		= luaL_optinteger(L, 6, 0) - 1;
+		esp.Overtype	= luaL_optinteger(L, 7,-1);
 	}
-
 	lua_pushboolean(L, (int)Info->EditorControl(EditorId, ECTL_SETPOSITION, 0, &esp));
 	return 1;
 }
@@ -1226,13 +1183,11 @@ static int FillEditorSelect(lua_State *L, int pos_table, struct EditorSelect *es
 	int success;
 	lua_getfield(L, pos_table, "BlockType");
 	es->BlockType = CAST(int, get_env_flag(L, -1, &success));
-
-	if(!success)
+	if (!success)
 	{
 		lua_pop(L,1);
 		return 0;
 	}
-
 	lua_pushvalue(L, pos_table);
 	es->BlockStartLine = GetOptIntFromTable(L, "BlockStartLine", 0) - 1;
 	es->BlockStartPos  = GetOptIntFromTable(L, "BlockStartPos", 0) - 1;
@@ -1249,7 +1204,6 @@ static int editor_Select(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	struct EditorSelect es;
 	es.StructSize = sizeof(es);
-
 	if(lua_istable(L, 2))
 		success = FillEditorSelect(L, 2, &es);
 	else
@@ -1260,7 +1214,6 @@ static int editor_Select(lua_State *L)
 		es.BlockWidth     = luaL_optinteger(L, 5, -1);
 		es.BlockHeight    = luaL_optinteger(L, 6, -1);
 	}
-
 	lua_pushboolean(L, success && Info->EditorControl(EditorId, ECTL_SELECT, 0, &es));
 	return 1;
 }
@@ -1279,10 +1232,8 @@ static int editor_GetSelection(lua_State *L)
 	egs.StructSize = sizeof(egs);
 	esp.StructSize = sizeof(esp);
 	Info->EditorControl(EditorId, ECTL_GETINFO, 0, &EI);
-
 	if(EI.BlockType == BTYPE_NONE || !FastGetString(EditorId, EI.BlockStartLine, &egs, Info))
 		return lua_pushnil(L), 1;
-
 	lua_createtable(L, 0, 5);
 	PutIntToTable(L, "BlockType", EI.BlockType);
 	PutIntToTable(L, "StartLine", EI.BlockStartLine+1);
@@ -1291,32 +1242,25 @@ static int editor_GetSelection(lua_State *L)
 	// binary search for a non-block line
 	h = 100; // arbitrary small number
 	from = EI.BlockStartLine;
-
 	for(to = from+h; to < EI.TotalLines; to = from + (h*=2))
 	{
-		if(!FastGetString(EditorId, to, &egs, Info))
+		if (!FastGetString(EditorId, to, &egs, Info))
 			return lua_pushnil(L), 1;
-
-		if(egs.SelStart < 0)
+		if (egs.SelStart < 0)
 			break;
 	}
-
-	if(to >= EI.TotalLines)
+	if (to >= EI.TotalLines)
 		to = EI.TotalLines - 1;
-
 	// binary search for the last block line
 	while(from != to)
 	{
 		intptr_t curr = (from + to + 1) / 2;
-
 		if(!FastGetString(EditorId, curr, &egs, Info))
 			return lua_pushnil(L), 1;
-
 		if(egs.SelStart < 0)
 		{
 			if(curr == to)
 				break;
-
 			to = curr;      // curr was not selected
 		}
 		else
@@ -1324,10 +1268,8 @@ static int editor_GetSelection(lua_State *L)
 			from = curr;    // curr was selected
 		}
 	}
-
 	if(!FastGetString(EditorId, from, &egs, Info))
 		return lua_pushnil(L), 1;
-
 	PutIntToTable(L, "EndLine", from+1);
 	PutIntToTable(L, "EndPos", egs.SelEnd);
 	// restore current position, since FastGetString() changed it
@@ -1349,12 +1291,10 @@ static int _EditorTabConvert(lua_State *L, int Operation)
 	ecp.StructSize = sizeof(ecp);
 	ecp.StringNumber = luaL_optinteger(L,2,0) - 1;
 	ecp.SrcPos = luaL_checkinteger(L,3) - 1;
-
-	if(Info->EditorControl(EditorId, Operation, 0, &ecp))
+	if (Info->EditorControl(EditorId, Operation, 0, &ecp))
 		lua_pushinteger(L, ecp.DestPos+1);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -1456,7 +1396,6 @@ static int editor_GetColor(lua_State *L)
 	EditorId        = luaL_optinteger(L, 1, CURRENT_EDITOR);
 	ec.StringNumber = luaL_optinteger(L, 2, 0) - 1;
 	ec.ColorItem    = luaL_checkinteger(L, 3);
-
 	if(Info->EditorControl(EditorId, ECTL_GETCOLOR, 0, &ec))
 	{
 		lua_createtable(L, 0, 6);
@@ -1469,12 +1408,13 @@ static int editor_GetColor(lua_State *L)
 		PutLStrToTable(L, "Owner", (const void*)&ec.Owner, sizeof(ec.Owner));
 	}
 	else
+	{
 		lua_pushnil(L);
-
+	}
 	return 1;
 }
 
-// APi to read editor's window coordinates (@Xer0X)
+// [feature@Xer0X] APi to read editor's window coordinates
 static int editor_GetCoord(lua_State *L)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
@@ -1489,7 +1429,9 @@ static int editor_GetCoord(lua_State *L)
 		return 1;
 	}
 	else
+	{
 		lua_pushnil(L);
+	}
 	return 1;
 }
 
@@ -1499,16 +1441,16 @@ static int editor_SetCoord(lua_State* L) //, struct COORD* new_coord)
 	PSInfo* Info = GetPluginData(L)->Info;
 	intptr_t EditorId;
 	SMALL_RECT res_rect =
-		{ 1, 1, 1, 1 };
+	{ 1, 1, 1, 1 };
 	//	{ new_coord->X, new_coord->Y, -1, -1 };
 	EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
 	if (Info->EditorControl(EditorId, ECTL_SETCOORD, 0, &res_rect))
 	{
 		lua_createtable(L, 0, 4);
-	//	PutNumToTable(L, "Left"	, res_rect.Left	);
-	//	PutNumToTable(L, "Top"	, res_rect.Top	);
-	//	PutNumToTable(L, "Right", res_rect.Right);
-	//	PutNumToTable(L, "Bottom",res_rect.Bottom);
+		//	PutNumToTable(L, "Left"	, res_rect.Left	);
+		//	PutNumToTable(L, "Top"	, res_rect.Top	);
+		//	PutNumToTable(L, "Right", res_rect.Right);
+		//	PutNumToTable(L, "Bottom",res_rect.Bottom);
 		return 1;
 	}
 	else
@@ -1522,8 +1464,8 @@ static int editor_SaveFile(lua_State *L)
 	struct EditorSaveFile esf;
 	intptr_t EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
 	esf.StructSize = sizeof(esf);
-	esf.FileName = opt_utf8_string(L, 2, NULL);
-	esf.FileEOL = opt_utf8_string(L, 3, NULL);
+	esf.FileName= opt_utf8_string(L, 2, NULL);
+	esf.FileEOL	= opt_utf8_string(L, 3, NULL);
 	esf.CodePage = luaL_optinteger(L, 4, CP_DEFAULT);
 	lua_pushboolean(L, (int)Info->EditorControl(EditorId, ECTL_SAVEFILE, 0, &esf));
 	return 1;
@@ -1533,7 +1475,6 @@ void PushInputRecord(lua_State *L, const INPUT_RECORD* ir)
 {
 	lua_newtable(L);
 	PutIntToTable(L, "EventType", ir->EventType);
-
 	switch(ir->EventType)
 	{
 		case KEY_EVENT:
@@ -1567,12 +1508,10 @@ static int editor_ReadInput(lua_State *L)
 	intptr_t EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
 	PSInfo *Info = GetPluginData(L)->Info;
 	INPUT_RECORD ir;
-
-	if(Info->EditorControl(EditorId, ECTL_READINPUT, 0, &ir))
+	if (Info->EditorControl(EditorId, ECTL_READINPUT, 0, &ir))
 		PushInputRecord(L, &ir);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -1587,7 +1526,6 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
 	if (ir->EventType==0) ir->EventType=KEY_EVENT;
 	lua_pop(L, 1);
 	lua_pushvalue(L, pos);
-
 	switch(ir->EventType)
 	{
 		case KEY_EVENT:
@@ -1614,18 +1552,16 @@ void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir)
 			ir->Event.FocusEvent.bSetFocus = GetOptBoolFromTable(L, "SetFocus", FALSE);
 			break;
 	}
-
 	lua_pop(L, 1);
 }
 
 static void OptInputRecord(lua_State* L, TPluginData *pd, int pos, INPUT_RECORD* ir)
 {
-	if(lua_istable(L, pos))
+	if (lua_istable(L, pos))
 		FillInputRecord(L, pos, ir);
 	else if(lua_type(L, pos) == LUA_TSTRING)
 	{
 		wchar_t* name = check_utf8_string(L, pos, NULL);
-
 		if(!pd->FSF->FarNameToInputRecord(name, ir))
 			luaL_argerror(L, pos, "invalid key");
 	}
@@ -1652,11 +1588,9 @@ static int editor_SubscribeChangeEvent(lua_State *L)
 	struct EditorSubscribeChangeEvent data;
 	intptr_t EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
 	int command = lua_toboolean(L, 2) ? ECTL_SUBSCRIBECHANGEEVENT : ECTL_UNSUBSCRIBECHANGEEVENT;
-
 	data.StructSize = sizeof(data);
 	data.PluginId = *pd->PluginId;
 	lua_pushboolean(L, pd->Info->EditorControl(EditorId, command, 0, &data) != 0);
-
 	return 1;
 }
 
@@ -1689,10 +1623,10 @@ static int far_Menu(lua_State *L)
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_checktype(L, 2, LUA_TTABLE);
 	ItemsNumber = lua_objlen(L, 2);
-
-	if(!lua_isnil(L,3) && !lua_istable(L,3) && lua_type(L,3)!=LUA_TSTRING)
+	if(!lua_isnil(L, 3)
+	&& !lua_istable(L, 3)
+	&& lua_type(L, 3) != LUA_TSTRING )
 		return luaL_argerror(L, 3, "must be table, string or nil");
-
 	lua_newtable(L); // temporary store; at stack position 4
 	// Properties
 	lua_pushvalue(L,1);                 //+1
@@ -1700,80 +1634,64 @@ static int far_Menu(lua_State *L)
 	Y = GetOptIntFromTable(L, "Y", -1);
 	MaxHeight = GetOptIntFromTable(L, "MaxHeight", 0);
 	lua_getfield(L, 1, "Flags");        //+2
-
-	if(!lua_isnil(L, -1)) Flags = CheckFlags(L, -1);
-
+	if (!lua_isnil(L, -1))	Flags	= CheckFlags(L, -1);
 	lua_getfield(L, 1, "Title");        //+3
-
-	if(lua_isstring(L,-1))    Title = StoreTempString(L, 4, &store);
-
+	if (lua_isstring(L,-1))	Title	= StoreTempString(L, 4, &store);
 	lua_getfield(L, 1, "Bottom");       //+3
-
-	if(lua_isstring(L,-1))    Bottom = StoreTempString(L, 4, &store);
-
+	if (lua_isstring(L,-1))	Bottom	= StoreTempString(L, 4, &store);
 	lua_getfield(L, 1, "HelpTopic");    //+3
-
-	if(lua_isstring(L,-1))    HelpTopic = StoreTempString(L, 4, &store);
-
+	if (lua_isstring(L,-1))	HelpTopic=StoreTempString(L, 4, &store);
 	lua_getfield(L, 1, "SelectIndex");  //+3
-	if ((SelectIndex = lua_tointeger(L,-1)) > ItemsNumber)
+	if((SelectIndex = lua_tointeger(L, -1)) > ItemsNumber)
 		SelectIndex = 0;
-
 	lua_getfield(L, 1, "Id");           //+4
-	if(lua_type(L,-1)==LUA_TSTRING && lua_objlen(L,-1)==sizeof(GUID))
+	if(lua_type(L, -1) == LUA_TSTRING
+	&& lua_objlen(L, -1) == sizeof(GUID) )
 		MenuGuid = (const GUID*)lua_tostring(L, -1);
-
 	lua_pop(L, 4);
 	// Items
 	Items = (struct FarMenuItem*)lua_newuserdata(L, ItemsNumber*sizeof(struct FarMenuItem));
 	memset(Items, 0, ItemsNumber*sizeof(struct FarMenuItem));
 	pItem = Items;
-
-	for(i=0; i < ItemsNumber; i++,pItem++,lua_pop(L,1))
+	for(i = 0; i < ItemsNumber; i++, pItem++, lua_pop(L, 1))
 	{
 		static const char key[] = "text";
-		lua_pushinteger(L, i+1);
+		lua_pushinteger(L, i + 1);
 		lua_gettable(L, 2);
-
-		if(!lua_istable(L, -1))
-			return luaLF_SlotError(L, i+1, "table");
-
+		if (!lua_istable(L, -1))
+			return luaLF_SlotError(L, i + 1, "table");
 		//-------------------------------------------------------------------------
 		lua_getfield(L, -1, key);
-
-		if(lua_isstring(L,-1))  pItem->Text = StoreTempString(L, 4, &store);
-		else if(!lua_isnil(L,-1)) return luaLF_FieldError(L, key, "string");
-
+		if (lua_isstring(L,-1))
+			pItem->Text = StoreTempString(L, 4, &store);
+		else
+		if (!lua_isnil(L,-1))
+			return luaLF_FieldError(L, key, "string");
 		if(!pItem->Text)
 			lua_pop(L, 1);
-
 		//-------------------------------------------------------------------------
 		lua_getfield(L,-1,"checked");
-
-		if(lua_type(L,-1) == LUA_TSTRING)
+		if (lua_type(L,-1) == LUA_TSTRING)
 		{
-			const wchar_t* s = utf8_to_utf16(L,-1,NULL);
-
-			if(s) pItem->Flags |= s[0];
+			const wchar_t* s = utf8_to_utf16(L, -1, NULL);
+			if (s)
+				pItem->Flags |= s[0];
 		}
-		else if(lua_toboolean(L,-1)) pItem->Flags |= MIF_CHECKED;
-
+		else
+		{
+			if (lua_toboolean(L, -1))
+				pItem->Flags |= MIF_CHECKED;
+		}
 		lua_pop(L,1);
-
 		//-------------------------------------------------------------------------
-		if(GetBoolFromTable(L, "separator")) pItem->Flags |= MIF_SEPARATOR;
-
-		if(GetBoolFromTable(L, "disable"))   pItem->Flags |= MIF_DISABLE;
-
-		if(GetBoolFromTable(L, "grayed"))    pItem->Flags |= MIF_GRAYED;
-
-		if(GetBoolFromTable(L, "hidden"))    pItem->Flags |= MIF_HIDDEN;
-
-		if(SelectIndex==0 && GetBoolFromTable(L, "selected")) pItem->Flags |= MIF_SELECTED;
-
+		if(GetBoolFromTable(L, "separator"))pItem->Flags |= MIF_SEPARATOR;
+		if(GetBoolFromTable(L, "disable"))	pItem->Flags |= MIF_DISABLE;
+		if(GetBoolFromTable(L, "grayed"))	pItem->Flags |= MIF_GRAYED;
+		if(GetBoolFromTable(L, "hidden"))	pItem->Flags |= MIF_HIDDEN;
+		if(SelectIndex == 0
+		&& GetBoolFromTable(L, "selected"))	pItem->Flags |= MIF_SELECTED;
 		//-------------------------------------------------------------------------
 		lua_getfield(L, -1, "AccelKey");
-
 		if(lua_istable(L, -1))
 		{
 			pItem->AccelKey.VirtualKeyCode = GetOptIntFromTable(L, "VirtualKeyCode", 0);
@@ -1783,23 +1701,20 @@ static int far_Menu(lua_State *L)
 		{
 			INPUT_RECORD Rec;
 			if (pd->FSF->FarNameToInputRecord((const wchar_t*)lua_touserdata(L,-1), &Rec)
-				&& Rec.EventType == KEY_EVENT)
+			&& Rec.EventType == KEY_EVENT)
 			{
 				pItem->AccelKey.VirtualKeyCode = Rec.Event.KeyEvent.wVirtualKeyCode;
 				pItem->AccelKey.ControlKeyState = Rec.Event.KeyEvent.dwControlKeyState;
 			}
 		}
-
 		lua_pop(L, 1);
 	}
-
 	if(SelectIndex > 0)
 		Items[SelectIndex-1].Flags |= MIF_SELECTED;
-
 	// Break Keys
 	pBreakKeys = NULL;
 	pBreakCode = NULL;
-	if (lua_type(L,3) == LUA_TSTRING)
+	if (lua_type(L, 3) == LUA_TSTRING)
 	{
 		const char *q, *ptr = lua_tostring(L,3);
 		lua_newtable(L);
@@ -1809,17 +1724,18 @@ static int far_Menu(lua_State *L)
 			if (*ptr == 0) break;
 			q = ptr++;
 			while(*ptr && !isspace(*ptr)) ptr++;
-			lua_createtable(L,0,1);
-			lua_pushlstring(L,q,ptr-q);
-			lua_setfield(L,-2,"BreakKey");
-			lua_rawseti(L,-2,++NumBreakCodes);
+			lua_createtable(L, 0, 1);
+			lua_pushlstring(L, q, ptr-q);
+			lua_setfield(L, -2, "BreakKey");
+			lua_rawseti(L, -2, ++NumBreakCodes);
 		}
-		lua_replace(L,3);
+		lua_replace(L, 3);
 	}
 	else
-		NumBreakCodes = lua_istable(L,3) ? (int)lua_objlen(L,3) : 0;
-
-	if(NumBreakCodes)
+	{
+		NumBreakCodes = lua_istable(L, 3) ? (int)lua_objlen(L, 3) : 0;
+	}
+	if (NumBreakCodes)
 	{
 		char buf[32];
 		int ind;
@@ -1828,28 +1744,21 @@ static int far_Menu(lua_State *L)
 		lua_pushstring(L, FAR_VIRTUALKEYS);
 		lua_rawget(L, LUA_REGISTRYINDEX);
 		// push breakkeys table on top
-		lua_pushvalue(L, 3);              // vk=-2; bk=-1;
-
-		for(ind=0; ind < NumBreakCodes; ind++)
+		lua_pushvalue(L, 3); // vk=-2; bk=-1;
+		for(ind = 0; ind < NumBreakCodes; ind++)
 		{
 			DWORD mod = 0;
 			const char* s;
 			char* vk;  // virtual key
 			WORD VirtualKeyCode;
-
 			BreakKeys[ind].VirtualKeyCode = 0xFF; // preset to invalid value !=0, since 0 marks end-of-array for Far.
 			BreakKeys[ind].ControlKeyState = LEFT_CTRL_PRESSED|LEFT_ALT_PRESSED|SHIFT_PRESSED;
-
 			// get next break key (optional modifier plus virtual key)
 			lua_pushinteger(L,ind+1);       // vk=-3; bk=-2;
 			lua_gettable(L,-2);             // vk=-3; bk=-2; bki=-1;
-
 			if(!lua_istable(L,-1)) { lua_pop(L,1); continue; }
-
 			lua_getfield(L, -1, "BreakKey");// vk=-4; bk=-3;bki=-2;bknm=-1;
-
 			if(!lua_isstring(L,-1)) { lua_pop(L,2); continue; }
-
 			// first try to use "Far key names" instead of "virtual key names"
 			if (utf8_to_utf16(L, -1, NULL))
 			{
@@ -1866,12 +1775,9 @@ static int far_Menu(lua_State *L)
 				lua_pop(L, 1);
 				lua_getfield(L, -1, "BreakKey");// vk=-4; bk=-3;bki=-2;bknm=-1;
 			}
-
 			// separate modifier and virtual key strings
 			s = lua_tostring(L,-1);
-
 			if(strlen(s) >= sizeof(buf)) { lua_pop(L,2); continue; }
-
 			strcpy(buf, s);
 			strupr(buf);
 			vk = strchr(buf, '+');  // virtual key
@@ -1879,20 +1785,15 @@ static int far_Menu(lua_State *L)
 			if(vk)
 			{
 				*vk++ = '\0';
-
 				if(strchr(buf,'C')) mod |= LEFT_CTRL_PRESSED;
-
 				if(strchr(buf,'A')) mod |= LEFT_ALT_PRESSED;
-
 				if(strchr(buf,'S')) mod |= SHIFT_PRESSED;
 			}
 			else
 				vk = buf;
-
 			// replace on stack: break key name with virtual key name
 			lua_pop(L, 1);
 			lua_pushstring(L, vk);        // vk=-4; bk=-3;bki=-2;vknm=-1;
-
 			// get virtual key and break key values
 			lua_rawget(L,-4);               // vk=-4; bk=-3;
 			VirtualKeyCode = (WORD)lua_tointeger(L,-1);
@@ -1903,29 +1804,25 @@ static int far_Menu(lua_State *L)
 			}
 			lua_pop(L,2);                   // vk=-2; bk=-1;
 		}
-
 		BreakKeys[ind].VirtualKeyCode = 0; // required by FAR API
 		pBreakKeys = BreakKeys;
 		pBreakCode = &BreakCode;
 	}
-
 	ret = pd->Info->Menu(pd->PluginId, MenuGuid, X, Y, MaxHeight, Flags, Title,
 	                     Bottom, HelpTopic, pBreakKeys, pBreakCode, Items, ItemsNumber);
-
-	if(NumBreakCodes && (BreakCode != -1))
+	if (NumBreakCodes && (BreakCode != -1))
 	{
 		lua_pushinteger(L, BreakCode+1);
 		lua_gettable(L, 3);
 	}
-	else if(ret == -1)
+	else if (ret == -1)
 		return lua_pushnil(L), 1;
 	else
 	{
-		lua_pushinteger(L, ret+1);
+		lua_pushinteger(L, ret + 1);
 		lua_gettable(L, 2);
 	}
-
-	lua_pushinteger(L, ret+1);
+	lua_pushinteger(L, ret + 1);
 	return 2;
 }
 
@@ -1953,11 +1850,9 @@ int LF_Message(lua_State *L,
 	// Buttons
 	wchar_t *BtnCopy = NULL, *ptr = NULL;
 	int wrap = !(aFlags && strchr(aFlags, 'n'));
-
 	if(*aButtons == L';')
 	{
 		const wchar_t* p = aButtons + 1;
-
 		if(!_wcsicmp(p, L"Ok"))               Flags = FMSG_MB_OK;
 		else if(!_wcsicmp(p, L"OkCancel"))         Flags = FMSG_MB_OKCANCEL;
 		else if(!_wcsicmp(p, L"AbortRetryIgnore")) Flags = FMSG_MB_ABORTRETRYIGNORE;
@@ -1972,7 +1867,6 @@ int LF_Message(lua_State *L,
 		// Buttons: 1-st pass, determining number of buttons
 		BtnCopy = _wcsdup(aButtons);
 		ptr = BtnCopy;
-
 		while(*ptr && (num_buttons < 64))
 		{
 			while(*ptr == L';')
@@ -1982,12 +1876,10 @@ int LF_Message(lua_State *L,
 			{
 				++num_buttons;
 				ptr = wcschr(ptr, L';');
-
 				if(!ptr) break;
 			}
 		}
 	}
-
 	items = (const wchar_t**) malloc((1+max_lines+num_buttons) * sizeof(wchar_t*));
 	allocLines = (wchar_t**) malloc(max_lines * sizeof(wchar_t*)); // array of pointers to allocated lines
 	nAlloc = 0;                                                    // number of allocated lines
@@ -1998,7 +1890,6 @@ int LF_Message(lua_State *L,
 	lastDelim = NULL;
 	MsgCopy = _wcsdup(aMsg);
 	start = pos = MsgCopy;
-
 	while(num_lines < max_lines)
 	{
 		if(*pos == 0)                          // end of the entire message
@@ -2019,7 +1910,6 @@ int LF_Message(lua_State *L,
 		{
 			if (wrap && !iswalnum(*pos) && *pos != L'_' && *pos != L'\'' && *pos != L'\"')
 				lastDelim = pos;
-
 			pos++;
 		}
 		else if (wrap)                          // the 1-st character beyond the line
@@ -2039,23 +1929,19 @@ int LF_Message(lua_State *L,
 		else
 			pos++;
 	}
-
 	if(*aButtons != L';')
 	{
 		// Buttons: 2-nd pass.
 		int i;
 		ptr = BtnCopy;
-
 		for(i=0; i < num_buttons; i++)
 		{
 			while(*ptr == L';')
 				++ptr;
-
 			if(*ptr)
 			{
 				*pItems++ = ptr;
 				ptr = wcschr(ptr, L';');
-
 				if(ptr)
 					*ptr++ = 0;
 				else
@@ -2064,28 +1950,20 @@ int LF_Message(lua_State *L,
 			else break;
 		}
 	}
-
 	// Flags
 	if(aFlags)
 	{
 		if(strchr(aFlags, 'w')) Flags |= FMSG_WARNING;
-
 		if(strchr(aFlags, 'e')) Flags |= FMSG_ERRORTYPE;
-
 		if(strchr(aFlags, 'k')) Flags |= FMSG_KEEPBACKGROUND;
-
 		if(strchr(aFlags, 'l')) Flags |= FMSG_LEFTALIGN;
 	}
-
 	// Id
 	if(aMessageGuid == NULL) aMessageGuid = pd->PluginId;
-
 	ret = (int)pd->Info->Message(pd->PluginId, aMessageGuid, Flags, aHelpTopic,
 	                             items, 1+num_lines+num_buttons, num_buttons);
 	free(BtnCopy);
-
 	while(nAlloc) free(allocLines[--nAlloc]);
-
 	free(allocLines);
 	free(MsgCopy);
 	free(CAST(void*, items));
@@ -2095,12 +1973,9 @@ int LF_Message(lua_State *L,
 void LF_Error(lua_State *L, const wchar_t* aMsg)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
-
 	if(Info == NULL)
 		return;
-
 	if(!aMsg) aMsg = L"<non-string error message>";
-
 	lua_pushlstring(L, (const char*)Info->ModuleName, wcslen(Info->ModuleName)*sizeof(wchar_t));
 	lua_pushlstring(L, (const char*)L":\n", 4);
 	LF_Gsub(L, aMsg, L"\n\t", L"\n   ");
@@ -2126,25 +2001,20 @@ static int far_Message(lua_State *L)
 	luaL_checkany(L,1);
 	lua_settop(L,6);
 	Msg = NULL;
-
 	if(lua_isstring(L, 1))
 		Msg = check_utf8_string(L, 1, NULL);
 	else
 	{
 		lua_getglobal(L, "tostring");
-
 		if(lua_isfunction(L,-1))
 		{
 			lua_pushvalue(L,1);
 			lua_call(L,1,1);
 			Msg = check_utf8_string(L,-1,NULL);
 		}
-
 		if(Msg == NULL) luaL_argerror(L, 1, "cannot convert to string");
-
 		lua_replace(L,1);
 	}
-
 	Title   = opt_utf8_string(L, 2, L"Message");
 	Buttons = opt_utf8_string(L, 3, L";OK");
 	Flags   = luaL_optstring(L, 4, "");
@@ -2179,10 +2049,8 @@ static int panel_GetPanelInfo(lua_State *L)
 	HANDLE handle = OptHandle2(L);
 	struct PanelInfo pi;
 	pi.StructSize = sizeof(pi);
-
-	if(!pd->Info->PanelControl(handle, FCTL_GETPANELINFO, 0, &pi))
+	if (!pd->Info->PanelControl(handle, FCTL_GETPANELINFO, 0, &pi))
 		return lua_pushnil(L), 1;
-
 	lua_createtable(L, 0, 13);
 	//-------------------------------------------------------------------------
 	PutLStrToTable(L, "OwnerGuid", &pi.OwnerGuid, sizeof(GUID));
@@ -2258,18 +2126,15 @@ static int get_string_info(lua_State *L, int command)
 	PSInfo *Info = GetPluginData(L)->Info;
 	HANDLE handle = OptHandle2(L);
 	intptr_t size = Info->PanelControl(handle, command, 0, 0);
-
 	if(size)
 	{
 		wchar_t *buf = (wchar_t*)lua_newuserdata(L, size * sizeof(wchar_t));
-
 		if(Info->PanelControl(handle, command, size, buf))
 		{
 			push_utf8_string(L, buf, -1);
 			return 1;
 		}
 	}
-
 	return lua_pushnil(L), 1;
 }
 
@@ -2305,7 +2170,6 @@ static int panel_RedrawPanel(lua_State *L)
 	HANDLE handle = OptHandle2(L);
 	struct PanelRedrawInfo pri;
 	pri.StructSize = sizeof(pri);
-
 	if(lua_istable(L, 3))
 	{
 		param2 = &pri;
@@ -2314,7 +2178,6 @@ static int panel_RedrawPanel(lua_State *L)
 		lua_getfield(L, 3, "TopPanelItem");
 		pri.TopPanelItem = lua_tointeger(L, -1) - 1;
 	}
-
 	lua_pushboolean(L, Info->PanelControl(handle, FCTL_REDRAWPANEL, 0, param2) != 0);
 	return 1;
 }
@@ -2367,13 +2230,11 @@ static int panel_GetPanelDirectory(lua_State *L)
 	TPluginData *pd = GetPluginData(L);
 	HANDLE handle = OptHandle2(L);
 	intptr_t size = pd->Info->PanelControl(handle, FCTL_GETPANELDIRECTORY, 0, NULL);
-
 	if(size)
 	{
 		struct FarPanelDirectory *fpd = (struct FarPanelDirectory*)lua_newuserdata(L, size);
 		memset(fpd, 0, size);
 		fpd->StructSize = sizeof(*fpd);
-
 		if(pd->Info->PanelControl(handle, FCTL_GETPANELDIRECTORY, size, fpd))
 		{
 			lua_createtable(L, 0, 4);
@@ -2384,7 +2245,6 @@ static int panel_GetPanelDirectory(lua_State *L)
 			return 1;
 		}
 	}
-
 	return lua_pushnil(L), 1;
 }
 
@@ -2395,27 +2255,21 @@ static int panel_SetPanelDirectory(lua_State *L)
 	HANDLE handle = OptHandle2(L);
 	memset(&fpd, 0, sizeof(fpd)); // also sets fpd.PluginId = FarId
 	fpd.StructSize = sizeof(fpd);
-
 	if(lua_istable(L, 3))
 	{
 		size_t len;
 		const GUID* id;
 		lua_getfield(L, 3, "PluginId");
 		id = (const GUID*)lua_tolstring(L, -1, &len);
-
 		if(id && len == sizeof(GUID)) fpd.PluginId = *id;
-
 		lua_getfield(L, 3, "Name");  if(lua_isstring(L, -1)) fpd.Name = check_utf8_string(L, -1, NULL);
-
 		lua_getfield(L, 3, "Param"); if(lua_isstring(L, -1)) fpd.Param = check_utf8_string(L, -1, NULL);
-
 		lua_getfield(L, 3, "File");  if(lua_isstring(L, -1)) fpd.File = check_utf8_string(L, -1, NULL);
 	}
 	else if(lua_isstring(L, 3))
 		fpd.Name = check_utf8_string(L, 3, NULL);
 	else
 		luaL_argerror(L, 3, "table or string");
-
 	lua_pushboolean(L, pd->Info->PanelControl(handle, FCTL_SETPANELDIRECTORY, 0, &fpd) != 0);
 	return 1;
 }
@@ -2475,18 +2329,14 @@ static int panel_GetCmdLineSelection(lua_State *L)
 	HANDLE handle = OptHandle(L);
 	struct CmdLineSelect cms;
 	cms.StructSize = sizeof(cms);
-
 	if(Info->PanelControl(handle, FCTL_GETCMDLINESELECTION, 0, &cms))
 	{
-		if(cms.SelStart < 0) cms.SelStart = 0;
-
-		if(cms.SelEnd < 0) cms.SelEnd = 0;
-
+		if (cms.SelStart<0) cms.SelStart = 0;
+		if (cms.SelEnd < 0) cms.SelEnd = 0;
 		lua_pushinteger(L, cms.SelStart + 1);
 		lua_pushinteger(L, cms.SelEnd);
 		return 2;
 	}
-
 	return lua_pushnil(L), 1;
 }
 
@@ -2498,11 +2348,8 @@ static int panel_SetCmdLineSelection(lua_State *L)
 	cms.StructSize = sizeof(cms);
 	cms.SelStart = luaL_checkinteger(L, 2) - 1;
 	cms.SelEnd = luaL_checkinteger(L, 3);
-
 	if(cms.SelStart < -1) cms.SelStart = -1;
-
 	if(cms.SelEnd < -1) cms.SelEnd = -1;
-
 	lua_pushboolean(L, Info->PanelControl(handle, FCTL_SETCMDLINESELECTION, 0, &cms) != 0);
 	return 1;
 }
@@ -2520,50 +2367,39 @@ static int ChangePanelSelection(lua_State *L, BOOL op_set)
 	intptr_t state;
 	struct PanelInfo pi;
 	HANDLE handle = OptHandle2(L);
-
 	if(lua_isnumber(L,3))
 	{
 		itemindex = lua_tointeger(L,3) - 1;
-
 		if(itemindex < 0) return luaL_argerror(L, 3, "non-positive index");
 	}
 	else if(!lua_istable(L,3))
 		return luaL_typerror(L, 3, "number or table");
-
 	state = op_set ? lua_toboolean(L,4) : 0;
 	// get panel info
 	pi.StructSize = sizeof(pi);
-
 	if(!Info->PanelControl(handle, FCTL_GETPANELINFO, 0, &pi) ||
 	        (pi.PanelType != PTYPE_FILEPANEL))
 		return lua_pushboolean(L,0), 1;
-
 	numItems = op_set ? pi.ItemsNumber : pi.SelectedItemsNumber;
 	command  = op_set ? FCTL_SETSELECTION : FCTL_CLEARSELECTION;
-
 	if(itemindex >= 0 && itemindex < numItems)
 		Info->PanelControl(handle, command, itemindex, (void*)state);
 	else
 	{
 		intptr_t i, len = lua_objlen(L,3);
-
 		for(i=1; i<=len; i++)
 		{
 			lua_pushinteger(L, i);
 			lua_gettable(L,3);
-
 			if(lua_isnumber(L,-1))
 			{
 				itemindex = lua_tointeger(L,-1) - 1;
-
 				if(itemindex >= 0 && itemindex < numItems)
 					Info->PanelControl(handle, command, itemindex, (void*)state);
 			}
-
 			lua_pop(L,1);
 		}
 	}
-
 	return lua_pushboolean(L,1), 1;
 }
 
@@ -2637,23 +2473,19 @@ static int far_GetDirList(lua_State *L)
 	const wchar_t *Dir = check_utf8_string(L, 1, NULL);
 	struct PluginPanelItem *PanelItems;
 	size_t ItemsNumber;
-
 	if(Info->GetDirList(Dir, &PanelItems, &ItemsNumber))
 	{
 		int i;
 		lua_createtable(L, (int)ItemsNumber, 0); // "PanelItems"
-
 		for(i=0; i < (int)ItemsNumber; i++)
 		{
 			PushPanelItem(L, PanelItems + i, 0);
 			lua_rawseti(L, -2, i+1);
 		}
-
 		Info->FreeDirList(PanelItems, ItemsNumber);
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -2667,15 +2499,13 @@ static int far_GetPluginDirList(lua_State *L)
 	const wchar_t *Dir = check_utf8_string(L, 2, NULL);
 	struct PluginPanelItem *PanelItems;
 	size_t ItemsNumber;
-
-	if(pd->Info->GetPluginDirList(pd->PluginId, handle, Dir, &PanelItems, &ItemsNumber))
+	if (pd->Info->GetPluginDirList(pd->PluginId, handle, Dir, &PanelItems, &ItemsNumber))
 	{
 		PushPanelItems(L, PanelItems, ItemsNumber, 0);
 		pd->Info->FreePluginDirList(handle, PanelItems, ItemsNumber);
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -2718,7 +2548,6 @@ static int far_SaveScreen(lua_State *L)
 	intptr_t Y1 = luaL_optinteger(L,2,0);
 	intptr_t X2 = luaL_optinteger(L,3,-1);
 	intptr_t Y2 = luaL_optinteger(L,4,-1);
-
 	*(void**)lua_newuserdata(L, sizeof(void*)) = GetPluginData(L)->Info->SaveScreen(X1,Y1,X2,Y2);
 	luaL_getmetatable(L, SavedScreenType);
 	lua_setmetatable(L, -2);
@@ -2732,13 +2561,11 @@ static UINT64 GetDialogItemType(lua_State* L, int key, int item)
 	lua_pushinteger(L, key);
 	lua_gettable(L, -2);
 	iType = get_env_flag(L, -1, &success);
-
 	if(!success)
 	{
 		const char* sType = lua_tostring(L, -1);
 		return luaL_error(L, "%s - unsupported type in dialog item %d", sType, item);
 	}
-
 	lua_pop(L, 1);
 	return iType;
 }
@@ -2751,10 +2578,8 @@ static UINT64 GetItemFlags(lua_State* L, int flag_index, int item_index)
 	lua_pushinteger(L, flag_index);
 	lua_gettable(L, -2);
 	flags = GetFlagCombination(L, -1, &success);
-
 	if(!success)
 		return luaL_error(L, "unsupported flag in dialog item %d", item_index);
-
 	lua_pop(L, 1);
 	return flags;
 }
@@ -2770,7 +2595,6 @@ struct FarList* CreateList(lua_State *L, int historyindex)
 	list->StructSize = sizeof(struct FarList);
 	list->ItemsNumber = n;
 	list->Items = (struct FarListItem*)(list+1);
-
 	for(i=0; i<n; i++)
 	{
 		struct FarListItem *p = list->Items + i;
@@ -2779,7 +2603,6 @@ struct FarList* CreateList(lua_State *L, int historyindex)
 
 		if(lua_type(L,-1) != LUA_TTABLE)
 			luaL_error(L, "value at index %d is not a table", i+1);
-
 		p->Text = NULL;
 		lua_getfield(L, -1, "Text"); // +3
 
@@ -2789,12 +2612,10 @@ struct FarList* CreateList(lua_State *L, int historyindex)
 			p->Text = check_utf8_string(L,-1,NULL); // +4
 			lua_rawseti(L, historyindex, ++len);  // +3
 		}
-
 		lua_pop(L, 1);                 // +2
 		p->Flags = CheckFlagsFromTable(L, -1, "Flags");
 		lua_pop(L, 1);                 // +1
 	}
-
 	return list;
 }
 
@@ -2847,7 +2668,6 @@ static void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemi
 	Item->X2    = GetIntFromArray(L, 4);
 	Item->Y2    = GetIntFromArray(L, 5);
 	Item->Flags = GetItemFlags(L, 9, itemindex+1);
-
 	if(Item->Type==DI_LISTBOX || Item->Type==DI_COMBOBOX)
 	{
 		int SelectIndex;
@@ -2855,13 +2675,10 @@ static void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemi
 
 		if(lua_type(L,-1) != LUA_TTABLE)
 			luaLF_SlotError(L, 6, "table");
-
 		Item->Param.ListItems = CreateList(L, historyindex);
 		SelectIndex = GetOptIntFromTable(L, "SelectIndex", -1);
-
 		if(SelectIndex > 0 && SelectIndex <= (int)lua_objlen(L,-1))
 			Item->Param.ListItems->Items[SelectIndex-1].Flags |= LIF_SELECTED;
-
 		lua_pop(L,1);                      // 0
 	}
 	else if(Item->Type == DI_USERCONTROL)
@@ -2876,7 +2693,6 @@ static void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemi
 	}
 	else
 		Item->Param.Selected = GetIntFromArray(L, 6);
-
 	//---------------------------------------------------------------------------
 	if(Item->Flags & DIF_HISTORY)
 	{
@@ -2885,7 +2701,6 @@ static void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemi
 		len = (int)lua_objlen(L, historyindex);
 		lua_rawseti(L, historyindex, len+1);  // +0; put into "histories" table to avoid being gc'ed
 	}
-
 	//---------------------------------------------------------------------------
 	lua_rawgeti(L, -1, 8);                       // +1
 	Item->Mask = opt_utf8_string(L, -1, NULL);   // +1
@@ -2904,7 +2719,6 @@ static void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemi
 	}
 	else
 		lua_pop(L, 1);
-
 	//---------------------------------------------------------------------------
 	lua_rawgeti(L, -1, 12);
 	Item->UserData = lua_tointeger(L, -1);
@@ -2915,13 +2729,11 @@ static void PushDlgItem(lua_State *L, const struct FarDialogItem* pItem, BOOL ta
 {
 	if(! table_exist)
 		lua_createtable(L, 12, 0);
-
 	PutIntToArray(L, 1, pItem->Type);
 	PutIntToArray(L, 2, pItem->X1);
 	PutIntToArray(L, 3, pItem->Y1);
 	PutIntToArray(L, 4, pItem->X2);
 	PutIntToArray(L, 5, pItem->Y2);
-
 	if ((pItem->Type == DI_LISTBOX || pItem->Type == DI_COMBOBOX) && pItem->Param.ListItems)
 	{
 		PushList(L, pItem->Param.ListItems);
@@ -2935,7 +2747,6 @@ static void PushDlgItem(lua_State *L, const struct FarDialogItem* pItem, BOOL ta
 	}
 	else
 		PutIntToArray(L, 6, pItem->Param.Selected);
-
 	PutWStrToArray(L, 7, pItem->History, -1);
 	PutWStrToArray(L, 8, pItem->Mask, -1);
 	PutFlagsToArray(L, 9, pItem->Flags);
@@ -2948,22 +2759,20 @@ static void PushDlgItem(lua_State *L, const struct FarDialogItem* pItem, BOOL ta
 	lua_rawset(L, -3);
 }
 
-static void PushDlgItemNum(lua_State *L, HANDLE hDlg, int numitem, int pos_table,
-                           PSInfo *Info)
+static void PushDlgItemNum(
+	lua_State *L, HANDLE hDlg, int numitem, int pos_table, PSInfo *Info
+		)
 {
 	struct FarGetDialogItem fgdi = { sizeof(struct FarGetDialogItem), 0, 0 };
 	fgdi.Size = Info->SendDlgMessage(hDlg, DM_GETDLGITEM, numitem, &fgdi);
-
-	if(fgdi.Size > 0)
+	if (fgdi.Size > 0)
 	{
 		BOOL table_exist;
 		fgdi.Item = (struct FarDialogItem*) lua_newuserdata(L, fgdi.Size);
 		Info->SendDlgMessage(hDlg, DM_GETDLGITEM, numitem, &fgdi);
 		table_exist = lua_istable(L, pos_table);
-
 		if(table_exist)
 			lua_pushvalue(L, pos_table);
-
 		PushDlgItem(L, fgdi.Item, table_exist);
 		lua_remove(L, -2);
 	}
@@ -2995,13 +2804,11 @@ TDialogData* NewDialogData(lua_State* L, PSInfo *Info, HANDLE hDlg, BOOL isOwned
 	dd->isModal  = TRUE;
 	luaL_getmetatable(L, FarDialogType);
 	lua_setmetatable(L, -2);
-
 	if(isOwned)
 	{
 		lua_newtable(L);
 		lua_setfenv(L, -2);
 	}
-
 	return dd;
 }
 
@@ -3034,7 +2841,6 @@ int PushDMParams (lua_State *L, intptr_t Msg, intptr_t Param1)
 {
 	if (! ((Msg>DM_FIRST && Msg<=DM_GETDIALOGTITLE) || Msg==DM_USER))
 		return 0;
-
 	lua_pushinteger(L, Msg);             //+1
 
 	// Param1
@@ -3064,7 +2870,6 @@ int PushDMParams (lua_State *L, intptr_t Msg, intptr_t Param1)
 			lua_pushinteger(L, Param1+1);
 			break;
 	}
-
 	return 1;
 }
 
@@ -3084,16 +2889,15 @@ static int far_SendDlgMessage(lua_State *L)
 	HANDLE hDlg = CheckDialogHandle(L, 1);
 	Msg = CAST(int, check_env_flag(L, 2));
 	lua_settop(L, 4);
-
 	// Special cases (implemented as no-ops as these message types are used internally)
-	if (Msg == DM_GETDLGDATA || Msg == DM_SETDLGDATA)
+	if(Msg == DM_GETDLGDATA
+	|| Msg == DM_SETDLGDATA)
 		return lua_pushnil(L), 1;
-
 	// Param1
 	switch(Msg)
 	{
 		case DM_CLOSE:
-			Param1 = luaL_optinteger(L,3,-1);
+			Param1 = luaL_optinteger(L, 3, -1);
 			if (Param1>0) --Param1;
 			break;
 		case DM_ENABLEREDRAW:
@@ -3113,26 +2917,24 @@ static int far_SendDlgMessage(lua_State *L)
 		case DN_DRAGGED:
 		case DN_DRAWDIALOG:
 		case DN_DRAWDIALOGDONE:
-			Param1 = luaL_optinteger(L,3,0);
+			Param1 = luaL_optinteger(L, 3, 0);
 			break;
 		default: // dialog element position
-			Param1 = luaL_optinteger(L,3,1) - 1;
+			Param1 = luaL_optinteger(L, 3, 1) - 1;
 			break;
 	}
-
 	// res_incr
-	switch(Msg)
+	switch (Msg)
 	{
 		case DM_GETFOCUS:
 		case DM_LISTADDSTR:
-			res_incr=1;
+			res_incr = 1;
 			break;
 		default:
-			res_incr=0;
+			res_incr = 0;
 			break;
 	}
-
-	switch(Msg)
+	switch (Msg)
 	{
 		default:
 			luaL_argerror(L, 2, "operation not implemented");
@@ -3148,13 +2950,13 @@ static int far_SendDlgMessage(lua_State *L)
 		case DM_GETFOCUS:
 		case DM_GETITEMDATA:
 		case DM_LISTSORT:
-		case DM_REDRAW:               // alias: DM_SETREDRAW
+		case DM_REDRAW:				// alias: DM_SETREDRAW
 		case DM_SET3STATE:
 		case DM_SETCURSORSIZE:
 		case DM_SETDROPDOWNOPENED:
 		case DM_SETFOCUS:
 		case DM_SETITEMDATA:
-		case DM_SETMAXTEXTLENGTH:     // alias: DM_SETTEXTLENGTH
+		case DM_SETMAXTEXTLENGTH:	// alias: DM_SETTEXTLENGTH
 		case DM_SETINPUTNOTIFY:
 		case DM_SHOWDIALOG:
 		case DM_SHOWITEM:
@@ -3180,21 +2982,18 @@ static int far_SendDlgMessage(lua_State *L)
 			Param2 = (void*)(intptr_t)check_env_flag(L, 4);
 			break;
 		case DM_GETCURSORPOS:
-
-			if(Info->SendDlgMessage(hDlg, Msg, Param1, &coord))
+			if (Info->SendDlgMessage(hDlg, Msg, Param1, &coord))
 			{
-				lua_createtable(L,0,2);
+				lua_createtable(L, 0, 2);
 				PutNumToTable(L, "X", coord.X);
 				PutNumToTable(L, "Y", coord.Y);
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		case DM_GETDIALOGINFO:
 		{
 			struct DialogInfo dlg_info;
 			dlg_info.StructSize = sizeof(dlg_info);
-
 			if(Info->SendDlgMessage(hDlg, Msg, Param1, &dlg_info))
 			{
 				lua_createtable(L,0,2);
@@ -3202,13 +3001,12 @@ static int far_SendDlgMessage(lua_State *L)
 				PutLStrToTable(L, "Owner", (const char*)&dlg_info.Owner, sizeof(dlg_info.Owner));
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		}
 		case DM_GETDLGRECT:
-		case DM_GETITEMPOSITION:
 
-			if(Info->SendDlgMessage(hDlg, Msg, Param1, &small_rect))
+		case DM_GETITEMPOSITION:
+			if (Info->SendDlgMessage(hDlg, Msg, Param1, &small_rect))
 			{
 				lua_createtable(L,0,4);
 				PutNumToTable(L, "Left", small_rect.Left);
@@ -3217,23 +3015,19 @@ static int far_SendDlgMessage(lua_State *L)
 				PutNumToTable(L, "Bottom", small_rect.Bottom);
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		case DM_GETEDITPOSITION:
 		{
 			struct EditorSetPosition esp;
 			esp.StructSize = sizeof(esp);
-
-			if(Info->SendDlgMessage(hDlg, Msg, Param1, &esp))
+			if (Info->SendDlgMessage(hDlg, Msg, Param1, &esp))
 				return PushEditorSetPosition(L, &esp), 1;
-
 			return lua_pushnil(L), 1;
 		}
 		case DM_GETSELECTION:
 		{
 			struct EditorSelect es;
 			es.StructSize = sizeof(es);
-
 			if(Info->SendDlgMessage(hDlg, Msg, Param1, &es))
 			{
 				lua_createtable(L,0,5);
@@ -3244,7 +3038,6 @@ static int far_SendDlgMessage(lua_State *L)
 				PutNumToTable(L, "BlockHeight", (double) es.BlockHeight);
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		}
 		case DM_SETSELECTION:
@@ -3252,12 +3045,10 @@ static int far_SendDlgMessage(lua_State *L)
 			struct EditorSelect es;
 			es.StructSize = sizeof(es);
 			luaL_checktype(L, 4, LUA_TTABLE);
-
-			if(FillEditorSelect(L, 4, &es))
+			if (FillEditorSelect(L, 4, &es))
 				lua_pushinteger(L, Info->SendDlgMessage(hDlg, Msg, Param1, &es));
 			else
 				lua_pushinteger(L,0);
-
 			return 1;
 		}
 		case DM_GETTEXT:
@@ -3298,18 +3089,18 @@ static int far_SendDlgMessage(lua_State *L)
 				arr = (INPUT_RECORD*)lua_newuserdata(L, count * sizeof(INPUT_RECORD));
 				for(i=0; i<count; i++)
 				{
-					lua_pushinteger(L,i+1);
+					lua_pushinteger(L, i + 1);
 					lua_gettable(L,4);
-					if (!lua_istable(L,-1))
+					if (!lua_istable(L, -1))
 					{
-						luaL_error(L, "element #%d in argument #4 is not a table", i+1);
+						luaL_error(L, "element #%d in argument #4 is not a table", i + 1);
 					}
-					FillInputRecord(L, -1, arr+i);
-					lua_pop(L,1);
+					FillInputRecord(L, -1, arr + i);
+					lua_pop(L, 1);
 				}
 				lua_pushinteger(L, Info->SendDlgMessage(hDlg, Msg, count, arr));
 			}
-			else if (lua_isstring(L,4))
+			else if (lua_isstring(L, 4))
 			{
 				wchar_t *str = check_utf8_string(L,4,NULL);
 				wchar_t *p, *q;
@@ -3320,20 +3111,19 @@ static int far_SendDlgMessage(lua_State *L)
 					while(*p && !iswspace(*p)) p++;
 				}
 				arr = (INPUT_RECORD*)lua_newuserdata(L, count * sizeof(INPUT_RECORD));
-				for(i=0,p=str; i<count; i++)
+				for (i = 0, p = str; i < count; i++)
 				{
 					while(iswspace(*p)) p++;
 					q = p;
 					while(*p && !iswspace(*p)) p++;
 					*p++ = 0;
-					if(!pluginData->FSF->FarNameToInputRecord(q, arr+i))
+					if (!pluginData->FSF->FarNameToInputRecord(q, arr+i))
 						luaL_argerror(L, 4, "invalid key");
 				}
 				lua_pushinteger(L, Info->SendDlgMessage(hDlg, Msg, count, arr));
 			}
 			else
 				luaL_typerror(L, 4, "table or string");
-
 			return 1;
 		}
 		case DM_LISTADD:
@@ -3397,7 +3187,6 @@ static int far_SendDlgMessage(lua_State *L)
 				PutWStrToTable(L, "Text", flgi.Item.Text, -1);
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		}
 		case DM_LISTGETTITLES:
@@ -3415,7 +3204,6 @@ static int far_SendDlgMessage(lua_State *L)
 				PutWStrToTable(L, "Bottom", flt.Bottom, -1);
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		}
 		case DM_LISTSETTITLES:
@@ -3445,7 +3233,6 @@ static int far_SendDlgMessage(lua_State *L)
 				PutIntToTable(L, "MaxLength", fli.MaxLength);
 				return 1;
 			}
-
 			return lua_pushnil(L), 1;
 		}
 		case DM_LISTINSERT:
@@ -3488,7 +3275,6 @@ static int far_SendDlgMessage(lua_State *L)
 			listdata_t Data, *oldData;
 			intptr_t Index;
 			struct FarListItemData flid;
-
 			luaL_checktype(L, 4, LUA_TTABLE);
 			Index = GetOptIntFromTable(L, "Index", 1) - 1;
 			lua_getfenv(L, 1);
@@ -3498,11 +3284,10 @@ static int far_SendDlgMessage(lua_State *L)
 				lua_pushinteger(L,0);
 				return 1;
 			}
-
 			oldData = (listdata_t*)Info->SendDlgMessage(hDlg, DM_LISTGETDATA, Param1, (void*)Index);
-			if (oldData &&
-				sizeof(listdata_t) == Info->SendDlgMessage(hDlg, DM_LISTGETDATASIZE, Param1, (void*)Index) &&
-				oldData->Id == pluginData)
+			if (oldData
+			&& sizeof(listdata_t) == Info->SendDlgMessage(hDlg, DM_LISTGETDATASIZE, Param1, (void*)Index)
+			&& oldData->Id == pluginData)
 			{
 				luaL_unref(L, -2, oldData->Ref);
 			}
@@ -3521,18 +3306,19 @@ static int far_SendDlgMessage(lua_State *L)
 			listdata_t *Data = (listdata_t*)Info->SendDlgMessage(hDlg, Msg, Param1, (void*)Index);
 			if (Data)
 			{
-				if (sizeof(listdata_t) == Info->SendDlgMessage(hDlg, DM_LISTGETDATASIZE, Param1, (void*)Index) &&
-					Data->Id == pluginData)
+				if (sizeof(listdata_t) == Info->SendDlgMessage(hDlg, DM_LISTGETDATASIZE, Param1, (void*)Index)
+				&& Data->Id == pluginData)
 				{
 					lua_getfenv(L, 1);
 					lua_rawgeti(L, -1, Data->Ref);
 				}
 				else
+				{
 					lua_pushlightuserdata(L, Data);
+				}
 			}
 			else
 				lua_pushnil(L);
-
 			return 1;
 		}
 		case DM_GETDLGITEM:
@@ -3547,13 +3333,11 @@ static int far_SendDlgMessage(lua_State *L)
 			luaL_checktype(L, 4, LUA_TTABLE);
 			coord.X = GetOptIntFromTable(L, "X", 0);
 			coord.Y = GetOptIntFromTable(L, "Y", 0);
-
-			if(Msg == DM_SETCURSORPOS)
+			if (Msg == DM_SETCURSORPOS)
 			{
 				lua_pushinteger(L, Info->SendDlgMessage(hDlg, Msg, Param1, &coord));
 				return 1;
 			}
-
 			c = (COORD*) Info->SendDlgMessage(hDlg, Msg, Param1, &coord);
 			lua_createtable(L, 0, 2);
 			PutIntToTable(L, "X", c->X);
@@ -3589,7 +3373,6 @@ static int far_SendDlgMessage(lua_State *L)
 			return 1;
 		}
 	}
-
 	res = Info->SendDlgMessage(hDlg, Msg, Param1, Param2);
 	lua_pushinteger(L, res + res_incr);
 	return 1;
@@ -3607,7 +3390,6 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 		case DN_INPUT:
 		case DN_RESIZECONSOLE:
 			break;
-
 		case DN_CLOSE:
 		case DN_CONTROLINPUT:
 		case DN_GOTFOCUS:
@@ -3615,7 +3397,6 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 			if (Param1 >= 0)
 				++Param1;
 			break;
-
 		case DN_BTNCLICK:
 		case DN_CTLCOLORDLGITEM:
 		case DN_CTLCOLORDLGLIST:
@@ -3631,11 +3412,9 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 		case DN_LISTHOTKEY:
 			++Param1; // dialog element position
 			break;
-
 		default:
 			return FALSE;
 	}
-
 	lua_pushinteger(L, Msg);             //+1
 	lua_pushinteger(L, Param1);          //+2
 
@@ -3647,11 +3426,9 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 		case DN_HOTKEY:
 			PushInputRecord(L, (const INPUT_RECORD*)Param2);
 			break;
-
 		case DN_CTLCOLORDIALOG:
 			PushFarColor(L, (struct FarColor*) Param2);
 			break;
-
 		case DN_CTLCOLORDLGITEM:
 		case DN_CTLCOLORDLGLIST:
 		{
@@ -3666,12 +3443,10 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 			}
 			break;
 		}
-
 		case DN_DRAWDLGITEM:
 		case DN_EDITCHANGE:
 			PushDlgItem(L, (struct FarDialogItem*)Param2, FALSE);
 			break;
-
 		case DN_GETVALUE:
 		{
 			struct FarGetValue *fgv = (struct FarGetValue*) Param2;
@@ -3682,16 +3457,13 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 			lua_setfield(L, -2, "Value");
 			break;
 		}
-
 		case DN_HELP:
 			push_utf8_string(L, Param2 ? (wchar_t*)Param2 : L"", -1);
 			break;
-
 		case DN_LISTCHANGE:
 		case DN_LISTHOTKEY:
 			lua_pushinteger(L, (intptr_t)Param2+1);  // make list positions 1-based
 			break;
-
 		case DN_RESIZECONSOLE:
 		{
 			COORD* coord = (COORD*)Param2;
@@ -3700,12 +3472,10 @@ int PushDNParams (lua_State *L, intptr_t Msg, intptr_t Param1, void *Param2)
 			PutIntToTable(L, "Y", coord->Y);
 			break;
 		}
-
 		default:
 			lua_pushinteger(L, (intptr_t)Param2);  //+3
 			break;
 	}
-
 	return TRUE;
 }
 
@@ -3721,9 +3491,7 @@ intptr_t ProcessDNResult(lua_State *L, intptr_t Msg, void *Param2)
 				struct FarDialogItemColors* fdic = (struct FarDialogItemColors*) Param2;
 				int i;
 				size_t len = lua_objlen(L, -1);
-
 				if(len > fdic->ColorsCount) len = fdic->ColorsCount;
-
 				for(i = 0; i < (int)len; i++)
 				{
 					lua_rawgeti(L, -1, i+1);
@@ -3732,11 +3500,9 @@ intptr_t ProcessDNResult(lua_State *L, intptr_t Msg, void *Param2)
 				}
 			}
 			break;
-
 		case DN_CTLCOLORDIALOG:
 			ret = GetFarColor(L, -1, (struct FarColor*)Param2);
 			break;
-
 		case DN_HELP:
 			if((ret = (intptr_t)utf8_to_utf16(L, -1, NULL)) != 0)
 			{
@@ -3746,7 +3512,6 @@ intptr_t ProcessDNResult(lua_State *L, intptr_t Msg, void *Param2)
 				lua_pop(L, 1);
 			}
 			break;
-
 		case DN_GETVALUE:
 			if((ret = lua_istable(L,-1)) != 0)
 			{
@@ -3769,15 +3534,12 @@ intptr_t ProcessDNResult(lua_State *L, intptr_t Msg, void *Param2)
 					fgv->Value.Value.Integer = (__int64)tempValue.Value.Double;
 				else
 					ret = 0;
-
 				lua_pop(L, 1);
 			}
 			break;
-
 		case DN_KILLFOCUS:
 			ret = lua_tointeger(L, -1) - 1;
 			break;
-
 		default:
 			ret = lua_isnumber(L, -1) ? lua_tointeger(L, -1) : (lua_Integer)lua_toboolean(L, -1);
 			break;
@@ -3788,22 +3550,18 @@ intptr_t ProcessDNResult(lua_State *L, intptr_t Msg, void *Param2)
 static intptr_t DoDlgProc(lua_State *L, PSInfo *Info, TDialogData *dd, HANDLE hDlg, intptr_t Msg, intptr_t Param1, void *Param2)
 {
 	intptr_t ret;
-
 	if(!dd || dd->wasError)
 		return Info->DefDlgProc(hDlg, Msg, Param1, Param2);
-
 	lua_pushlightuserdata(L, dd);        //+1   retrieve the table
 	lua_rawget(L, LUA_REGISTRYINDEX);    //+1
 	lua_rawgeti(L, -1, 2);               //+2   retrieve the procedure
 	lua_rawgeti(L, -2, 3);               //+3   retrieve the handle
 	lua_remove(L, -3);                   //+2
-
 	if (! PushDNParams(L, Msg, Param1, Param2)) //+5
 	{
 		lua_pop(L, 2);
 		return Info->DefDlgProc(hDlg, Msg, Param1, Param2);
 	}
-
 	if (pcall_msg(L, 4, 1))  //+2
 	{
 		lua_pop(L, 1);
@@ -3811,11 +3569,9 @@ static intptr_t DoDlgProc(lua_State *L, PSInfo *Info, TDialogData *dd, HANDLE hD
 		Info->SendDlgMessage(hDlg, DM_CLOSE, -1, 0);
 		return Info->DefDlgProc(hDlg, Msg, Param1, Param2);
 	}
-
 	ret = lua_isnil(L, -1) ?
 		Info->DefDlgProc(hDlg, Msg, Param1, Param2) :
 		ProcessDNResult(L, Msg, Param2);
-
 	lua_pop(L, 1);
 	return ret;
 }
@@ -3838,12 +3594,10 @@ intptr_t LF_DlgProc(lua_State *L, HANDLE hDlg, intptr_t Msg, intptr_t Param1, vo
 	intptr_t ret;
 	PSInfo *Info = GetPluginData(L)->Info;
 	TDialogData *dd = (TDialogData*) Info->SendDlgMessage(hDlg,DM_GETDLGDATA,0,0);
-
 	if (Msg == DN_INITDIALOG && NonModal(dd))
 	{
 		dd->hDlg = hDlg;
 	}
-
 	L = dd->L; // the dialog may be called from a lua_State other than the main one
 	ret = DoDlgProc(L, Info, dd, hDlg, Msg, Param1, Param2);
 	if (Msg == DN_CLOSE && ret && NonModal(dd))
@@ -3869,7 +3623,6 @@ static int far_DialogInit(lua_State *L)
 	intptr_t X2 = luaL_checkinteger(L, 4);
 	intptr_t Y2 = luaL_checkinteger(L, 5);
 	const wchar_t *HelpTopic = opt_utf8_string(L, 6, NULL);
-
 	luaL_checktype(L, 7, LUA_TTABLE);
 	lua_newtable(L);  // create a "histories" table, to prevent history strings
 	// from being garbage collected too early
@@ -3877,28 +3630,22 @@ static int far_DialogInit(lua_State *L)
 	ItemsNumber = lua_objlen(L, 7);
 	Items = (struct FarDialogItem*)lua_newuserdata(L, ItemsNumber * sizeof(struct FarDialogItem));
 	lua_replace(L, 2);
-
-	for(i=0; i < ItemsNumber; i++)
+	for(i = 0; i < ItemsNumber; i++)
 	{
 		int type;
 		lua_pushinteger(L, i+1);
 		lua_gettable(L, 7);
 		type = lua_type(L, -1);
-
 		if(type == LUA_TTABLE)
 		{
 			SetFarDialogItem(L, Items+i, (int)i, 1);
 		}
-
 		lua_pop(L, 1);
-
 		if(type == LUA_TNIL)
 			break;
-
 		if(type != LUA_TTABLE)
 			return luaL_error(L, "Items[%d] is not a table", i+1);
 	}
-
 	// 8-th parameter (flags)
 	Flags = OptFlags(L, 8, 0);
 	dd = NewDialogData(L, pd->Info, INVALID_HANDLE_VALUE, TRUE);
@@ -3906,19 +3653,16 @@ static int far_DialogInit(lua_State *L)
 	// 9-th parameter (DlgProc function)
 	Proc = NULL;
 	Param = NULL;
-
-	if(lua_isfunction(L, 9))
+	if (lua_isfunction(L, 9))
 	{
 		Proc = pd->DlgProc;
 		Param = dd;
 	}
-
 	// Put some values into the registry
 	lua_pushlightuserdata(L, dd); // important: index it with dd
 	lua_createtable(L, 3, 0);
-	lua_pushvalue(L, 1);      // store the "histories" table
+	lua_pushvalue(L, 1);	// store the "histories" table
 	lua_rawseti(L, -2, 1);
-
 	if(lua_isfunction(L, 9))
 	{
 		lua_pushvalue(L, 9);    // store the procedure
@@ -3926,25 +3670,22 @@ static int far_DialogInit(lua_State *L)
 		lua_pushvalue(L, -3);   // store the handle
 		lua_rawseti(L, -2, 3);
 	}
-
 	lua_rawset(L, LUA_REGISTRYINDEX);
-
-	dd->hDlg = pd->Info->DialogInit(pd->PluginId, &Id, X1, Y1, X2, Y2, HelpTopic,
-	                                Items, ItemsNumber, 0, Flags, Proc, Param);
-
+	dd->hDlg = pd->Info->DialogInit(
+		pd->PluginId, &Id, X1, Y1, X2, Y2, HelpTopic,
+		Items, ItemsNumber, 0, Flags, Proc, Param
+			);
 	if(dd->hDlg == INVALID_HANDLE_VALUE)
 	{
 		RemoveDialogFromRegistry(L, dd);
 		lua_pushnil(L);
 	}
-
 	return 1;
 }
 
 static void free_dialog(TDialogData* dd)
 {
 	lua_State* L = dd->L;
-
 	if(dd->isOwned && dd->isModal && dd->hDlg != INVALID_HANDLE_VALUE)
 	{
 		dd->Info->DialogFree(dd->hDlg);
@@ -3957,13 +3698,11 @@ static int far_DialogRun(lua_State *L)
 	TDialogData* dd = CheckValidDialog(L, 1);
 	intptr_t result = dd->Info->DialogRun(dd->hDlg);
 	if (result >= 0) ++result;
-
 	if(dd->wasError)
 	{
 		free_dialog(dd);
 		luaL_error(L, "error occured in dialog procedure");
 	}
-
 	lua_pushinteger(L, (int)result);
 	return 1;
 }
@@ -3977,24 +3716,20 @@ static int far_DialogFree(lua_State *L)
 static int dialog_tostring(lua_State *L)
 {
 	TDialogData* dd = CheckDialog(L, 1);
-
 	if(dd->hDlg != INVALID_HANDLE_VALUE)
 		lua_pushfstring(L, "%s (%p)", FarDialogType, dd->hDlg);
 	else
 		lua_pushfstring(L, "%s (closed)", FarDialogType);
-
 	return 1;
 }
 
 static int dialog_rawhandle(lua_State *L)
 {
 	TDialogData* dd = CheckDialog(L, 1);
-
 	if(dd->hDlg != INVALID_HANDLE_VALUE)
 		lua_pushlightuserdata(L, dd->hDlg);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -4059,9 +3794,8 @@ static int viewer_Viewer(lua_State *L)
 static int viewer_GetFileName(lua_State *L)
 {
 	intptr_t ViewerId = luaL_optinteger(L, 1, -1);
-
-	if(!push_ev_filename(L, 0, ViewerId)) lua_pushnil(L);
-
+	if (!push_ev_filename(L, 0, ViewerId))
+		lua_pushnil(L);
 	return 1;
 }
 
@@ -4071,15 +3805,12 @@ static int viewer_GetInfo(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	struct ViewerInfo vi;
 	vi.StructSize = sizeof(vi);
-
 	if(Info->ViewerControl(ViewerId, VCTL_GETINFO, 0, &vi))
 	{
 		lua_createtable(L, 0, 10);
 		PutNumToTable(L, "ViewerID", (double) vi.ViewerID);
-
 		if(push_ev_filename(L, 0, ViewerId))
 			lua_setfield(L, -2, "FileName");
-
 		PutNumToTable(L,  "FileSize", (double) vi.FileSize);
 		PutNumToTable(L,  "FilePos", (double) vi.FilePos);
 		PutNumToTable(L,  "WindowSizeX", (double) vi.WindowSizeX);
@@ -4095,7 +3826,6 @@ static int viewer_GetInfo(lua_State *L)
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -4133,7 +3863,6 @@ static int viewer_SetPosition(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	struct ViewerSetPosition vsp;
 	vsp.StructSize = sizeof(vsp);
-
 	if(lua_istable(L, 2))
 	{
 		lua_settop(L, 2);
@@ -4147,12 +3876,10 @@ static int viewer_SetPosition(lua_State *L)
 		vsp.LeftPos = (__int64)luaL_optnumber(L,3,1) - 1;
 		vsp.Flags = OptFlags(L,4,0);
 	}
-
-	if(Info->ViewerControl(ViewerId, VCTL_SETPOSITION, 0, &vsp))
+	if (Info->ViewerControl(ViewerId, VCTL_SETPOSITION, 0, &vsp))
 		lua_pushnumber(L, (double)vsp.StartPos);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -4167,23 +3894,17 @@ static int viewer_SetMode(lua_State *L)
 	luaL_checktype(L, 2, LUA_TTABLE);
 	lua_getfield(L, 2, "Type");
 	vsm.Type = get_env_flag(L, -1, &success);
-
 	if(!success)
 		return lua_pushboolean(L,0), 1;
-
 	lua_getfield(L, 2, "iParam");
-
 	if(lua_isnumber(L, -1))
 		vsm.Param.iParam = lua_tointeger(L, -1);
 	else
 		return lua_pushboolean(L,0), 1;
-
 	lua_getfield(L, 2, "Flags");
 	vsm.Flags = get_env_flag(L, -1, &success);
-
 	if(!success)
 		return lua_pushboolean(L,0), 1;
-
 	lua_pushboolean(L, GetPluginData(L)->Info->ViewerControl(ViewerId, VCTL_SETMODE, 0, &vsm) != 0);
 	return 1;
 }
@@ -4205,8 +3926,10 @@ static int far_ShowHelp(lua_State *L)
 static int far_InputBox(lua_State *L)
 {
 	TPluginData *pd = GetPluginData(L);
-	const GUID *Id = (lua_type(L,1)==LUA_TSTRING && lua_objlen(L,1)==sizeof(GUID)) ?
-	                 (const GUID*)lua_tostring(L, 1) : pd->PluginId;
+	const GUID *Id =
+		(lua_type(L, 1) == LUA_TSTRING && lua_objlen(L, 1) == sizeof(GUID))
+		? (const GUID*)lua_tostring(L, 1)
+		: pd->PluginId;
 	const wchar_t *Title       = opt_utf8_string(L, 2, L"Input Box");
 	const wchar_t *Prompt      = opt_utf8_string(L, 3, L"Enter the text:");
 	const wchar_t *HistoryName = opt_utf8_string(L, 4, NULL);
@@ -4216,16 +3939,17 @@ static int far_InputBox(lua_State *L)
 	UINT64 Flags = OptFlags(L, 8, FIB_ENABLEEMPTY|FIB_BUTTONS|FIB_NOAMPERSAND);
 	wchar_t *DestText;
 	intptr_t res;
-
-	if(DestLength < 0) DestLength = 0;
-
+	if (DestLength < 0)
+		DestLength = 0;
 	DestText = (wchar_t*) malloc(sizeof(wchar_t)*(DestLength+1));
-	res = pd->Info->InputBox(pd->PluginId, Id, Title, Prompt, HistoryName, SrcText,
-	                         DestText, DestLength+1, HelpTopic, Flags);
-
-	if(res) push_utf8_string(L, DestText, -1);
-	else lua_pushnil(L);
-
+	res = pd->Info->InputBox(
+		pd->PluginId, Id, Title, Prompt, HistoryName, SrcText,
+		DestText, DestLength+1, HelpTopic, Flags
+			);
+	if (res)
+		push_utf8_string(L, DestText, -1);
+	else
+		lua_pushnil(L);
 	free(DestText);
 	return 1;
 }
@@ -4238,17 +3962,15 @@ static int far_GetMsg(lua_State *L)
 		GUID guid;
 		TPluginData *pd = GetPluginData(L);
 		const wchar_t* str;
-
 		GetOptGuid(L, 2, &guid, pd->PluginId);
 		str = pd->Info->GetMsg(&guid, MsgId);
-		if(str)
+		if (str)
 			push_utf8_string(L, str, -1);
 		else
 			lua_pushnil(L);
 	}
 	else
 		lua_pushnil(L); // (MsgId < 0) crashes FAR
-
 	return 1;
 }
 
@@ -4284,12 +4006,10 @@ static int far_PasteFromClipboard(lua_State *L)
 	struct FarStandardFunctions *FSF = GetPluginData(L)->FSF;
 	enum FARCLIPBOARD_TYPE type = (enum FARCLIPBOARD_TYPE) OptFlags(L,1,FCT_ANY);
 	size_t len = FSF->PasteFromClipboard(type,NULL,0);
-
-	if(len)
+	if (len)
 	{
 		wchar_t *buf = (wchar_t*) malloc(len * sizeof(wchar_t));
-
-		if(buf)
+		if (buf)
 		{
 			FSF->PasteFromClipboard(type,buf,len);
 			push_utf8_string(L,buf,len-1);
@@ -4297,7 +4017,6 @@ static int far_PasteFromClipboard(lua_State *L)
 			return 1;
 		}
 	}
-
 	lua_pushnil(L);
 	return 1;
 }
@@ -4309,8 +4028,7 @@ static int far_InputRecordToName(lua_State *L)
 	size_t result;
 	FillInputRecord(L, 1, &ir);
 	result = GetPluginData(L)->FSF->FarInputRecordToName(&ir, buf, ARRSIZE(buf)-1);
-
-	if(result > 0)
+	if (result > 0)
 	{
 		if(lua_toboolean(L, 2))
 		{
@@ -4318,18 +4036,24 @@ static int far_InputRecordToName(lua_State *L)
 			const char *p;
 			push_utf8_string(L, buf, -1);
 			p = lua_tostring(L, -1);
-
-			if(!strncmp(p, C+1, 4))       { lua_pushstring(L, C+1);  p += 4; }
-			else if(!strncmp(p, C, 5))    { lua_pushstring(L, C); p += 5; }
-			else lua_pushboolean(L, 0);
-
-			if(!strncmp(p, A+1, 3))       { lua_pushstring(L, A+1);  p += 3; }
-			else if(!strncmp(p, A, 4))    { lua_pushstring(L, A); p += 4; }
-			else lua_pushboolean(L, 0);
-
-			if(!strncmp(p, S, 5))         { lua_pushstring(L, S); p += 5; }
-			else lua_pushboolean(L, 0);
-
+			if (!strncmp(p, C+1, 4))
+				{ lua_pushstring(L, C+1);p += 4; }
+			else
+			if (!strncmp(p, C, 5))
+				{ lua_pushstring(L, C)	;p += 5; }
+			else
+				{ lua_pushboolean(L, 0); }
+			if (!strncmp(p, A+1, 3))
+				{ lua_pushstring(L, A+1); p += 3; }
+			else
+			if (!strncmp(p, A, 4))
+				{ lua_pushstring(L, A)	; p += 4; }
+			else
+				{ lua_pushboolean(L, 0); }
+			if (!strncmp(p, S, 5))
+				{ lua_pushstring(L, S); p += 5; }
+			else
+				{ lua_pushboolean(L, 0); }
 			*p ? lua_pushstring(L, p) : lua_pushboolean(L, 0);
 			return 4;
 		}
@@ -4338,7 +4062,6 @@ static int far_InputRecordToName(lua_State *L)
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -4346,12 +4069,10 @@ static int far_NameToInputRecord(lua_State *L)
 {
 	INPUT_RECORD ir;
 	const wchar_t* str = check_utf8_string(L, 1, NULL);
-
 	if(GetPluginData(L)->FSF->FarNameToInputRecord(str, &ir))
 		PushInputRecord(L, &ir);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -4368,9 +4089,7 @@ static int far_LStrnicmp(lua_State *L)
 	const wchar_t* s1 = check_utf8_string(L, 1, NULL);
 	const wchar_t* s2 = check_utf8_string(L, 2, NULL);
 	intptr_t num = luaL_checkinteger(L, 3);
-
 	if(num < 0) num = 0;
-
 	lua_pushinteger(L, GetPluginData(L)->FSF->LStrnicmp(s1, s2, num));
 	return 1;
 }
@@ -4388,7 +4107,6 @@ static int far_ProcessName(lua_State *L)
 	const wchar_t* Mask = check_utf8_string(L,2,NULL);
 	const wchar_t* Name = (Op==PN_CHECKMASK) ? L"" : check_utf8_string(L,3,NULL);
 	UINT64 Flags = OptFlags(L,4,0);
-
 	if(Op == PN_CMPNAME || Op == PN_CMPNAMELIST || Op == PN_CHECKMASK)
 	{
 		size_t result = GetPluginData(L)->FSF->ProcessName(Mask, (wchar_t*)Name, 0, Op|Flags);
@@ -4400,9 +4118,7 @@ static int far_ProcessName(lua_State *L)
 		size_t result;
 		wchar_t* buf;
 		size_t len = wcslen(Mask), len2 = wcslen(Name), bufsize;
-
 		if(len < len2) len = len2;
-
 		bufsize = len < 1024 ? 1024 : len+1;
 		buf = (wchar_t*)lua_newuserdata(L, bufsize * sizeof(wchar_t));
 		wcsncpy(buf, Mask, bufsize-1);
@@ -4412,7 +4128,6 @@ static int far_ProcessName(lua_State *L)
 	}
 	else
 		lua_pushboolean(L, 0);
-
 	return 1;
 }
 
@@ -4422,10 +4137,8 @@ static int far_GetReparsePointInfo(lua_State *L)
 	struct FarStandardFunctions *FSF = GetPluginData(L)->FSF;
 	const wchar_t* Src = check_utf8_string(L, 1, NULL);
 	size_t size = FSF->GetReparsePointInfo(Src, NULL, 0);
-
-	if(size == 0)
+	if (size == 0)
 		return lua_pushnil(L), 1;
-
 	Dest = (wchar_t*)lua_newuserdata(L, size * sizeof(wchar_t));
 	FSF->GetReparsePointInfo(Src, Dest, size);
 	return push_utf8_string(L, Dest, -1), 1;
@@ -4464,12 +4177,10 @@ static int convert_buf(lua_State *L, int command)
 	struct FarStandardFunctions *FSF = GetPluginData(L)->FSF;
 	size_t len;
 	wchar_t* dest = check_utf8_string(L, 1, &len);
-
 	if(command=='l')
 		FSF->LLowerBuf(dest,len);
 	else
 		FSF->LUpperBuf(dest,len);
-
 	push_utf8_string(L, dest, len);
 	return 1;
 }
@@ -4489,12 +4200,10 @@ static int far_MkTemp(lua_State *L)
 	const wchar_t* prefix = opt_utf8_string(L, 1, NULL);
 	const int dim = 4096;
 	wchar_t* dest = (wchar_t*)lua_newuserdata(L, dim * sizeof(wchar_t));
-
-	if(GetPluginData(L)->FSF->MkTemp(dest, dim, prefix))
+	if (GetPluginData(L)->FSF->MkTemp(dest, dim, prefix))
 		push_utf8_string(L, dest, -1);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -4527,10 +4236,8 @@ static int truncstring(lua_State *L, int op)
 	wchar_t *Trg;
 	intptr_t MaxLen = luaL_checkinteger(L, 2);
 	intptr_t SrcLen = wcslen(Src);
-
 	if(MaxLen < 0) MaxLen = 0;
 	else if(MaxLen > SrcLen) MaxLen = SrcLen;
-
 	Trg = (wchar_t*)lua_newuserdata(L, (1 + SrcLen) * sizeof(wchar_t));
 	wcscpy(Trg, Src);
 	ptr = (op == 'p') ? FSF->TruncPathStr(Trg, MaxLen) : FSF->TruncStr(Trg, MaxLen);
@@ -4562,7 +4269,6 @@ static int WINAPI FrsUserFunc(const struct PluginPanelItem *FData, const wchar_t
 	FrsData *Data = (FrsData*)Param;
 	lua_State *L = Data->L;
 	int i, nret = lua_gettop(L);
-
 	if ((FData->FileAttributes & Data->attr_excl) != 0 || (FData->FileAttributes & Data->attr_incl) != Data->attr_incl)
 		return TRUE; // attributes mismatch
 
@@ -4571,9 +4277,7 @@ static int WINAPI FrsUserFunc(const struct PluginPanelItem *FData, const wchar_t
 	push_utf8_string(L, FullName, -1);
 	for (i=1; i<=Data->nparams; i++)
 		lua_pushvalue(L, 4+i);
-
 	Data->err = lua_pcall(L, 2+Data->nparams, LUA_MULTRET, 0);
-
 	nret = lua_gettop(L) - nret;
 	if (!Data->err && (nret==0 || lua_toboolean(L,-nret)==0))
 	{
@@ -4590,7 +4294,6 @@ static int far_RecursiveSearch(lua_State *L)
 	const wchar_t *InitDir = check_utf8_string(L, 1, NULL);
 	wchar_t *Mask = check_utf8_string(L, 2, NULL);
 	wchar_t *MaskEnd;
-
 	luaL_checktype(L, 3, LUA_TFUNCTION);
 	if ((MaskEnd=wcsstr(Mask, L">>")) != NULL)
 	{
@@ -4600,12 +4303,9 @@ static int far_RecursiveSearch(lua_State *L)
 	Flags = OptFlags(L, 4, 0);
 	if (lua_gettop(L) == 3)
 		lua_pushnil(L);
-
 	Data.nparams = lua_gettop(L) - 4;
 	lua_checkstack(L, 256);
-
 	GetPluginData(L)->FSF->FarRecursiveSearch(InitDir, Mask, FrsUserFunc, Flags, &Data);
-
 	if(Data.err)
 		LF_Error(L, check_utf8_string(L, -1, NULL));
 	return Data.err ? 0 : lua_gettop(L) - Data.nparams - 4;
@@ -4633,7 +4333,6 @@ static int far_AdvControl(lua_State *L)
 	intptr_t Param1 = 0;
 	void *Param2 = NULL;
 	lua_settop(L,3);  /* for proper calling GetOptIntFromTable and the like */
-
 	switch(Command)
 	{
 		default:
@@ -4665,12 +4364,10 @@ static int far_AdvControl(lua_State *L)
 		{
 			struct FarColor fc;
 			Param1 = luaL_checkinteger(L, 2);
-
 			if(Info->AdvControl(PluginId, Command, Param1, &fc))
 				PushFarColor(L, &fc);
 			else
 				lua_pushnil(L);
-
 			return 1;
 		}
 		case ACTL_SYNCHRO:
@@ -4698,21 +4395,18 @@ static int far_AdvControl(lua_State *L)
 			struct FarColor *arr = (struct FarColor*) lua_newuserdata(L, len*sizeof(struct FarColor));
 			Info->AdvControl(PluginId, Command, len, arr);
 			lua_createtable(L, (int)len, 0);
-
 			for(i=0; i < len; i++)
 			{
 				PushFarColor(L, &arr[i]);
 				lua_rawseti(L, -2, (int)i+1);
 			}
-
 			return 1;
 		}
 		case ACTL_GETFARMANAGERVERSION:
 		{
 			struct VersionInfo vi;
 			Info->AdvControl(PluginId, Command, 0, &vi);
-
-			if(lua_toboolean(L, 2))
+			if (lua_toboolean(L, 2))
 			{
 				lua_pushinteger(L, vi.Major);
 				lua_pushinteger(L, vi.Minor);
@@ -4721,7 +4415,6 @@ static int far_AdvControl(lua_State *L)
 				lua_pushinteger(L, vi.Stage);
 				return 5;
 			}
-
 			lua_pushfstring(L, "%d.%d.%d.%d.%d", vi.Major, vi.Minor, vi.Revision, vi.Build, vi.Stage);
 			return 1;
 		}
@@ -4733,20 +4426,15 @@ static int far_AdvControl(lua_State *L)
 			wi.StructSize = sizeof(wi);
 			wi.Pos = luaL_optinteger(L, 2, 0) - 1;
 			r = Info->AdvControl(PluginId, Command, 0, &wi);
-
-			if(!r)
+			if (!r)
 				return lua_pushnil(L), 1;
-
 			wi.TypeName = (wchar_t*)
-			              lua_newuserdata(L, (wi.TypeNameSize + wi.NameSize) * sizeof(wchar_t));
+				lua_newuserdata(L, (wi.TypeNameSize + wi.NameSize) * sizeof(wchar_t));
 			wi.Name = wi.TypeName + wi.TypeNameSize;
 			r = Info->AdvControl(PluginId, Command, 0, &wi);
-
 			if(!r)
 				return lua_pushnil(L), 1;
-
 			lua_createtable(L,0,6);
-
 			switch(wi.Type)
 			{
 				case WTYPE_DIALOG:
@@ -4759,7 +4447,6 @@ static int far_AdvControl(lua_State *L)
 					PutIntToTable(L, "Id", CAST(int, wi.Id));
 					break;
 			}
-
 			PutIntToTable(L, "Pos", wi.Pos + 1);
 			PutIntToTable(L, "Type", wi.Type);
 			PutFlagsToTable(L, "Flags", wi.Flags);
@@ -4781,14 +4468,12 @@ static int far_AdvControl(lua_State *L)
 			size = fsc.ColorsCount * sizeof(struct FarColor);
 			fsc.Colors = (struct FarColor*) lua_newuserdata(L, size);
 			memset(fsc.Colors, 0, size);
-
-			for(i=0; i < (int)fsc.ColorsCount; i++)
+			for( i = 0; i < (int)fsc.ColorsCount; i++)
 			{
 				lua_rawgeti(L, 3, i+1);
 				GetFarColor(L, -1, &fsc.Colors[i]);
 				lua_pop(L,1);
 			}
-
 			lua_pushinteger(L, Info->AdvControl(PluginId, Command, Param1, &fsc));
 			return 1;
 		}
@@ -4805,7 +4490,6 @@ static int far_AdvControl(lua_State *L)
 			}
 			else
 				lua_pushnil(L);
-
 			return 1;
 		}
 		case ACTL_GETCURSORPOS:
@@ -4819,7 +4503,6 @@ static int far_AdvControl(lua_State *L)
 			}
 			else
 				lua_pushnil(L);
-
 			return 1;
 		}
 		case ACTL_SETCURSORPOS:
@@ -4837,19 +4520,19 @@ static int far_AdvControl(lua_State *L)
 		{
 			struct WindowType wt;
 			wt.StructSize = sizeof(wt);
-
-			if(Info->AdvControl(PluginId, Command, 0, &wt))
+			if (Info->AdvControl(PluginId, Command, 0, &wt))
 			{
 				lua_createtable(L, 0, 1);
 				lua_pushinteger(L, wt.Type);
 				lua_setfield(L, -2, "Type");
 			}
-			else lua_pushnil(L);
-
+			else
+			{
+				lua_pushnil(L);
+			}
 			return 1;
 		}
 	}
-
 	lua_pushinteger(L, Info->AdvControl(PluginId, Command, Param1, Param2));
 	return 1;
 }
@@ -4896,7 +4579,6 @@ static int MacroSendString(lua_State* L, int Param1)
 	smt.Flags = OptFlags(L, 2, 0);
 	if (Param1 == MSSC_POST)
 		OptInputRecord(L, pd, 3, &smt.AKey);
-
 	lua_pushboolean(L, pd->Info->MacroControl(pd->PluginId, MCTL_SENDSTRING, Param1, &smt) != 0);
 	return 1;
 }
@@ -4915,7 +4597,6 @@ static int far_MacroGetLastError(lua_State* L)
 {
 	TPluginData *pd = GetPluginData(L);
 	intptr_t size = pd->Info->MacroControl(pd->PluginId, MCTL_GETLASTERROR, 0, NULL);
-
 	if(size)
 	{
 		struct MacroParseResult *mpr = (struct MacroParseResult*)lua_newuserdata(L, size);
@@ -4929,7 +4610,6 @@ static int far_MacroGetLastError(lua_State* L)
 	}
 	else
 		lua_pushboolean(L, 0);
-
 	return 1;
 }
 
@@ -4946,9 +4626,7 @@ intptr_t WINAPI MacroAddCallback (void* Id, FARADDKEYMACROFLAGS Flags)
 	MacroAddData *data = (MacroAddData*)Id;
 	if ((L = data->L) == NULL)
 		return FALSE;
-
 	lua_rawgeti(L, LUA_REGISTRYINDEX, data->funcref);
-
 	if(lua_type(L,-1) == LUA_TFUNCTION)
 	{
 		lua_pushlightuserdata(L, Id);
@@ -4956,7 +4634,6 @@ intptr_t WINAPI MacroAddCallback (void* Id, FARADDKEYMACROFLAGS Flags)
 		bit64_push(L, Flags);
 		result = !lua_pcall(L, 2, 1, 0) && lua_toboolean(L, -1);
 	}
-
 	lua_pop(L, 1);
 	return result;
 }
@@ -4980,7 +4657,6 @@ static int far_MacroAdd(lua_State* L)
 	}
 	data.Id = lua_newuserdata(L, sizeof(MacroAddData));
 	data.Priority = luaL_optinteger(L, 7, 50);
-
 	if (pd->Info->MacroControl(pd->PluginId, MCTL_ADDMACRO, 0, &data))
 	{
 		MacroAddData* Id = (MacroAddData*)data.Id;
@@ -4995,7 +4671,6 @@ static int far_MacroAdd(lua_State* L)
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -5004,7 +4679,6 @@ static int far_MacroDelete(lua_State* L)
 	TPluginData *pd = GetPluginData(L);
 	MacroAddData *Id;
 	int result = FALSE;
-
 	Id = (MacroAddData*)luaL_checkudata(L, 1, AddMacroDataType);
 	if (Id->L)
 	{
@@ -5018,7 +4692,6 @@ static int far_MacroDelete(lua_State* L)
 			lua_rawset(L, LUA_REGISTRYINDEX);
 		}
 	}
-
 	lua_pushboolean(L, result);
 	return 1;
 }
@@ -5033,28 +4706,24 @@ static int far_MacroExecute(lua_State* L)
 {
 	TPluginData *pd = GetPluginData(L);
 	int top = lua_gettop(L);
-
 	struct MacroExecuteString Data;
 	Data.StructSize = sizeof(Data);
 	Data.SequenceText = check_utf8_string(L, 1, NULL);
 	Data.Flags = OptFlags(L,2,0);
 	Data.InCount = 0;
-
 	if (top > 2)
 	{
 		size_t i;
 		Data.InCount = top-2;
 		Data.InValues = (struct FarMacroValue*)lua_newuserdata(L, Data.InCount*sizeof(struct FarMacroValue));
 		memset(Data.InValues, 0, Data.InCount*sizeof(struct FarMacroValue));
-		for (i=0; i<Data.InCount; i++)
+		for (i = 0; i < Data.InCount; i++)
 			ConvertLuaValue(L, (int)i+3, Data.InValues+i);
 	}
-
 	if (pd->Info->MacroControl(pd->PluginId, MCTL_EXECSTRING, 0, &Data))
 		PackMacroValues(L, Data.OutCount, Data.OutValues);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -5084,50 +4753,40 @@ static int far_MakeMenuItems(lua_State *L)
 		char buf_prefix[64], buf_space[64], buf_format[64];
 		int maxno = 0;
 		size_t len_prefix;
-
 		for (i=argn; i; maxno++,i/=10) {}
 		len_prefix = sprintf(buf_space, "%*s%s ", maxno, "", delim);
 		sprintf(buf_format, "%%%dd%%s ", maxno);
-
 		for(i=1; i<=argn; i++)
 		{
 			size_t j, len_arg;
 			const char *start;
 			char* str;
-
 			lua_getglobal(L, "tostring");          //+2
 
 			if(i == 1 && lua_type(L,-1) != LUA_TFUNCTION)
 				luaL_error(L, "global `tostring' is not function");
-
 			lua_pushvalue(L, i);                   //+3
 
 			if(0 != lua_pcall(L, 1, 1, 0))         //+2 (items,str)
 				luaL_error(L, lua_tostring(L, -1));
-
 			if(lua_type(L, -1) != LUA_TSTRING)
 				luaL_error(L, "tostring() returned a non-string value");
-
 			sprintf(buf_prefix, buf_format, i, delim);
 			start = lua_tolstring(L, -1, &len_arg);
 			str = (char*) malloc(len_arg + 1);
 			memcpy(str, start, len_arg + 1);
-
 			for (j=0; j<len_arg; j++)
 				if(str[j] == '\0') str[j] = ' ';
-
 			for (start=str; start; )
 			{
 				size_t len_text;
 				char *line;
 				const char* nl = strchr(start, '\n');
-
 				lua_newtable(L);                     //+3 (items,str,curr_item)
 				len_text = nl ? (nl++) - start : (str+len_arg) - start;
 				line = (char*) malloc(len_prefix + len_text);
 				memcpy(line, buf_prefix, len_prefix);
 				memcpy(line + len_prefix, start, len_text);
-
 				lua_pushlstring(L, line, len_prefix + len_text);
 				free(line);
 				lua_setfield(L, -2, "text");         //+3
@@ -5137,12 +4796,10 @@ static int far_MakeMenuItems(lua_State *L)
 				strcpy(buf_prefix, buf_space);
 				start = nl;
 			}
-
 			free(str);
 			lua_pop(L, 1);                         //+1 (items)
 		}
 	}
-
 	return 1;
 }
 
@@ -5155,16 +4812,12 @@ static int far_Show(lua_State *L)
 	    "{{BreakKey='SPACE'}})";
 	int argn = lua_gettop(L);
 	far_MakeMenuItems(L);
-
 	if(luaL_loadstring(L, f) != 0)
 		luaL_error(L, lua_tostring(L, -1));
-
 	lua_pushvalue(L, -2);
 	lua_pushinteger(L, argn);
-
 	if(lua_pcall(L, 2, LUA_MULTRET, 0) != 0)
 		luaL_error(L, lua_tostring(L, -1));
-
 	return lua_gettop(L) - argn - 1;
 }
 
@@ -5172,17 +4825,14 @@ void NewVirtualKeyTable(lua_State* L, BOOL twoways)
 {
 	int i;
 	lua_createtable(L, twoways ? 256:0, 200);
-
 	for(i=0; i<256; i++)
 	{
 		const char* str = VirtualKeyStrings[i];
-
 		if(str)
 		{
 			lua_pushinteger(L, i);
 			lua_setfield(L, -2, str);
 		}
-
 		if(twoways)
 		{
 			lua_pushstring(L, str ? str : "");
@@ -5209,7 +4859,6 @@ static int far_CreateFileFilter(lua_State *L)
 	HANDLE hHandle = (luaL_checkinteger(L,1) % 2) ? PANEL_ACTIVE:PANEL_PASSIVE;
 	int filterType = CAST(int, check_env_flag(L,2));
 	HANDLE* pOutHandle = (HANDLE*)lua_newuserdata(L, sizeof(HANDLE));
-
 	if(Info->FileFilterControl(hHandle, FFCTL_CREATEFILEFILTER, filterType, pOutHandle))
 	{
 		luaL_getmetatable(L, FarFileFilterType);
@@ -5217,14 +4866,12 @@ static int far_CreateFileFilter(lua_State *L)
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
 static int filefilter_Free(lua_State *L)
 {
 	HANDLE *h = CheckFileFilter(L, 1);
-
 	if(*h != INVALID_HANDLE_VALUE)
 	{
 		PSInfo *Info = GetPluginData(L)->Info;
@@ -5233,7 +4880,6 @@ static int filefilter_Free(lua_State *L)
 	}
 	else
 		lua_pushboolean(L,0);
-
 	return 1;
 }
 
@@ -5246,12 +4892,10 @@ static int filefilter_gc(lua_State *L)
 static int filefilter_tostring(lua_State *L)
 {
 	HANDLE *h = CheckFileFilter(L, 1);
-
 	if(*h != INVALID_HANDLE_VALUE)
 		lua_pushfstring(L, "%s (%p)", FarFileFilterType, h);
 	else
 		lua_pushfstring(L, "%s (closed)", FarFileFilterType);
-
 	return 1;
 }
 
@@ -5289,14 +4933,15 @@ static int plugin_load(lua_State *L, enum FAR_PLUGINS_CONTROL_COMMANDS command)
 	int param1 = CAST(int, check_env_flag(L, 1));
 	void *param2 = check_utf8_string(L, 2, NULL);
 	intptr_t result = Info->PluginsControl(INVALID_HANDLE_VALUE, command, param1, param2);
-
-	if(result) PushPluginHandle(L, CAST(HANDLE, result));
-	else lua_pushnil(L);
-
+	if (result)
+		PushPluginHandle(L, CAST(HANDLE, result));
+	else
+		lua_pushnil(L);
 	return 1;
 }
 
 static int far_LoadPlugin(lua_State *L) { return plugin_load(L, PCTL_LOADPLUGIN); }
+
 static int far_ForcedLoadPlugin(lua_State *L) { return plugin_load(L, PCTL_FORCEDLOADPLUGIN); }
 
 static int far_UnloadPlugin(lua_State *L)
@@ -5312,28 +4957,24 @@ static int far_FindPlugin(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	int param1 = CAST(int, check_env_flag(L, 1));
 	void *param2 = NULL;
-
-	if(param1 == PFM_MODULENAME)
+	if (param1 == PFM_MODULENAME)
 		param2 = check_utf8_string(L, 2, NULL);
 	else if(param1 == PFM_GUID)
 	{
 		size_t len;
 		param2 = CAST(void*, luaL_checklstring(L, 2, &len));
-
-		if(len < sizeof(GUID)) param2 = NULL;
+		if (len < sizeof(GUID))
+			param2 = NULL;
 	}
-
-	if(param2)
+	if (param2)
 	{
 		intptr_t handle = Info->PluginsControl(NULL, PCTL_FINDPLUGIN, param1, param2);
-
 		if(handle)
 		{
 			PushPluginHandle(L, CAST(HANDLE, handle));
 			return 1;
 		}
 	}
-
 	lua_pushnil(L);
 	return 1;
 }
@@ -5346,15 +4987,13 @@ static void PutPluginMenuItemToTable(lua_State *L, const char* field, const stru
 		PutIntToTable(L, "Count", mi->Count);
 		lua_createtable(L, (int) mi->Count, 0); // Guids
 		lua_createtable(L, (int) mi->Count, 0); // Strings
-
-		for(i=0; i < (int) mi->Count; i++)
+		for(i = 0; i < (int) mi->Count; i++)
 		{
 			lua_pushlstring(L, CAST(const char*, mi->Guids + i), sizeof(GUID));
 			lua_rawseti(L, -3, i+1);
 			push_utf8_string(L, mi->Strings[i], -1);
 			lua_rawseti(L, -2, i+1);
 		}
-
 		lua_setfield(L, -3, "Strings");
 		lua_setfield(L, -2, "Guids");
 	}
@@ -5378,15 +5017,12 @@ static int far_GetPluginInformation(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	HANDLE Handle = *(HANDLE*)luaL_checkudata(L, 1, PluginHandleType);
 	size_t size = Info->PluginsControl(Handle, PCTL_GETPLUGININFORMATION, 0, 0);
-
-	if(size == 0) return lua_pushnil(L), 1;
-
+	if (size == 0)
+		return lua_pushnil(L), 1;
 	pi = (struct FarGetPluginInformation *)lua_newuserdata(L, size);
 	pi->StructSize = sizeof(*pi);
-
-	if(!Info->PluginsControl(Handle, PCTL_GETPLUGININFORMATION, size, pi))
+	if (!Info->PluginsControl(Handle, PCTL_GETPLUGININFORMATION, size, pi))
 		return lua_pushnil(L), 1;
-
 	lua_createtable(L, 0, 4);
 	{
 		PutWStrToTable(L, "ModuleName", pi->ModuleName, -1);
@@ -5398,10 +5034,8 @@ static int far_GetPluginInformation(lua_State *L)
 			PutPluginMenuItemToTable(L, "DiskMenu", &pi->PInfo->DiskMenu);
 			PutPluginMenuItemToTable(L, "PluginMenu", &pi->PInfo->PluginMenu);
 			PutPluginMenuItemToTable(L, "PluginConfig", &pi->PInfo->PluginConfig);
-
-			if(pi->PInfo->CommandPrefix)
+			if (pi->PInfo->CommandPrefix)
 				PutWStrToTable(L, "CommandPrefix", pi->PInfo->CommandPrefix, -1);
-
 			lua_setfield(L, -2, "PInfo");
 		}
 		lua_createtable(L, 0, 7); // GInfo
@@ -5424,22 +5058,18 @@ static int far_GetPlugins(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	int count = (int)Info->PluginsControl(INVALID_HANDLE_VALUE, PCTL_GETPLUGINS, 0, 0);
 	lua_createtable(L, count, 0);
-
-	if(count > 0)
+	if (count > 0)
 	{
 		int i;
 		HANDLE *handles = lua_newuserdata(L, count*sizeof(HANDLE));
 		count = (int)Info->PluginsControl(INVALID_HANDLE_VALUE, PCTL_GETPLUGINS, count, handles);
-
 		for(i=0; i<count; i++)
 		{
 			PushPluginHandle(L, handles[i]);
 			lua_rawseti(L, -3, i+1);
 		}
-
 		lua_pop(L, 1);
 	}
-
 	return 1;
 }
 
@@ -5451,12 +5081,10 @@ static int far_IsPluginLoaded(lua_State *L)
 	int result = 0;
 	const char *guid = luaL_checklstring(L, 1, &len);
 	PSInfo *Info = GetPluginData(L)->Info;
-
 	if (len == 16)
 		uuid = *(UUID*)guid;
 	else
 		luaL_argcheck(L, UuidFromStringA((unsigned char*)guid, &uuid) == RPC_S_OK, 1, "invalid GUID");
-
 	handle = Info->PluginsControl(NULL, PCTL_FINDPLUGIN, PFM_GUID, &uuid);
 	if (handle)
 	{
@@ -5467,7 +5095,6 @@ static int far_IsPluginLoaded(lua_State *L)
 			pi->StructSize = sizeof(*pi);
 			if (Info->PluginsControl((HANDLE)handle, PCTL_GETPLUGININFORMATION, size, pi))
 				result = (pi->Flags & FPF_LOADED) ? 1:0;
-
 			free(pi);
 		}
 	}
@@ -5495,10 +5122,8 @@ static int far_FormatFileSize(lua_State *L)
 	UINT64 Size = CAST(UINT64, luaL_checknumber(L, 1));
 	intptr_t Width = luaL_checkinteger(L, 2);
 	UINT64 Flags = OptFlags(L, 3, 0);
-
 	if(Flags & FFFS_MINSIZEINDEX)
 		Flags |= (luaL_optinteger(L, 4, 0) & FFFS_MINSIZEINDEX_MASK);
-
 	GetPluginData(L)->FSF->FormatFileSize(Size, Width, Flags, buf, ARRSIZE(buf));
 	push_utf8_string(L, buf, -1);
 	return 1;
@@ -5529,44 +5154,35 @@ static int far_Timer(lua_State *L)
 	TTimerData *td;
 	HANDLE hQueue;
 	int interval, index, tabSize;
-
 	interval = (int)luaL_checkinteger(L, 1);
 	luaL_checktype(L, 2, LUA_TFUNCTION);
-
 	tabSize = lua_gettop(L);
-
 	lua_createtable(L, tabSize, 1);         // place the function at [1]
 	lua_pushinteger(L, tabSize);
 	lua_setfield(L, -2, "n");
 	lua_pushvalue(L, 2);
 	lua_rawseti(L, -2, 1);
-
 	td = (TTimerData*)lua_newuserdata(L, sizeof(TTimerData));
 	luaL_getmetatable(L, FarTimerType);
 	lua_setmetatable(L, -2);
 	lua_pushvalue(L, -1);
 	lua_rawseti(L, -3, 2);                  // place the userdata at [2]
-
 	for (index=3; index<=tabSize; index++)  // place the arguments, if any
 	{
 		lua_pushvalue(L, index);
 		lua_rawseti(L, -3, index);
 	}
-
 	pd = GetPluginData(L);
 	td->Info = pd->Info;
 	td->PluginGuid = pd->PluginId;
 	td->interval = interval < 1 ? 1 : interval;
-
 	lua_pushvalue(L, -2);
 	td->tabRef = luaL_ref(L, LUA_REGISTRYINDEX);
 	td->needClose = FALSE;
 	td->enabled = 1;
 	hQueue = GetLuaStateTimerQueue(L);
-
 	if (hQueue && CreateTimerQueueTimer(&td->hTimer,hQueue,TimerCallback,td,td->interval,td->interval,WT_EXECUTEDEFAULT))
 		return 1;
-
 	luaL_unref(L, LUA_REGISTRYINDEX, td->tabRef);
 	return lua_pushnil(L), 1;
 }
@@ -5617,12 +5233,10 @@ static int timer_gc(lua_State *L)
 static int timer_tostring(lua_State *L)
 {
 	TTimerData* td = CheckTimer(L, 1);
-
 	if (!td->needClose)
 		lua_pushfstring(L, "%s (%p)", FarTimerType, td);
 	else
 		lua_pushfstring(L, "%s (closed)", FarTimerType);
-
 	return 1;
 }
 
@@ -5630,7 +5244,6 @@ static int timer_index(lua_State *L)
 {
 	TTimerData* td = CheckTimer(L, 1);
 	const char* method = luaL_checkstring(L, 2);
-
 	if(!strcmp(method, "Close"))
 		lua_pushcfunction(L, timer_Close);
 	else if(!strcmp(method, "Enabled"))
@@ -5646,7 +5259,6 @@ static int timer_index(lua_State *L)
 		lua_pushboolean(L, td->needClose);
 	else
 		luaL_error(L, "attempt to call non-existent method");
-
 	return 1;
 }
 
@@ -5654,7 +5266,6 @@ static int timer_newindex(lua_State *L)
 {
 	TTimerData* td = CheckValidTimer(L, 1);
 	const char* method = luaL_checkstring(L, 2);
-
 	if(!strcmp(method, "Enabled"))
 	{
 		luaL_checkany(L, 3);
@@ -5678,7 +5289,6 @@ static int timer_newindex(lua_State *L)
 		lua_rawseti(L, -2, 1);
 	}
 	else luaL_error(L, "attempt to call non-existent method");
-
 	return 0;
 }
 
@@ -5707,7 +5317,6 @@ static int far_CreateSettings(lua_State *L)
 	TPluginData *pd = GetPluginData(L);
 	int location;
 	strId = luaL_optlstring(L, 1, NULL, &len);
-
 	if(strId == NULL)
 		ParamId = pd->PluginId;
 	else
@@ -5721,20 +5330,16 @@ static int far_CreateSettings(lua_State *L)
 			lua_pushnil(L);
 			return 1;
 		}
-
 		ParamId = CAST(const GUID*, (IsFarSettings ? FarGuid : strId));
 	}
-
 	location = CAST(int, OptFlags(L, 2, PSL_ROAMING));
 	fsc.StructSize = sizeof(fsc);
 	fsc.Guid = *ParamId;
-
 	if(!pd->Info->SettingsControl(INVALID_HANDLE_VALUE, SCTL_CREATE, location, &fsc))
 	{
 		lua_pushnil(L);
 		return 1;
 	}
-
 	lua_getfield(L, LUA_REGISTRYINDEX, SettingsHandles);
 	udata = (FarSettingsUdata*)lua_newuserdata(L, sizeof(FarSettingsUdata));
 	udata->Handle = fsc.Handle;
@@ -5755,13 +5360,11 @@ static FarSettingsUdata* GetSettingsUdata(lua_State *L, int pos)
 static FarSettingsUdata* CheckSettings(lua_State *L, int pos)
 {
 	FarSettingsUdata* udata = GetSettingsUdata(L, pos);
-
 	if(udata->Handle == INVALID_HANDLE_VALUE)
 	{
 		const char* s = lua_pushfstring(L, "attempt to access a closed %s", SettingsType);
 		luaL_argerror(L, pos, s);
 	}
-
 	return udata;
 }
 
@@ -5773,16 +5376,16 @@ static int Settings_set(lua_State *L)
 	fsi.Root = (size_t)check_env_flag(L, 2);
 	fsi.Name = opt_utf8_string(L, 3, NULL);
 	fsi.Type = (enum FARSETTINGSTYPES) check_env_flag(L, 4);
-
-	if(fsi.Type == FST_QWORD)
+	if (fsi.Type == FST_QWORD)
 		fsi.Value.Number = GetFlagCombination(L, 5, NULL);
-	else if(fsi.Type == FST_STRING)
+	else
+	if (fsi.Type == FST_STRING)
 		fsi.Value.String = check_utf8_string(L, 5, NULL);
-	else if(fsi.Type == FST_DATA)
+	else
+	if (fsi.Type == FST_DATA)
 		fsi.Value.Data.Data = luaL_checklstring(L, 5, &fsi.Value.Data.Size);
 	else
 		return lua_pushboolean(L,0), 1;
-
 	lua_pushboolean(L, GetPluginData(L)->Info->SettingsControl(udata->Handle, SCTL_SET, 0, &fsi) != 0);
 	return 1;
 }
@@ -5795,21 +5398,19 @@ static int Settings_get(lua_State *L)
 	fsi.Root = (size_t)check_env_flag(L, 2);
 	fsi.Name = check_utf8_string(L, 3, NULL);
 	fsi.Type = (enum FARSETTINGSTYPES) check_env_flag(L, 4);
-
-	if(GetPluginData(L)->Info->SettingsControl(udata->Handle, SCTL_GET, 0, &fsi))
+	if (GetPluginData(L)->Info->SettingsControl(udata->Handle, SCTL_GET, 0, &fsi))
 	{
-		if(fsi.Type == FST_QWORD)
+		if		(fsi.Type == FST_QWORD)
 			bit64_push(L, fsi.Value.Number);
-		else if(fsi.Type == FST_STRING)
+		else if (fsi.Type == FST_STRING)
 			push_utf8_string(L, fsi.Value.String, -1);
-		else if(fsi.Type == FST_DATA)
+		else if (fsi.Type == FST_DATA)
 			lua_pushlstring(L, fsi.Value.Data.Data, fsi.Value.Data.Size);
 		else
 			lua_pushnil(L);
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -5836,8 +5437,7 @@ static int Settings_createsubkey(lua_State *L)
 	fsv.Value = check_utf8_string(L, 3, NULL);
 	description = opt_utf8_string(L, 4, NULL);
 	subkey = Info->SettingsControl(udata->Handle, SCTL_CREATESUBKEY, 0, &fsv);
-
-	if(subkey != 0)
+	if (subkey != 0)
 	{
 		if(description != NULL)
 		{
@@ -5849,12 +5449,10 @@ static int Settings_createsubkey(lua_State *L)
 			fsi.Value.String = description;
 			Info->SettingsControl(udata->Handle, SCTL_SET, 0, &fsi);
 		}
-
 		lua_pushinteger(L, subkey);
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -5867,12 +5465,10 @@ static int Settings_opensubkey(lua_State *L)
 	fsv.Root = (size_t)check_env_flag(L, 2);
 	fsv.Value = check_utf8_string(L, 3, NULL);
 	subkey = GetPluginData(L)->Info->SettingsControl(udata->Handle, SCTL_OPENSUBKEY, 0, &fsv);
-
 	if(subkey != 0)
 		lua_pushinteger(L, subkey);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -5883,39 +5479,26 @@ static int Settings_enum(lua_State *L)
 	FarSettingsUdata* udata = CheckSettings(L, 1);
 	fse.StructSize = sizeof(fse);
 	fse.Root = (size_t)check_env_flag(L, 2);
-
 	if(!lua_isnoneornil(L, 3))  from = luaL_checkinteger(L, 3);
-
 	if(!lua_isnoneornil(L, 4))  to = luaL_checkinteger(L, 4);
-
 	if(GetPluginData(L)->Info->SettingsControl(udata->Handle, SCTL_ENUM, 0, &fse))
 	{
-		if(from < 1 && (from += fse.Count + 1) < 1) from = 1;
-
+		if (from < 1 && (from += fse.Count + 1) < 1) from = 1;
 		--from;
-
-		if(to < 0 && (to += fse.Count + 1) < 0) to = 0;
-
-		if(to > (int)fse.Count) to = fse.Count;
-
+		if (to < 0 && (to += fse.Count + 1) < 0) to = 0;
+		if (to > (int)fse.Count) to = fse.Count;
 		lua_createtable(L, (int)fse.Count, 1);
 		PutIntToTable(L, "Count", (int)fse.Count);
-
-		for(i = from; i < to; i++)
+		for (i = from; i < to; i++)
 		{
 			if(udata->IsFarSettings)
 			{
 				const struct FarSettingsHistory *fsh = fse.Value.Histories + i;
 				lua_createtable(L, 0, 6);
-
 				if(fsh->Name) PutWStrToTable(L, "Name", fsh->Name, -1);
-
 				if(fsh->Param) PutWStrToTable(L, "Param", fsh->Param, -1);
-
 				PutLStrToTable(L, "PluginId", &fsh->PluginId, sizeof(GUID));
-
 				if(fsh->File) PutWStrToTable(L, "File", fsh->File, -1);
-
 				pushFileTime(L, &fsh->Time);
 				lua_setfield(L, -2, "Time");
 				PutBoolToTable(L, "Lock", fsh->Lock);
@@ -5926,21 +5509,18 @@ static int Settings_enum(lua_State *L)
 				PutWStrToTable(L, "Name", fse.Value.Items[i].Name, -1);
 				PutIntToTable(L, "Type", fse.Value.Items[i].Type);
 			}
-
 			lua_rawseti(L, -2, (int)(i-from+1));
 		}
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
 static int Settings_free(lua_State *L)
 {
 	FarSettingsUdata* udata = GetSettingsUdata(L, 1);
-
-	if(udata->Handle != INVALID_HANDLE_VALUE)
+	if (udata->Handle != INVALID_HANDLE_VALUE)
 	{
 		PSInfo *Info = GetPluginData(L)->Info;
 		Info->SettingsControl(udata->Handle, SCTL_FREE, 0, 0);
@@ -5950,7 +5530,6 @@ static int Settings_free(lua_State *L)
 		lua_pushnil(L);
 		lua_rawset(L, -3);
 	}
-
 	return 0;
 }
 
@@ -5958,7 +5537,6 @@ static int far_FreeSettings(lua_State *L)
 {
 	lua_getfield(L, LUA_REGISTRYINDEX, SettingsHandles);
 	lua_pushnil(L);
-
 	while(lua_next(L, -2))
 	{
 		lua_pushcfunction(L, Settings_free);
@@ -5966,7 +5544,6 @@ static int far_FreeSettings(lua_State *L)
 		lua_call(L, 1, 0);
 		lua_pop(L, 1);
 	}
-
 	lua_pop(L, 1); // mandatory, since this function is called directly from pcall_msg
 	return 0;
 }
@@ -5974,12 +5551,10 @@ static int far_FreeSettings(lua_State *L)
 static int Settings_tostring(lua_State *L)
 {
 	FarSettingsUdata* udata = GetSettingsUdata(L, 1);
-
-	if(udata->Handle != INVALID_HANDLE_VALUE)
+	if (udata->Handle != INVALID_HANDLE_VALUE)
 		lua_pushfstring(L, "%s (%p)", SettingsType, udata->Handle);
 	else
 		lua_pushfstring(L, "%s (closed)", SettingsType);
-
 	return 1;
 }
 
@@ -5989,16 +5564,13 @@ static int far_ColorDialog(lua_State *L)
 	struct FarColor Color;
 	TPluginData *pd = GetPluginData(L);
 	int istable = lua_istable(L, 1);
-
 	if(!GetFarColor(L, 1, &Color))
 	{
 		Color.Foreground.ForegroundColor = 0x0F | ALPHAMASK;
 		Color.Background.BackgroundColor = 0x00 | ALPHAMASK;
 		Color.Flags = FCF_4BITMASK;
 	}
-
 	Flags = OptFlags(L, 2, 0);
-
 	if(pd->Info->ColorDialog(pd->PluginId, Flags, &Color))
 	{
 		if(istable) PushFarColor(L, &Color);
@@ -6006,7 +5578,6 @@ static int far_ColorDialog(lua_State *L)
 	}
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -6063,7 +5634,6 @@ static int far_host_GetFiles(lua_State *L)
 	int collectorPos;
 	struct PluginPanelItem *ppi, *ppi_curr;
 	size_t i, numLines;
-
 	luaL_checktype(L, 2, LUA_TTABLE);  //2-nd argument
 	numLines = lua_objlen(L, 2);
 	memset(&gfInfo, 0, sizeof(gfInfo));
@@ -6078,17 +5648,13 @@ static int far_host_GetFiles(lua_State *L)
 	if (! (panHandle && psInfo->PanelControl(panHandle,FCTL_GETPANELINFO,0,&panInfo) && panInfo.PluginHandle) )
 		return 1;
 	gfInfo.hPanel = panInfo.PluginHandle;
-
 	if (NULL == (dll_handle = GetPluginModuleHandle(psInfo, &panInfo.OwnerGuid)))
 		return 1;
-
 	if (NULL == (getfiles = (T_GetFilesW)GetProcAddress(dll_handle, "GetFilesW")))
 		return 1;
-
 	ppi = (struct PluginPanelItem *)malloc(sizeof(struct PluginPanelItem) * numLines);
 	if (ppi == NULL)
 		return luaL_error(L, "insufficient memory");
-
 	lua_newtable(L);
 	collectorPos = lua_gettop(L);
 	for(i=1,ppi_curr=ppi; i<=numLines; i++)
@@ -6101,7 +5667,6 @@ static int far_host_GetFiles(lua_State *L)
 	}
 	gfInfo.ItemsNumber = ppi_curr - ppi;
 	gfInfo.PanelItem = ppi;
-
 	lua_pushinteger(L, getfiles(&gfInfo));
 	free(ppi);
 	return 1;
@@ -6119,7 +5684,6 @@ static int far_host_PutFiles(lua_State *L)
 	int collectorPos;
 	struct PluginPanelItem *ppi, *ppi_curr;
 	size_t i, numLines;
-
 	luaL_checktype(L, 2, LUA_TTABLE);  //2-nd argument
 	numLines = lua_objlen(L, 2);
 	memset(&pfInfo, 0, sizeof(pfInfo));
@@ -6127,24 +5691,18 @@ static int far_host_PutFiles(lua_State *L)
 	pfInfo.Move = lua_toboolean(L, 3); //3-rd argument
 	pfInfo.SrcPath = check_utf8_string(L, 4, NULL); //4-th argument
 	pfInfo.OpMode = luaL_optinteger(L, 5, (lua_Integer)(OPM_SILENT)); //5-th argument
-
 	lua_pushinteger(L,0);  //prepare to return 0
-
 	panInfo.StructSize = sizeof(panInfo);
 	if (! (panHandle && psInfo->PanelControl(panHandle,FCTL_GETPANELINFO,0,&panInfo) && panInfo.PluginHandle) )
 		return 1;
 	pfInfo.hPanel = panInfo.PluginHandle;
-
 	if (NULL == (dll_handle = GetPluginModuleHandle(psInfo, &panInfo.OwnerGuid)))
 		return 1;
-
 	if (NULL == (putfiles = (T_PutFilesW)GetProcAddress(dll_handle, "PutFilesW")))
 		return 1;
-
 	ppi = (struct PluginPanelItem *)malloc(sizeof(struct PluginPanelItem) * numLines);
 	if (ppi == NULL)
 		return luaL_error(L, "insufficient memory");
-
 	lua_newtable(L);
 	collectorPos = lua_gettop(L);
 	for(i=1,ppi_curr=ppi; i<=numLines; i++)
@@ -6157,7 +5715,6 @@ static int far_host_PutFiles(lua_State *L)
 	}
 	pfInfo.ItemsNumber = ppi_curr - ppi;
 	pfInfo.PanelItem = ppi;
-
 	lua_pushinteger(L, putfiles(&pfInfo));
 	free(ppi);
 	return 1;
@@ -6174,16 +5731,13 @@ static int far_host_GetFindData(lua_State *L)
 	HMODULE dll_handle;
 	PSInfo *psInfo = GetPluginData(L)->Info;
 	HANDLE panHandle = OptHandle(L); //1-st argument
-
 	lua_settop(L, 2); //2 arguments at most
 	lua_pushnil(L);  //prepare to return nil
 	panInfo.StructSize = sizeof(panInfo);
 	if (! (panHandle && psInfo->PanelControl(panHandle,FCTL_GETPANELINFO,0,&panInfo) && panInfo.PluginHandle) )
 		return 1;
-
 	if (NULL == (dll_handle = GetPluginModuleHandle(psInfo, &panInfo.OwnerGuid)))
 		return 1;
-
 	getfinddata = (T_GetFindDataW)GetProcAddress(dll_handle, "GetFindDataW");
 	memset(&gfdInfo, 0, sizeof(gfdInfo));
 	gfdInfo.StructSize = sizeof(gfdInfo);
@@ -6191,9 +5745,7 @@ static int far_host_GetFindData(lua_State *L)
 	gfdInfo.hPanel = panInfo.PluginHandle;
 	if (! (getfinddata && getfinddata(&gfdInfo)))
 		return 1;
-
 	PushPanelItems(L, gfdInfo.PanelItem, gfdInfo.ItemsNumber, 1); //this will be returned
-
 	//as the panel items have been copied (internalized) they should be freed
 	freefinddata = (T_FreeFindDataW)GetProcAddress(dll_handle, "FreeFindDataW");
 	if (freefinddata)
@@ -6212,13 +5764,10 @@ static int far_host_FreeUserData(lua_State *L)
 {
 	struct FarPanelItemFreeInfo freeInfo;
 	size_t ItemsNumber, idx;
-
 	luaL_checktype(L, 1, LUA_TLIGHTUSERDATA);
 	freeInfo.hPlugin = lua_touserdata(L, 1);
-
 	luaL_checktype(L, 2, LUA_TTABLE);
 	ItemsNumber = lua_objlen(L, 2);
-
 	freeInfo.StructSize = sizeof(freeInfo);
 	for (idx=0; idx < ItemsNumber; idx++)
 	{
@@ -6227,15 +5776,12 @@ static int far_host_FreeUserData(lua_State *L)
 		{
 			void *UserData;
 			FARPANELITEMFREECALLBACK FreeData;
-
 			lua_getfield(L, -1, "ExtUserData");
 			UserData = lua_touserdata(L, -1);
 			lua_pop(L, 1);
-
 			lua_getfield(L, -1, "FreeUserData");
 			FreeData = (FARPANELITEMFREECALLBACK) lua_touserdata(L, -1);
 			lua_pop(L, 1);
-
 			if (UserData && FreeData)
 				FreeData(UserData, &freeInfo);
 		}
@@ -6260,16 +5806,13 @@ static int far_host_SetDirectory(lua_State *L)
 	panInfo.StructSize = sizeof(panInfo);
 	if (! (panHandle && psInfo->PanelControl(panHandle, FCTL_GETPANELINFO, 0, &panInfo) && panInfo.PluginHandle) )
 		return 1;
-
 	if (NULL == (dll_handle = GetPluginModuleHandle(psInfo, &panInfo.OwnerGuid)))
 		return 1;
-
 	memset(&sdInfo, 0, sizeof(sdInfo));
 	sdInfo.StructSize = sizeof(sdInfo);
 	sdInfo.Dir = dir_name;
 	sdInfo.OpMode = luaL_optinteger(L, 3, (lua_Integer)(OPM_FIND | OPM_SILENT)); //3-rd argument
 	sdInfo.hPanel = panInfo.PluginHandle;
-
 	setdirectory = (T_SetDirectoryW)GetProcAddress(dll_handle, "SetDirectoryW");
 	if (setdirectory && setdirectory(&sdInfo))
 	{
@@ -6340,7 +5883,7 @@ const luaL_Reg editor_funcs[] =
 	{"ExpandTabs",          editor_ExpandTabs},
 	{"GetBookmarks",        editor_GetBookmarks},
 	{"GetColor",            editor_GetColor},
-	// Api to read editor's window coordinates (by @Xer0X) 
+	// [feature@Xer0X] Api to read editor's window coordinates
 	{"GetCoord",            editor_GetCoord},
 	{"SetCoord",			editor_SetCoord},
 	{"GetFileName",         editor_GetFileName},
@@ -6552,18 +6095,14 @@ static int luaopen_far(lua_State *L)
 		lua_pushlightuserdata(L, TimerQueue);
 		lua_setfield(L, LUA_REGISTRYINDEX, FarTimerQueueKey);
 	}
-
 	lua_newtable(L);
 	lua_setfield(L, LUA_REGISTRYINDEX, FAR_DN_STORAGE);
-
 	NewVirtualKeyTable(L, FALSE);
 	lua_setfield(L, LUA_REGISTRYINDEX, FAR_VIRTUALKEYS);
 	luaL_register(L, "far", far_funcs);
-
 	lua_newtable(L); //far.Host namespace
 	luaL_register(L, NULL, far_host_funcs);
 	lua_setfield(L, -2, "Host");
-
 	if (GetPluginData(L)->Info->Private)
 	{
 		lua_pushcfunction(L, far_MacroCallFar);
@@ -6571,33 +6110,26 @@ static int luaopen_far(lua_State *L)
 		lua_pushcfunction(L, far_FarMacroCallToLua);
 		lua_setfield(L, -2, "FarMacroCallToLua");
 	}
-
 	push_flags_table(L);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -3, "Flags");
 	lua_setfield(L, LUA_REGISTRYINDEX, FAR_FLAGSTABLE);
-
 	SetFarColors(L);
-
 	luaL_register(L, "editor", editor_funcs);
 	luaL_register(L, "viewer", viewer_funcs);
 	luaL_register(L, "panel",  panel_funcs);
-
 	luaL_newmetatable(L, FarFileFilterType);
 	lua_pushvalue(L,-1);
 	lua_setfield(L, -2, "__index");
 	luaL_register(L, NULL, filefilter_methods);
-
 	luaL_newmetatable(L, FarTimerType);
 	luaL_register(L, NULL, timer_methods);
-
 	luaL_newmetatable(L, FarDialogType);
 	lua_pushvalue(L,-1);
 	lua_setfield(L, -2, "__index");
 	lua_pushcfunction(L, DialogHandleEqual);
 	lua_setfield(L, -2, "__eq");
 	luaL_register(L, NULL, dialog_methods);
-
 	luaL_newmetatable(L, SettingsType);
 	lua_pushvalue(L,-1);
 	lua_setfield(L, -2, "__index");
@@ -6608,23 +6140,18 @@ static int luaopen_far(lua_State *L)
 	lua_setfield(L, -2, "__mode");
 	lua_setmetatable(L, -2);
 	lua_setfield(L, LUA_REGISTRYINDEX, SettingsHandles);
-
 	(void) luaL_dostring(L, far_Dialog);
-
 	luaL_newmetatable(L, PluginHandleType);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 	lua_pushcfunction(L, PluginHandle_rawhandle);
 	lua_setfield(L, -2, "rawhandle");
-
 	luaL_newmetatable(L, AddMacroDataType);
 	lua_pushcfunction(L, AddMacroData_gc);
 	lua_setfield(L, -2, "__gc");
-
 	luaL_newmetatable(L, SavedScreenType);
 	lua_pushcfunction(L, far_FreeScreen);
 	lua_setfield(L, -2, "__gc");
-
 	return 0;
 }
 
@@ -6633,7 +6160,6 @@ void LF_RunLuafarInit(lua_State* L)
 	const wchar_t *filename = L"\\luafar_init.lua";
 	wchar_t buf[2048];
 	int size;
-
 	size = GetEnvironmentVariableW(L"FARPROFILE", buf, ARRSIZE(buf));
 	if(size && (size + wcslen(filename) < ARRSIZE(buf)))
 	{
@@ -6683,9 +6209,7 @@ static const luaL_Reg lualibs[] =
 void LF_InitLuaState1(lua_State *L, lua_CFunction aOpenLibs)
 {
 	const luaL_Reg *lib;
-
 	FP_PROTECT();
-
 	// open Lua libraries
 	for(lib=lualibs; lib->func; lib++)
 	{
@@ -6698,20 +6222,17 @@ void LF_InitLuaState1(lua_State *L, lua_CFunction aOpenLibs)
 		lua_pop(L, 1);  /* remove lib */
 #endif
 	}
-
 	// getmetatable("").__index = utf8
 	lua_pushliteral(L, "");
 	lua_getmetatable(L, -1);
 	lua_getglobal(L, "utf8");
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 2);
-
 	// unicode.utf8 = utf8 (for backward compatibility;)
 	lua_newtable(L);
 	lua_getglobal(L, "utf8");
 	lua_setfield(L, -2, "utf8");
 	lua_setglobal(L, "unicode");
-
 	// utf8.cfind = utf8.find (for backward compatibility;)
 	lua_getglobal(L, "utf8");
 	lua_getfield(L, -1, "find");
@@ -6744,7 +6265,6 @@ void LF_InitLuaState1(lua_State *L, lua_CFunction aOpenLibs)
 #endif
 
 	if(aOpenLibs) aOpenLibs(L);
-
 	lua_pushcfunction(L, luaB_dofileW);
 	lua_setglobal(L, "dofile");
 	lua_pushcfunction(L, luaB_loadfileW);
@@ -6763,7 +6283,6 @@ static const luaL_Reg lualibs_extra[] =
 static void LoadExtraLibraries(lua_State *L)
 {
 	const luaL_Reg *lib;
-
 	FP_PROTECT();
 
 	// open Lua libraries
@@ -6773,7 +6292,6 @@ static void LoadExtraLibraries(lua_State *L)
 		lua_pushstring(L, lib->name);
 		lua_call(L, 1, 0);
 	}
-
 	// add "luafar" namespace with a few functions
 	lua_newtable(L);
 	lua_pushcfunction(L, far_GetLuafarVersion);
@@ -6781,7 +6299,6 @@ static void LoadExtraLibraries(lua_State *L)
 	lua_pushcfunction(L, far_FileTimeResolution);
 	lua_setfield(L, -2, "FileTimeResolution");
 	lua_setglobal(L, "luafar");
-
 	// getmetatable("").__index = utf8
 	lua_pushliteral(L, "");
 	lua_getmetatable(L, -1);
@@ -6820,29 +6337,23 @@ intptr_t LF_MacroCallback(lua_State* L, void* Id, FARADDKEYMACROFLAGS Flags) { r
 int LF_DoFile(lua_State *L, const wchar_t *fname, int argc, wchar_t* argv[])
 {
 	int status;
-
 	if((status = LF_LoadFile(L, fname)) == 0)
 	{
 		int i;
-
-		for(i=0; i < argc; i++)
+		for (i=0; i < argc; i++)
 			push_utf8_string(L, argv[i], -1);
-
 		status = lua_pcall(L, argc, 0, 0);
 	}
-
-	if(status)
+	if (status)
 	{
 		fprintf(stderr, "%s\n", lua_tostring(L, -1));
 		lua_pop(L, 1);
 	}
-
 	return status;
 }
 
 const LuafarAPI api_functions = {
 	0,
-
 	check_utf8_string,
 	opt_utf8_string,
 	push_utf8_string,
@@ -6889,7 +6400,6 @@ void LF_GetLuafarAPI (LuafarAPI* target)
 __declspec(dllexport) int luaopen_luafar3 (lua_State *L)
 {
 	int InsideFarManager = 0;
-
 	lua_getglobal(L, "far");
 	if (lua_istable(L, -1))
 	{
@@ -6898,7 +6408,6 @@ __declspec(dllexport) int luaopen_luafar3 (lua_State *L)
 		lua_pop(L, 1);
 	}
 	lua_pop(L, 1);
-
 	if (! InsideFarManager)
 	{
 		/* There is no Far Manager here and no plugin data but some functions need TPluginData::Flags
@@ -6911,7 +6420,6 @@ __declspec(dllexport) int luaopen_luafar3 (lua_State *L)
 		pd->Flags = 0;
 		pd->MainLuaState = L;
 		GetPluginData = GetFakePluginData;
-
 		LoadExtraLibraries(L);
 	}
 	return 0;
