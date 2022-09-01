@@ -1436,25 +1436,112 @@ static int editor_GetCoord(lua_State *L)
 }
 
 // [feature@Xer0X] editor control update the screen coordinates
-static int editor_SetCoord(lua_State* L) //, struct COORD* new_coord)
+static int editor_SetCoord(lua_State* L)
 {
 	PSInfo* Info = GetPluginData(L)->Info;
-	intptr_t EditorId;
-	SMALL_RECT res_rect =
-	{ 1, 1, 1, 1 };
-	//	{ new_coord->X, new_coord->Y, -1, -1 };
-	EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
-	if (Info->EditorControl(EditorId, ECTL_SETCOORD, 0, &res_rect))
+	intptr_t EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
+	void* Param2 = NULL;
+	SMALL_RECT new_rect, res_rect;
+	luaL_checktype(L, 2, LUA_TTABLE);
+	int is_delta = FALSE;
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "Delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "IsDelta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "isdelta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "Is_Delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "is_delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "D"		, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "d"		, FALSE);
+	const SHORT NO_VAL = -12345; 
+	const SHORT NV = NO_VAL; // just a short name
+	const SHORT NA = NO_VAL + 1; // value what is not applicable
+	new_rect.Left		= GetOptIntFromTable (L, "Left"		, NO_VAL);
+	new_rect.Top		= GetOptIntFromTable (L, "Top"		, NO_VAL);
+	new_rect.Right		= GetOptIntFromTable (L, "Right"	, NO_VAL);
+	new_rect.Bottom		= GetOptIntFromTable (L, "Bottom"	, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "X"			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "Y"			, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "X"			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "Y"			, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "x"			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "y"			, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "x1"		, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "X1"		, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "y1"		, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "Y1"		, NO_VAL);
+	if (new_rect.Right	== NO_VAL)
+		new_rect.Right	= GetOptIntFromTable(L, "x2"		, NO_VAL);
+	if (new_rect.Bottom == NO_VAL)
+		new_rect.Bottom = GetOptIntFromTable(L, "y2"		, NO_VAL);
+	if (new_rect.Right	== NO_VAL)
+		new_rect.Right	= GetOptIntFromTable(L, "X2"		, NO_VAL);
+	if (new_rect.Bottom == NO_VAL)
+		new_rect.Bottom = GetOptIntFromTable(L, "Y2"		, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromArray(L, 1			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromArray(L, 2			, NO_VAL);
+	if (new_rect.Right	== NO_VAL)
+		new_rect.Right	= GetOptIntFromArray(L, 3			, NO_VAL);
+	if (new_rect.Bottom	== NO_VAL)
+		new_rect.Bottom	= GetOptIntFromArray(L, 4			, NO_VAL);
+	int new_W = new_rect.Right == NO_VAL ? NO_VAL : NA;
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "Width"		, NO_VAL);
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "width"		, NO_VAL);
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "W"			, NO_VAL);
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "w"			, NO_VAL);
+	if (new_W==NA)new_W = NO_VAL;
+	int new_H = new_rect.Bottom== NO_VAL ? NO_VAL : NA;
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "Height"	, NO_VAL);
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "height"	, NO_VAL);
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "H"			, NO_VAL);
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "h"			, NO_VAL);
+	if (new_H==NA)new_H = NO_VAL;
+	if (new_W!=NV
+	&&	new_rect.Right == NO_VAL) {
+		new_rect.Right  = new_W;
+	} else
+		new_W = NO_VAL;
+	if (new_H!= NO_VAL
+	&&	new_rect.Bottom== NO_VAL) {
+		new_rect.Bottom = new_H;
+	} else
+		new_H = NO_VAL;
+	new_rect.Left	= new_rect.Left	!= NO_VAL ? new_rect.Left	: (is_delta ? 0 : -1);
+	new_rect.Top	= new_rect.Top	!= NO_VAL ? new_rect.Top	: (is_delta ? 0 : -1);
+	new_rect.Right	= new_rect.Right!= NO_VAL ? new_rect.Right	: (is_delta ? 0 : -1);
+	new_rect.Bottom = new_rect.Bottom!=NO_VAL ? new_rect.Bottom	: (is_delta ? 0 : -1);
+	int Param1 = 0
+		+ (!is_delta ? 0 : 1)
+		+ (new_W==NV ? 0 : 2)
+		+ (new_H==NV ? 0 : 4);
+	Param2 = &new_rect;
+	res_rect = new_rect;
+	if (Info->EditorControl(EditorId, ECTL_SETCOORD, Param1, &res_rect))
 	{
-		lua_createtable(L, 0, 4);
-		//	PutNumToTable(L, "Left"	, res_rect.Left	);
-		//	PutNumToTable(L, "Top"	, res_rect.Top	);
-		//	PutNumToTable(L, "Right", res_rect.Right);
-		//	PutNumToTable(L, "Bottom",res_rect.Bottom);
-		return 1;
+		lua_createtable(L, 0, 6);
+		PutNumToTable(L, "Left"	, res_rect.Left	);
+		PutNumToTable(L, "Top"	, res_rect.Top	);
+		PutNumToTable(L, "Right", res_rect.Right);
+		PutNumToTable(L, "Bottom",res_rect.Bottom);
+		PutNumToTable(L, "Width", res_rect.Right - res_rect.Left+ 1);
+		PutNumToTable(L, "Height",res_rect.Bottom- res_rect.Top	+ 1);
 	}
 	else
+	{
 		lua_pushnil(L);
+	}
 	return 1;
 }
 
