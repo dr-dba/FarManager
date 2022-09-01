@@ -66,6 +66,7 @@ enum
 	SBFLAGS_FLUSHEDCURTYPE  = 2_bit,
 	SBFLAGS_FLUSHEDTITLE    = 3_bit,
 };
+
 static bool is_visible(point const& Where)
 {
 	return
@@ -94,7 +95,7 @@ static void invalidate_broken_pairs_in_cache(matrix<FAR_CHAR_INFO>const& Buf, ma
 	const auto
 		&Buf0 = BufRowData[X1X2.first],
 		&Buf1 = BufRowData[X1X2.second];
-	std::array Pair{ Buf0, Buf1 };
+	std::array Pair { Buf0, Buf1 };
 	sanitise_pair(Pair[0], Pair[1]);
 	if (Pair[0] != Buf0)
 		ShadowRowData[X1X2.first] = {};
@@ -149,14 +150,17 @@ void ScreenBuf::FillBuf()
 void ScreenBuf::Write(int X, int Y, span<const FAR_CHAR_INFO> Text)
 {
 	SCOPED_ACTION(std::lock_guard)(CS);
-	if (X<0)
+	if (X < 0)
 	{
 		Text.pop_front(std::min(static_cast<size_t>(-X), Text.size()));
-		X=0;
+		X = 0;
 	}
-	if (X >= static_cast<int>(Buf.width()) || Y >= static_cast<int>(Buf.height()) || Text.empty() || Y < 0)
+	if(X >= static_cast<int>(Buf.width())
+	|| Y >= static_cast<int>(Buf.height())
+	|| Text.empty()
+	|| Y < 0)
 		return;
-	if (X + Text.size() > Buf.width())
+	if(X + Text.size() > Buf.width())
 		Text.pop_back(Text.size() - (Buf.width() - X));
 	for (const auto& i: irange(Text.size()))
 	{
@@ -329,8 +333,7 @@ void ScreenBuf::ApplyColor(rectangle Where, const FarColor& Color)
 	debug_flush();
 }
 
-/* Закрасить прямоугольник символом Ch и цветом Color
-*/
+/* Закрасить прямоугольник символом Ch и цветом Color */
 void ScreenBuf::FillRect(rectangle Where, const FAR_CHAR_INFO& Info)
 {
 	if (!is_visible(Where))
@@ -371,7 +374,7 @@ static void expand_write_region_if_needed(matrix<FAR_CHAR_INFO>& Buf, rectangle&
 	};
 	auto
 		Left = border::unchecked,
-		Right = border::unchecked;
+		Right= border::unchecked;
 	for (;;)
 	{
 		auto
@@ -382,8 +385,10 @@ static void expand_write_region_if_needed(matrix<FAR_CHAR_INFO>& Buf, rectangle&
 			const auto RowData = Buf[Row];
 			if (
 				const auto& First = RowData[WriteRegion.left];
-				Left != border::checked && WriteRegion.left && (First.Attributes.Flags & COMMON_LVB_TRAILING_BYTE || encoding::utf16::is_low_surrogate(First.Char))
-			)
+				Left != border::checked
+				&& WriteRegion.left
+				&& (First.Attributes.Flags & COMMON_LVB_TRAILING_BYTE || encoding::utf16::is_low_surrogate(First.Char))
+					)
 			{
 				--WriteRegion.left;
 				Left = border::expanded;
@@ -392,7 +397,9 @@ static void expand_write_region_if_needed(matrix<FAR_CHAR_INFO>& Buf, rectangle&
 			}
 			if (
 				const auto& Last = RowData[WriteRegion.right];
-				Right != border::checked && WriteRegion.right != ScrX && (Last.Attributes.Flags & COMMON_LVB_LEADING_BYTE || encoding::utf16::is_high_surrogate(Last.Char))
+				Right != border::checked
+					&& WriteRegion.right != ScrX
+					&& (Last.Attributes.Flags & COMMON_LVB_LEADING_BYTE || encoding::utf16::is_high_surrogate(Last.Char))
 			)
 			{
 				++WriteRegion.right;
@@ -410,8 +417,7 @@ static void expand_write_region_if_needed(matrix<FAR_CHAR_INFO>& Buf, rectangle&
 	}
 }
 
-/* "Сбросить" виртуальный буфер на консоль
-*/
+/* "Сбросить" виртуальный буфер на консоль */
 void ScreenBuf::Flush(flush_type FlushType)
 {
 	SCOPED_ACTION(std::lock_guard)(CS);
@@ -435,9 +441,10 @@ void ScreenBuf::Flush(flush_type FlushType)
 				Where.Attributes = colors::NtColorToFarColor(Color);
 				SBFlags.Clear(SBFLAGS_FLUSHED);
 			};
-			if (Global->CtrlObject &&
-				(Global->CtrlObject->Macro.IsRecording() ||
-				(Global->CtrlObject->Macro.IsExecuting() && Global->Opt->Macro.ShowPlayIndicator))
+			if(Global->CtrlObject
+			&&(Global->CtrlObject->Macro.IsRecording()
+			||(Global->CtrlObject->Macro.IsExecuting()
+			&& Global->Opt->Macro.ShowPlayIndicator))
 				)
 			{
 				auto& Where = Buf[0][0];
@@ -461,8 +468,8 @@ void ScreenBuf::Flush(flush_type FlushType)
 			bool Changes=false;
 			if (m_ClearTypeFix == BSTATE_CHECKED)
 			{
-				//Для полного избавления от артефактов ClearType будем перерисовывать на всю ширину.
-				//Чревато тормозами/миганием в зависимости от конфигурации системы.
+				// Для полного избавления от артефактов ClearType будем перерисовывать на всю ширину.
+				// Чревато тормозами/миганием в зависимости от конфигурации системы.
 				rectangle WriteRegion{ 0, 0, static_cast<int>(Buf.width() - 1), 0 };
 				for (size_t I = 0, Height = Buf.height(); I < Height; ++I)
 				{
@@ -621,13 +628,13 @@ void ScreenBuf::Lock()
 
 void ScreenBuf::Unlock()
 {
-	if (LockCount>0)
-		SetLockCount(LockCount-1);
+	if (LockCount > 0)
+		SetLockCount(LockCount - 1);
 }
 
 void ScreenBuf::SetLockCount(int Count)
 {
-	LockCount=Count;
+	LockCount = Count;
 }
 
 void ScreenBuf::MoveCursor(point const Point)
@@ -651,8 +658,8 @@ point ScreenBuf::GetCursorPos() const
 void ScreenBuf::SetCursorType(bool Visible, size_t Size)
 {
 	/* $ 09.01.2001 SVS
-	   По наводке ER - в SetCursorType не дергать раньше
-	   времени установку курсора
+		По наводке ER - в SetCursorType не дергать раньше
+		времени установку курсора
 	*/
 	if (CurVisible!=Visible || CurSize!=Size)
 	{
@@ -679,7 +686,7 @@ void ScreenBuf::SetTitle(string_view const Title)
 
 void ScreenBuf::RestoreMacroChar()
 {
-	if(MacroCharUsed)
+	if (MacroCharUsed)
 	{
 		SBFlags.Clear(SBFLAGS_FLUSHED);
 		MacroCharUsed=false;
@@ -688,9 +695,13 @@ void ScreenBuf::RestoreMacroChar()
 
 void ScreenBuf::RestoreElevationChar()
 {
-	if(ElevationCharUsed)
+	if (ElevationCharUsed)
 	{
-		Write(static_cast<int>(Buf.width() - 1), static_cast<int>(Buf.height() - 1), { &ElevationChar, 1 });
+		Write(
+			static_cast<int>(Buf.width() - 1),
+			static_cast<int>(Buf.height() - 1),
+			{ &ElevationChar, 1 }
+		);
 		ElevationCharUsed=false;
 	}
 }
@@ -705,7 +716,7 @@ void ScreenBuf::Scroll(size_t Count)
 	{
 		if (console.IsScrollbackPresent())
 		{
-			rectangle Region{ 0, 0, ScrX, static_cast<int>(Count - 1) };
+			rectangle Region { 0, 0, ScrX, static_cast<int>(Count - 1) };
 			// TODO: matrix_view to avoid copying
 			matrix<FAR_CHAR_INFO> BufferBlock(Count, ScrX + 1);
 			Read(Region, BufferBlock);
