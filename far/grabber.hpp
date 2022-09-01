@@ -52,28 +52,31 @@ class Grabber final: public Modal
 	struct private_tag { explicit private_tag() = default; };
 
 public:
-
 	static grabber_ptr create();
 	explicit Grabber(private_tag);
+
 	int GetType() const override { return windowtype_grabber; }
 	int GetTypeAndName(string &, string &) override { return windowtype_grabber; }
 	void ResizeConsole() override;
 
 private:
-
 	struct grabber_tag { explicit grabber_tag() = default; };
+
 	void DisplayObject() override;
 	bool ProcessKey(const Manager::Key& Key) override;
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
-	string GetTitle() const override { return { }; }
+	string GetTitle() const override { return {}; }
+
 	void init();
 	// (begin, end)
 	std::tuple<point&, point&> GetSelection();
 	std::tuple<point&, point&> GetSelectionXWise();
 	void CopyGrabbedArea(bool Append, bool VerticalBlock);
 	void Reset();
+
 	bool empty() const;
 	void clear();
+
 	struct
 	{
 		point Begin;
