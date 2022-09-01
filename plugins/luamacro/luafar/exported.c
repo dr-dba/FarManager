@@ -1007,11 +1007,12 @@ intptr_t LF_MakeDirectory(lua_State* L, struct MakeDirectoryInfo *Info)
 intptr_t LF_ProcessPanelEvent(lua_State* L, const struct ProcessPanelEventInfo *Info)
 {
 	int res = FALSE;
-	if (!(GetPluginData(L)->Flags & PDF_PROCESSINGERROR)
-		&& GetExportFunction(L, "ProcessPanelEvent"))     //+1: Func
+	if (!(GetPluginData(L)->Flags & PDF_PROCESSINGERROR) &&
+			GetExportFunction(L, "ProcessPanelEvent"))     //+1: Func
 	{
 		PushPluginPair(L, Info->hPanel);   //+3
 		lua_pushinteger(L, Info->Event);   //+4
+
 		switch (Info->Event)
 		{
 			case FE_CHANGEVIEWMODE:
