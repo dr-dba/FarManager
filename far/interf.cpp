@@ -1203,7 +1203,8 @@ void PutText(rectangle Where, const FAR_CHAR_INFO *Src)
 */
 void Box(rectangle Where, const FarColor& Color, int Type)
 {
-	if (Where.left >= Where.right || Where.top >= Where.bottom)
+	if(Where.left>= Where.right
+	|| Where.top >= Where.bottom)
 		return;
 	enum line { LineV, LineH, LineLT, LineRT, LineLB, LineRB, LineCount };
 	static const BOX_DEF_SYMBOLS BoxInit[][LineCount] =
@@ -1327,15 +1328,13 @@ void DrawLine(int const Length, line_type const Type, string_view const UserLine
 	if (Length < 2)
 		return;
 	const auto Line = MakeLine(Length, Type, UserLine);
-	Type == line_type::v1_to_none ||
-		Type == line_type::v1_to_h2 ||
-		Type == line_type::v1_to_h1 ||
-		Type == line_type::v2_to_h2 ||
-		Type == line_type::v1 ||
-		Type == line_type::v2 ||
-		Type == line_type::v_user ?
-		VText(Line) :
-		Text(Line);
+	Type == line_type::v1_to_none
+		|| Type == line_type::v1_to_h2
+		|| Type == line_type::v1_to_h1
+		|| Type == line_type::v2_to_h2
+		|| Type == line_type::v1
+		|| Type == line_type::v2
+		|| Type == line_type::v_user ? VText(Line) : Text(Line);
 }
 
 string make_progressbar(size_t Size, size_t Percent, bool ShowPercent, bool PropagateToTasbkar)
@@ -1561,7 +1560,7 @@ TEST_CASE("wide_chars")
 	Tests[]
 	{
 		{
-			{}, // Baseline, half width
+			{ }, // Baseline, half width
 			{ { 0, +0 }, { 1, +0 }, { 2, +0 }, { 3, +0 }, { 4, +0 }, },
 			{ { 0, +0 }, { 1, +0 }, { 2, +0 }, { 3, +0 }, { 4, +0 }, },
 		},
@@ -1604,21 +1603,20 @@ TEST_CASE("wide_chars")
 			L"残酷な天使のように少年よ神話になれ"sv,
 			{ {17, +17}, },
 			{ {34, -17} } },
-
 	};
 	char_width::enable(1);
 	for (const auto& i: Tests)
-	{
-		position_parser_state State[2];
-		for (const auto& [StringPos, VisualShift]: i.StringToVisual)
 		{
-			REQUIRE(string_pos_to_visual_pos(i.Str, StringPos, 1, &State[0]) == StringPos + VisualShift);
+			position_parser_state State[2];
+			for (const auto& [StringPos, VisualShift]: i.StringToVisual)
+			{
+				REQUIRE(string_pos_to_visual_pos(i.Str, StringPos, 1, &State[0]) == StringPos + VisualShift);
+			}
+			for (const auto& [VisualPos, StringShift] : i.VisualToString)
+			{
+				REQUIRE(visual_pos_to_string_pos(i.Str, VisualPos, 1, &State[1]) == VisualPos + StringShift);
+			}
 		}
-		for (const auto& [VisualPos, StringShift] : i.VisualToString)
-		{
-			REQUIRE(visual_pos_to_string_pos(i.Str, VisualPos, 1, &State[1]) == VisualPos + StringShift);
-		}
-	}
 	char_width::enable(0);
 }
 
