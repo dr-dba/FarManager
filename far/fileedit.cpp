@@ -2432,7 +2432,7 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			}
 			break;
 		}
-		// [feature@Xer0X] Give the editor position (top left corner):
+	// [feature@Xer0X] Give the editor position (top left corner):
 	case ECTL_GETCOORD:
 		{
 			BOOL Result = FALSE;
@@ -2447,17 +2447,38 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 	case ECTL_SETCOORD:
 		{
 			BOOL Result = FALSE;
-		//	const auto new_where = static_cast<const rectangle*>(Param2);
+			const auto new_rect = static_cast<const SMALL_RECT*>(Param2);
 		//	if (!CheckStructSize(new_where)) return false;
-				rectangle NewWhere = {
-					m_Where.top + 1,
-					m_Where.left + 1,
-					m_Where.right,
-					m_Where.bottom
+			rectangle NewWhere;
+			if ((Param1 & 1) == 0)
+			{ // absolute
+				NewWhere = {
+					new_rect->Left	< 0 ? m_Where.left	: new_rect->Left,
+					new_rect->Top	< 0 ? m_Where.top	: new_rect->Top,
+					new_rect->Right < 0 ? m_Where.right	: new_rect->Right,
+					new_rect->Bottom< 0 ? m_Where.bottom: new_rect->Bottom
 				};
+				if ((Param1 & 2) == 2 && new_rect->Right > 0) NewWhere.right += (NewWhere.left- 1);
+				if ((Param1 & 4) == 4 && new_rect->Bottom> 0) NewWhere.bottom+= (NewWhere.top - 1);
+			}
+			else
+			{ // delta
+				NewWhere = {
+					m_Where.left +	new_rect->Left,
+					m_Where.top	+	new_rect->Top,
+					m_Where.right +	new_rect->Right,
+					m_Where.bottom+ new_rect->Bottom,
+				};
+			}
 			m_Flags.Change(FFILEEDIT_FULLSCREEN, false);
-		//	*static_cast<rectangle*>(Param2) = NewWhere;
 			SetPosition(NewWhere);
+			m_windowKeyBar->SetPosition({ m_Where.left, m_Where.bottom, m_Where.right, m_Where.bottom });
+			*static_cast<SMALL_RECT*>(Param2) = {
+				m_Where.left	,
+				m_Where.top		,
+				m_Where.right,
+				m_Where.bottom	,
+			};
 		//	auto FileEditorPtr = std::make_shared<FileEditor>(private_tag());
 		//	FileEditorPtr->ScreenObjectWithShadow::SetPosition({ 5, 5, 50, 20 });
 			Result = TRUE;
