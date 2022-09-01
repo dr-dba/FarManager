@@ -81,9 +81,7 @@ void SimpleScreenObject::Show()
 {
 	if (!m_Flags.Check(FSCROBJ_SETPOSITIONDONE))
 		return;
-
 	m_Flags.Set(FSCROBJ_VISIBLE);
-
 	DisplayObject();
 	ShowConsoleTitle();
 }
@@ -120,13 +118,11 @@ void ScreenObject::Show()
 {
 	if (!m_Flags.Check(FSCROBJ_SETPOSITIONDONE))
 		return;
-
 	if (!IsVisible())
 	{
 		if (m_Flags.Check(FSCROBJ_ENABLERESTORESCREEN) && !SaveScr)
 			SaveScr = std::make_unique<SaveScreen>(m_Where);
 	}
-
 	SimpleScreenObject::Show();
 }
 
@@ -144,10 +140,10 @@ void ScreenObject::HideButKeepSaveScreen()
 void ScreenObject::SetPosition(rectangle Where)
 {
 	/* $ 13.04.2002 KM
-	- Раз меняем позицию объекта на экране, то тогда
-	перед этим восстановим изображение под ним для
-	предотвращения восстановления ранее сохранённого
-	изображения в новом месте.
+	- Раз меняем позицию объекта на экране,
+	то тогда перед этим восстановим изображение под ним
+	для предотвращения восстановления
+	ранее сохранённого изображения в новом месте.
 	*/
 	SaveScr.reset();
 	SimpleScreenObject::SetPosition(Where);
