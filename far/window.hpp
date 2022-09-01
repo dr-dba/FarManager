@@ -5,7 +5,8 @@
 /*
 window.hpp
 
-Немодальное окно (базовый класс для FilePanels, FileEditor, FileViewer)
+Немодальное окно
+(базовый класс для FilePanels, FileEditor, FileViewer)
 */
 /*
 Copyright © 1996 Eugene Roshal
@@ -68,12 +69,13 @@ enum window_type
 
 class window: public ScreenObjectWithShadow, public std::enable_shared_from_this<window>
 {
-public:
+	public:
+
 	~window() override;
 	void Refresh() override;
 
 	virtual bool GetCanLoseFocus(bool DynamicMode = false) const { return m_CanLoseFocus; }
-	virtual void SetExitCode(int Code) { m_ExitCode=Code; }
+	virtual void SetExitCode(int Code) { m_ExitCode = Code; }
 	virtual bool IsFileModified() const { return false; }
 	virtual int GetTypeAndName(string &strType, string &strName) = 0;
 	virtual int GetType() const = 0;
@@ -105,22 +107,21 @@ public:
 	[[nodiscard]]
 	auto GetPinner() { return make_raii_wrapper<&window::Pin, &window::UnPin>(this); }
 
-protected:
-	window();
+	protected:
 
+	window();
 	int m_ID;
 	bool m_CanLoseFocus{};
 	int m_ExitCode{ -1 };
 	std::unique_ptr<KeyBar> m_windowKeyBar;
 
-private:
+	private:
+
 	friend class Manager;
-
-	void SetID(int Value) {m_ID=Value;}
-
-	bool m_Deleting{};
-	long m_BlockCounter{};
-	FARMACROAREA m_MacroArea{ MACROAREA_OTHER };
+	void SetID(int Value) { m_ID = Value; }
+	bool m_Deleting { };
+	long m_BlockCounter { };
+	FARMACROAREA m_MacroArea { MACROAREA_OTHER };
 };
 
 #endif // WINDOW_HPP_1A177508_4749_4C46_AE24_0D274332C03A
