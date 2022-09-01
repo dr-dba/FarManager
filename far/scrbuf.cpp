@@ -84,11 +84,12 @@ static void invalidate_broken_pairs_in_cache(matrix<FAR_CHAR_INFO>const& Buf, ma
 	const auto
 		IsLeft = !Point.x && Where.left,
 		IsRight = Point.x == Where.width() - 1 && Where.right != ScrX;
-	if (!IsLeft && !IsRight)
+	if(!IsLeft
+	&& !IsRight)
 		return;
-	const auto X1X2 = IsLeft?
-		std::pair{ Where.left - 1, Where.left      } :
-		std::pair{ Where.right,    Where.right + 1 };
+	const auto X1X2 = IsLeft
+		? std::pair{ Where.left - 1,Where.left      }
+		: std::pair{ Where.right,	Where.right + 1 };
 	const auto
 		BufRowData = Buf[Where.top + Point.y],
 		ShadowRowData = Shadow[Where.top + Point.y];
