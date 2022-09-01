@@ -134,9 +134,13 @@ size_t consoleicons::size() const
 
 static int CurX,CurY;
 static FarColor CurColor;
+
 static CONSOLE_CURSOR_INFO InitialCursorInfo;
+
 static rectangle windowholder_rect;
+
 wchar_t BoxSymbols[BS_COUNT];
+
 point InitSize{};
 point CurSize{};
 int ScrX=0, ScrY=0;
@@ -337,6 +341,8 @@ void InitConsole()
 			}
 		}
 	}
+
+
 	SetFarConsoleMode();
 	UpdateScreenSize();
 	Global->ScrBuf->FillBuf();
@@ -378,6 +384,7 @@ void CloseConsole()
 	consoleicons::instance().restore_icon();
 	CancelIoInProgress().close();
 }
+
 
 void SetFarConsoleMode(bool SetsActiveBuffer)
 {
@@ -601,20 +608,24 @@ void GotoXY(int X,int Y)
 	CurY=Y;
 }
 
+
 int WhereX()
 {
 	return CurX;
 }
+
 
 int WhereY()
 {
 	return CurY;
 }
 
+
 void MoveCursor(point const Point)
 {
 	Global->ScrBuf->MoveCursor(Point);
 }
+
 
 point GetCursorPos()
 {
@@ -636,10 +647,12 @@ void SetInitialCursorType()
 	Global->ScrBuf->SetCursorType(InitialCursorInfo.bVisible!=FALSE,InitialCursorInfo.dwSize);
 }
 
+
 void GetCursorType(bool& Visible, size_t& Size)
 {
 	Global->ScrBuf->GetCursorType(Visible,Size);
 }
+
 
 void MoveRealCursor(int X,int Y)
 {
@@ -827,6 +840,7 @@ static void HiTextBase(string_view const Str, function_ref<void(string_view, boo
 		return;
 	}
 }
+
 
 static size_t unescape(string_view const Str, function_ref<bool(wchar_t)> const PutChar)
 {
@@ -1037,6 +1051,7 @@ const FarColor& GetColor()
 {
 	return CurColor;
 }
+
 
 void ScrollScreen(int Count)
 {
@@ -1623,19 +1638,24 @@ TEST_CASE("tabs")
 	{
 		{ 0, 0,  0,  0, true,  },
 		{ 0, 0,  1,  1, true,  },
+
 		{ 1, 0,  0,  0, true,  },
+
 		{ 1, 1,  0,  0, true,  },
 		{ 1, 1,  1,  1, true,  },
 		{ 1, 1,  2,  2, true,  },
 		{ 1, 1,  3,  3, true,  },
+
 		{ 1, 2,  0,  0, true,  },
 		{ 1, 2,  1,  1, true,  },
 		{ 1, 2,  2,  2, true,  },
 		{ 1, 2,  3,  3, true,  },
+
 		{ 1, 3,  0,  0, true,  },
 		{ 1, 3,  1,  1, true,  },
 		{ 1, 3,  2,  1, false, },
 		{ 1, 3,  3,  2, true,  },
+
 		{ 2, 4,  0,  0, true,  },
 		{ 2, 4,  1,  0, false, },
 		{ 2, 4,  2,  0, false, },
