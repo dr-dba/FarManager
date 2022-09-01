@@ -19,7 +19,7 @@ static int FL_PushParams(lua_State* L, const struct FarMacroCall* Data)
 	if (ret)
 	{
 		size_t i;
-		for(i=0; i < Data->Count; i++)
+		for (i = 0; i < Data->Count; i++)
 			PushFarMacroValue(L, Data->Values + i);
 	}
 	if (Data->Callback)
@@ -45,13 +45,11 @@ HANDLE Open_Luamacro(lua_State* L, const struct OpenInfo *Info)
 	struct OpenMacroPluginInfo* om_info = (struct OpenMacroPluginInfo*)Info->Data;
 	int calltype = om_info->CallType;
 	size_t argc = om_info->Data ? om_info->Data->Count : 0; // store Data->Count: 'Data' will be invalid after FL_PushParams()
-
 	if (!IsEqualGUID(GetPluginData(L)->PluginId, LuamacroGuid))
 	{
 		lua_pop(L, 1);
 		return NULL;
 	}
-
 	lua_pushinteger(L, Info->OpenFrom);            //+2
 	lua_pushinteger(L, calltype);                  //+3
 	if (om_info->Data && !FL_PushParams(L, om_info->Data))
@@ -70,7 +68,6 @@ HANDLE Open_Luamacro(lua_State* L, const struct OpenInfo *Info)
 			return NULL;
 		}
 		ReturnType = lua_type(L,-2)==LUA_TNUMBER ? lua_tointeger(L,-2) : 1;
-
 		if (lua_istable(L,-2))
 		{
 			lua_pop(L,1);
@@ -86,22 +83,18 @@ HANDLE Open_Luamacro(lua_State* L, const struct OpenInfo *Info)
 		{
 			struct MacroPluginReturn* Ret = &om_info->Ret;
 			int nargs, idx;
-
 			lua_getfield(L,-1,"n");
 			nargs = lua_type(L,-1)==LUA_TNUMBER ? (int)lua_tointeger(L,-1) : (int)lua_objlen(L,-2);
 			lua_pop(L,1);
 			if (nargs < 0) nargs = 0;
-
 			InitMPR(L, Ret, (size_t)nargs, ReturnType);
-
-			for(idx=0; idx<nargs; idx++)
+			for (idx = 0; idx < nargs; idx++)
 			{
 				int type;
 				INT64 val64;
 				lua_rawgeti(L,-1,idx+1);
 				type = lua_type(L, -1);
-
-				if(type == LUA_TNUMBER)
+				if (type == LUA_TNUMBER)
 				{
 					Ret->Values[idx].Type = FMVT_DOUBLE;
 					Ret->Values[idx].Value.Double = lua_tonumber(L, -1);
@@ -155,12 +148,10 @@ HANDLE Open_Luamacro(lua_State* L, const struct OpenInfo *Info)
 					lua_pop(L,1);
 				}
 			}
-
 			lua_pop(L,2);
 			return (HANDLE)1;
 		}
 	}
-
 	return NULL;
 }
 
@@ -197,8 +188,7 @@ int far_MacroCallFar(lua_State *L)
 	fmc.Values = fmc.Count<=MAXARG ? args:(struct FarMacroValue*)malloc(fmc.Count*sizeof(struct FarMacroValue));
 	fmc.Callback = MacroCallFarCallback;
 	fmc.CallbackData = &cbdata;
-
-	for(idx=0; idx<(int)fmc.Count; idx++)
+	for (idx = 0; idx < (int)fmc.Count; idx++)
 	{
 		ConvertLuaValue(L, idx+2, fmc.Values+idx);
 		if (fmc.Values[idx].Type == FMVT_UNKNOWN)
@@ -206,13 +196,14 @@ int far_MacroCallFar(lua_State *L)
 			lua_Debug ar;
 			if (fmc.Values != args)
 				free(fmc.Values);
-			if (lua_getstack(L,1,&ar) && lua_getinfo(L,"n",&ar) && ar.name)
+			if(lua_getstack(L,1,&ar)
+			&& lua_getinfo(L,"n",&ar)
+			&& ar.name)
 				luaL_error(L, "invalid argument #%d to '%s'", idx+1, ar.name);
 			else
 				luaL_argerror(L, idx+1, "invalid argument");
 		}
 	}
-
 	lua_checkstack(L, MAXRET);
 	ret = (int) privateInfo->CallFar(opcode, &fmc);
 	FP_PROTECT(); // protect from plugins activating FPU exceptions
@@ -226,7 +217,7 @@ int far_MacroCallFar(lua_State *L)
 
 int far_FarMacroCallToLua(lua_State *L)
 {
-  if (lua_type(L,1) == LUA_TLIGHTUSERDATA)
+	if (lua_type(L, 1) == LUA_TLIGHTUSERDATA)
 	{
 		struct FarMacroCall* Data = (struct FarMacroCall*)lua_touserdata(L, 1);
 		lua_settop(L, 0);
