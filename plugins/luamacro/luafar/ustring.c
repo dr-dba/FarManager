@@ -169,7 +169,6 @@ wchar_t* convert_multibyte_string(
 			luaL_argerror(L, pos, "invalid multibyte string");
 		return NULL;
 	}
-
 	target = (wchar_t*)lua_newuserdata(L, (size+1) * sizeof(wchar_t));
 	MultiByteToWideChar(codepage, dwFlags, source, (int)sourceLen, target, size);
 	target[size] = L'\0';
@@ -224,7 +223,6 @@ char* push_multibyte_string(
 	{
 		luaL_error(L, "invalid UTF-16 string");
 	}
-
 	target = (char*)lua_newuserdata(L, targetSize+1);
 	WideCharToMultiByte(CodePage, dwFlags, str, (int)numchars, target, targetSize, NULL, NULL);
 	if(numchars == -1)
@@ -263,7 +261,6 @@ int ustring_WideCharToMultiByte(lua_State *L)
 			else if(*s == 'f') dwFlags |= WC_DEFAULTCHAR;
 		}
 	}
-
 	push_multibyte_string(L, codepage, src, numchars, dwFlags);
 	return 1;
 }
@@ -287,14 +284,12 @@ int ustring_MultiByteToWideChar(lua_State *L)
 			else if(*s == 'u') dwFlags |= MB_USEGLYPHCHARS;
 		}
 	}
-
 	Trg = convert_multibyte_string(L, 1, codepage, dwFlags, &TrgSize, FALSE);
 	if(Trg)
 	{
 		lua_pushlstring(L, (const char*)Trg, TrgSize * sizeof(wchar_t));
 		return 1;
 	}
-
 	return SysErrorReturn(L);
 }
 
@@ -424,11 +419,9 @@ int ustring_GetLogicalDriveStrings(lua_State *L)
 				PutWStrToArray(L, i, buf, -1);
 				buf += wcslen(buf) + 1;
 			}
-
 			return 1;
 		}
 	}
-
 	return SysErrorReturn(L);
 }
 
@@ -448,7 +441,6 @@ int ustring_GetDriveType(lua_State *L)
 		case DRIVE_CDROM:     out = "cdrom";             break;
 		case DRIVE_RAMDISK:   out = "ramdisk";           break;
 	}
-
 	lua_pushstring(L, out);
 	return 1;
 }
@@ -490,7 +482,6 @@ int ustring_Uuid(lua_State* L)
 			}
 		}
 	}
-
 	lua_pushnil(L);
 	return 1;
 }
@@ -516,7 +507,6 @@ int ustring_SearchPath(lua_State *L)
 		push_utf8_string(L, lpFilePart, -1);
 		return 2;
 	}
-
 	return 0;
 }
 
@@ -591,7 +581,6 @@ int DecodeAttributes(const char* str)
 		else if(c == 'u' || c == 'U') attr |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
 		else if(c == 'v' || c == 'V') attr |= FILE_ATTRIBUTE_VIRTUAL;
 	}
-
 	return attr;
 }
 
@@ -759,10 +748,12 @@ int ustring_GetCurrentDir (lua_State *L)
 {
 	wchar_t buf[256];
 	DWORD num = GetCurrentDirectoryW(ARRSIZE(buf), buf);
-	if(num) {
-		if(num < ARRSIZE(buf))
+	if (num)
+	{
+		if (num < ARRSIZE(buf))
 			push_utf8_string(L, buf, -1);
-		else {
+		else
+		{
 			wchar_t* alloc = (wchar_t*) malloc(num * sizeof(wchar_t));
 			num = GetCurrentDirectoryW(num, alloc);
 			if(num) push_utf8_string(L, alloc, -1);
@@ -820,7 +811,6 @@ const luaL_Reg ustring_funcs[] =
 	{"subW",                ustring_sub},
 	{"system",              ustring_system},
 	{"lenW",                ustring_len},
-
 	{NULL, NULL}
 };
 
