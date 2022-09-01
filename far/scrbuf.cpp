@@ -386,9 +386,9 @@ static void expand_write_region_if_needed(matrix<FAR_CHAR_INFO>& Buf, rectangle&
 			if (
 				const auto& First = RowData[WriteRegion.left];
 				Left != border::checked
-				&& WriteRegion.left
-				&& (First.Attributes.Flags & COMMON_LVB_TRAILING_BYTE || encoding::utf16::is_low_surrogate(First.Char))
-					)
+					&& WriteRegion.left
+					&& (First.Attributes.Flags & COMMON_LVB_TRAILING_BYTE || encoding::utf16::is_low_surrogate(First.Char))
+				)
 			{
 				--WriteRegion.left;
 				Left = border::expanded;
