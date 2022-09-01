@@ -69,9 +69,8 @@ enum
 
 static bool is_visible(point const& Where)
 {
-	return
-		in_closed_range(0, Where.x, ScrX) &&
-		in_closed_range(0, Where.y, ScrY);
+	return in_closed_range(0, Where.x, ScrX)
+		&& in_closed_range(0, Where.y, ScrY);
 }
 
 static bool is_visible(rectangle const& Where)
