@@ -166,9 +166,7 @@ void ScreenObjectWithShadow::Hide()
 {
 	if (!m_Flags.Check(FSCROBJ_VISIBLE))
 		return;
-
 	ShadowSaveScr.reset();
-
 	ScreenObject::Hide();
 }
 
@@ -176,7 +174,7 @@ void ScreenObjectWithShadow::Shadow(bool Full)
 {
 	if (m_Flags.Check(FSCROBJ_VISIBLE))
 	{
-		if(Full)
+		if (Full)
 		{
 			if (!ShadowSaveScr)
 			{
