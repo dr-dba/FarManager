@@ -73,8 +73,8 @@ enum FLAGS_CLASS_EDITLINE
 	FEDITLINE_SHOWLINEBREAK        = 18_bit,
 	FEDITLINE_READONLY             = 19_bit,
 	FEDITLINE_CURSORVISIBLE        = 20_bit,
-	// Если ни один из FEDITLINE_PARENT_ не указан (или указаны оба), то Edit
-	// явно не в диалоге юзается.
+	/* Если ни один из FEDITLINE_PARENT_ не указан (или указаны оба),
+		то Edit явно не в диалоге юзается. */
 	FEDITLINE_PARENT_SINGLELINE    = 21_bit,  // обычная строка ввода в диалоге
 	FEDITLINE_PARENT_MULTILINE     = 22_bit,  // для будущего Memo-Edit (DI_EDITOR или DIF_MULTILINE)
 };
@@ -85,13 +85,16 @@ struct ColorItem
 	// Keeping a copy of UUID in each of thousands of color items is a giant waste of memory,
 	// so UUIDs are stored in a separate set and here is only a pointer.
 	const UUID* Owner;
+
 	// Usually we have only 5-10 unique colors.
 	// Keeping a copy of FarColor in each of thousands of color items is a giant waste of memory,
 	// so FarColors are stored in a separate set and here is only a pointer.
 	const FarColor* Color;
+
 	unsigned int Priority;
 	int StartPos;
 	int EndPos;
+
 	// it's an uint64 in plugin API, but only 0x1 and 0x2 are used now, so save some memory here.
 	unsigned int Flags;
 
@@ -101,7 +104,7 @@ struct ColorItem
 	const FarColor& GetColor() const { return *Color; }
 	void SetColor(const FarColor& Value);
 
-	bool operator <(const ColorItem& rhs) const
+	bool operator < (const ColorItem& rhs) const
 	{
 		return Priority < rhs.Priority;
 	}
@@ -116,6 +119,7 @@ class Edit: public SimpleScreenObject
 		int LeftPos;
 		int CurTabPos;
 	};
+
 public:
 	NONCOPYABLE(Edit);
 	MOVE_CONSTRUCTIBLE(Edit);
@@ -127,11 +131,11 @@ public:
 	bool ProcessKey(const Manager::Key& Key) override;
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 	long long VMProcess(int OpCode, void *vParam = nullptr, long long iParam = 0) override;
-	virtual void Changed(bool DelBlock = false) {}
+	virtual void Changed(bool DelBlock = false) { }
 	// Получение максимального значения строки для потребностей Dialod API
 	virtual int GetMaxLength() const {return -1;}
 
-	void FastShow(const ShowInfo* Info=nullptr);
+	void FastShow(const ShowInfo* Info = nullptr);
 	void SetDelRemovesBlocks(bool Mode) {m_Flags.Change(FEDITLINE_DELREMOVESBLOCKS,Mode);}
 	int GetDelRemovesBlocks() const {return m_Flags.Check(FEDITLINE_DELREMOVESBLOCKS); }
 	void SetPersistentBlocks(bool Mode) {m_Flags.Change(FEDITLINE_PERSISTENTBLOCKS,Mode);}

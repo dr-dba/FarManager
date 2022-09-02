@@ -66,30 +66,28 @@ class SimpleScreenObject
 public:
 	NONCOPYABLE(SimpleScreenObject);
 	MOVE_CONSTRUCTIBLE(SimpleScreenObject);
-
 	virtual ~SimpleScreenObject() = default;
 
 	virtual bool ProcessKey(const Manager::Key& Key) { return false; }
 	virtual bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) { return false; }
-
 	virtual void Hide();
 	virtual void Show();
 	virtual void ShowConsoleTitle() { }
 	virtual void SetPosition(rectangle Where);
 	virtual rectangle GetPosition() const;
 	virtual void SetScreenPosition();
-	virtual void ResizeConsole() {}
-	virtual long long VMProcess(int OpCode, void* vParam = nullptr, long long iParam=0) {return 0;}
+	virtual void ResizeConsole() { }
+	virtual long long VMProcess(int OpCode, void* vParam = nullptr, long long iParam = 0) { return 0; }
 	virtual void Refresh();
 
 	int ObjWidth() const { return m_Where.width(); }
 	int ObjHeight() const { return m_Where.height(); }
 	void Redraw();
-	bool IsVisible() const {return m_Flags.Check(FSCROBJ_VISIBLE);}
-	void SetVisible(bool Visible) {m_Flags.Change(FSCROBJ_VISIBLE,Visible);}
-	void SetRestoreScreenMode(bool Mode) {m_Flags.Change(FSCROBJ_ENABLERESTORESCREEN,Mode);}
-	bool IsSpecial() const {return m_Flags.Check(FSCROBJ_SPECIAL);}
-	window_ptr GetOwner() const {return m_Owner.lock();}
+	bool IsVisible() const { return m_Flags.Check(FSCROBJ_VISIBLE); }
+	void SetVisible(bool Visible) { m_Flags.Change(FSCROBJ_VISIBLE, Visible); }
+	void SetRestoreScreenMode(bool Mode) { m_Flags.Change(FSCROBJ_ENABLERESTORESCREEN, Mode); }
+	bool IsSpecial() const { return m_Flags.Check(FSCROBJ_SPECIAL); }
+	window_ptr GetOwner() const { return m_Owner.lock(); }
 
 protected:
 	explicit SimpleScreenObject(window_ptr Owner);
@@ -134,7 +132,7 @@ protected:
 	explicit ScreenObjectWithShadow(window_ptr Owner);
 	~ScreenObjectWithShadow() override;
 
-	void Shadow(bool Full=false);
+	void Shadow(bool Full = false);
 
 	std::unique_ptr<SaveScreen> ShadowSaveScr;
 };
