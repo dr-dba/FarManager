@@ -221,9 +221,7 @@ static bool EnumWithQuoutes(VMenu2& Menu, const string_view strStart, const stri
 		if (Global->Opt->AutoComplete.AppendCompletion)
 		{
 			if (starts_with_icase(i, Token))
-			{
 				Item.ComplexUserData = cmp_user_data{ BuildQuotedString(Token + i.substr(Token.size())) };
-			}
 		}
 		Menu.AddItem(Item);
 	}
@@ -282,9 +280,7 @@ static bool EnumModules(VMenu2& Menu, const string_view strStart, const string_v
 		for (const auto& SubkeyName: os::reg::enum_key(AppPathsKey))
 		{
 			if (const auto SubKey = os::reg::key::open(AppPathsKey, SubkeyName, SamDesired); SubKey.get({}) && starts_with_icase(SubkeyName, Token))
-			{
 				ResultStrings.emplace(SubkeyName);
-			}
 		}
 	};
 	enum_app_paths(os::reg::key::current_user);
