@@ -1481,14 +1481,17 @@ struct ProgressValue
 
 enum VIEWER_CONTROL_COMMANDS
 {
-	VCTL_GETINFO                    = 0,
-	VCTL_QUIT                       = 1,
-	VCTL_REDRAW                     = 2,
-	VCTL_SETKEYBAR                  = 3,
-	VCTL_SETPOSITION                = 4,
-	VCTL_SELECT                     = 5,
-	VCTL_SETMODE                    = 6,
-	VCTL_GETFILENAME                = 7,
+	VCTL_GETINFO                    =   0,
+	VCTL_QUIT                       =   1,
+	VCTL_REDRAW                     =   2,
+	VCTL_SETKEYBAR                  =   3,
+	VCTL_SETPOSITION                =   4,
+	VCTL_SELECT                     =   5,
+	VCTL_SETMODE                    =   6,
+	VCTL_GETFILENAME                =   7,
+	// [feature@Xer0X] viewer control Get/Set screen coordinates commands
+	VCTL_GETCOORD					= 101,
+	VCTL_SETCOORD					= 102,
 };
 
 typedef unsigned long long VIEWER_OPTIONS;

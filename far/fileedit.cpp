@@ -2189,9 +2189,7 @@ void FileEditor::OnChangeFocus(bool focus)
 {
 	window::OnChangeFocus(focus);
 	if (!m_bClosing)
-	{
 		Global->CtrlObject->Plugins->ProcessEditorEvent(focus? EE_GOTFOCUS : EE_KILLFOCUS, nullptr, m_editor.get());
-	}
 }
 
 intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
@@ -2201,19 +2199,16 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 	if (m_bClosing
 		&& (Command != ECTL_GETINFO)
 		&& (Command != ECTL_GETCOORD) // Get the editor position (top left corner) @Xer0X
-		&& (Command != ECTL_SETCOORD) // Set the editor position (top left corner) @Xer0X
 		&& (Command != ECTL_GETBOOKMARKS)
 		&& (Command != ECTL_GETFILENAME)
-		)
+			)
 		return FALSE;
 	switch (Command)
 	{
 	case ECTL_GETFILENAME:
 		{
 			if (Param2 && static_cast<size_t>(Param1) > strFullFileName.size())
-			{
-				*copy_string(strFullFileName, static_cast<wchar_t*>(Param2)) = {};
-			}
+				*copy_string(strFullFileName, static_cast<wchar_t*>(Param2)) = { };
 			return strFullFileName.size() + 1;
 		}
 	case ECTL_GETBOOKMARKS:
@@ -2227,21 +2222,13 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 					for (const auto& [i, index] : enumerate(m_editor->m_SavePos))
 					{
 						if (ebm->Line)
-						{
 							ebm->Line[index] = i.Line;
-						}
 						if (ebm->Cursor)
-						{
 							ebm->Cursor[index] = i.LinePos;
-						}
 						if (ebm->ScreenLine)
-						{
 							ebm->ScreenLine[index] = i.ScreenLine;
-						}
 						if (ebm->LeftPos)
-						{
 							ebm->LeftPos[index] = i.LeftPos;
-						}
 					}
 				}
 				return size;
@@ -2281,9 +2268,7 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 		{
 			const auto strLocalTitle = GetTitle();
 			if (Param2 && static_cast<size_t>(Param1) > strLocalTitle.size())
-			{
 				*copy_string(strLocalTitle, static_cast<wchar_t*>(Param2)) = {};
-			}
 			return strLocalTitle.size() + 1;
 		}
 	case ECTL_SETTITLE:
@@ -2301,8 +2286,7 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 			Global->ScrBuf->Flush();
 			return TRUE;
 		}
-		/*
-			Функция установки Keybar Labels
+		/* Функция установки Keybar Labels
 			Param2 = nullptr - восстановить, пред. значение
 			Param2 = -1   - обновить полосу (перерисовать)
 			Param2 = KeyBarTitles
@@ -2436,14 +2420,14 @@ intptr_t FileEditor::EditorControl(int Command, intptr_t Param1, void *Param2)
 	case ECTL_GETCOORD:
 		{
 			BOOL Result = FALSE;
-			COORD crd_editor = { -1, -1 };
-			crd_editor.X = m_Where.left;
-			crd_editor.Y = m_Where.top;
-			*static_cast<COORD*>(Param2) = crd_editor;
+			COORD crd_screen = { -1, -1 };
+			crd_screen.X = m_Where.left;
+			crd_screen.Y = m_Where.top;
+			*static_cast<COORD*>(Param2) = crd_screen;
 			Result = TRUE;
 			return Result;
 		}
-		// [feature@Xer0X]: Set the editor position (top left corner):
+	// [feature@Xer0X]: Set the editor position (top left corner):
 	case ECTL_SETCOORD:
 		{
 			BOOL Result = FALSE;

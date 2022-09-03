@@ -120,38 +120,30 @@ static Panel* GetHostPanel(HANDLE Handle)
 	{
 		return Global->CtrlObject->Cp()->PassivePanel().get();
 	}
-
 	return static_cast<Panel*>(Handle);
 }
-
 
 namespace cfunctions
 {
 	using comparer = int (WINAPI*)(const void*, const void*, void*);
-
 	static thread_local comparer bsearch_comparer;
 	static thread_local void* bsearch_param;
-
 	static int bsearch_comparer_wrapper(const void* a, const void* b)
 	{
 		return bsearch_comparer(a, b, bsearch_param);
 	}
-
 	static void* bsearchex(const void* key, const void* base, size_t nelem, size_t width, comparer user_comparer, void* user_param) noexcept
 	{
 		bsearch_comparer = user_comparer;
 		bsearch_param = user_param;
 		return std::bsearch(key, base, nelem, width, bsearch_comparer_wrapper);
 	}
-
 	static thread_local comparer qsort_comparer;
 	static thread_local void* qsort_param;
-
 	static int qsort_comparer_wrapper(const void* a, const void* b)
 	{
 		return qsort_comparer(a, b, qsort_param);
 	}
-
 	static void qsortex(char *base, size_t nel, size_t width, comparer user_comparer, void *user_param) noexcept
 	{
 		qsort_comparer = user_comparer;
@@ -266,7 +258,6 @@ void WINAPI apiUnquote(wchar_t *Str) noexcept
 	{
 		if (!Str)
 			return;
-
 		const auto Iterator = null_iterator(Str);
 		*std::remove(Iterator, Iterator.end(), L'"') = 0;
 	},
@@ -350,9 +341,7 @@ intptr_t WINAPI apiInputBox(
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return false;
-
 		string strDest;
-
 		const auto Result = GetString(
 			NullToEmpty(Title),
 			NullToEmpty(Prompt),
@@ -365,7 +354,6 @@ intptr_t WINAPI apiInputBox(
 			{},
 			UuidToPlugin(PluginId),
 			Id);
-
 		xwcsncpy(DestText, strDest.c_str(), DestSize);
 		return Result;
 	},
@@ -384,15 +372,12 @@ BOOL WINAPI apiShowHelp(const wchar_t *ModuleName, const wchar_t *HelpTopic, FAR
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return false;
-
 		if (!HelpTopic)
 			HelpTopic = L"Contents";
-
 		auto OFlags = Flags;
 		Flags &= ~(FHELP_NOSHOWERROR | FHELP_USECONTENTS);
 		string strTopic;
 		string strMask;
-
 		// двоеточие в начале топика надо бы игнорировать и в том случае,
 		// если стоит FHELP_FARHELP...
 		if ((Flags&FHELP_FARHELP) || *HelpTopic == L':')
@@ -429,26 +414,22 @@ BOOL WINAPI apiShowHelp(const wchar_t *ModuleName, const wchar_t *HelpTopic, FAR
 				if (Flags == FHELP_SELFHELP || (Flags&(FHELP_CUSTOMFILE | FHELP_CUSTOMPATH)))
 				{
 					Path = ModuleName;
-
 					if (Flags == FHELP_SELFHELP || (Flags&(FHELP_CUSTOMFILE)))
 					{
 						if (Flags&FHELP_CUSTOMFILE)
 							strMask = PointToName(Path);
 						else
 							strMask.clear();
-
 						CutToSlash(Path);
 					}
 				}
 				else
 					return false;
-
 				strTopic = help::make_link(Path, HelpTopic);
 			}
 			else
 				return false;
 		}
-
 		return help::show(strTopic, strMask, OFlags);
 	},
 	[]
@@ -471,9 +452,7 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 			const auto Plugin = Global->CtrlObject->Plugins->FindPlugin(*PluginId);
 			if (!Plugin)
 				return false;
-
 			Plugin->SubscribeToSynchroEvents();
-
 			message_manager::instance().notify(*PluginId, Param2);
 			return 0;
 		}
@@ -503,7 +482,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 			}
 			return FALSE;
 		}
-
 		switch (Command)
 		{
 		case ACTL_GETFARMANAGERVERSION:
@@ -517,20 +495,16 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 		case ACTL_SETCURSORPOS:
 		case ACTL_PROGRESSNOTIFY:
 			break;
-
 		default:
 			if (Global->WindowManager->ManagerIsDown())
 				return 0;
 		}
-
 		switch (Command)
 		{
 		case ACTL_GETFARMANAGERVERSION:
 			if (Param2)
 				*static_cast<VersionInfo*>(Param2) = build::version();
-
 			return TRUE;
-
 		/* $ 24.08.2000 SVS
 			ожидать определенную (или любую) клавишу
 			(const INPUT_RECORD*)Param2 - код клавиши, которую ожидаем, или nullptr
@@ -540,7 +514,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 		case ACTL_WAITKEY:
 			WaitKey(Param2? InputRecordToKey(static_cast<const INPUT_RECORD*>(Param2)) : -1, {}, false);
 			return 0;
-
 		/* $ 04.12.2000 SVS
 			ACTL_GETCOLOR - получить определенный цвет по индексу, определенному
 			в farcolor.hpp
@@ -554,7 +527,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				return TRUE;
 			}
 			return FALSE;
-
 		/* $ 04.12.2000 SVS
 			ACTL_GETARRAYCOLOR - получить весь массив цветов
 			Param1 - размер буфера (в элементах FarColor)
@@ -567,7 +539,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				Global->Opt->Palette.CopyTo({ static_cast<FarColor*>(Param2), static_cast<size_t>(Param1) });
 			}
 			return Global->Opt->Palette.size();
-
 		case ACTL_SETARRAYCOLOR:
 		{
 			const auto Pal = static_cast<const FarSetColors*>(Param2);
@@ -580,17 +551,14 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 					if (Pal->Flags&FSETCLR_REDRAW)
 					{
 						SCOPED_ACTION(LockScreen);
-
 						Global->WindowManager->ResizeAllWindows();
 						Global->WindowManager->PluginCommit(); // коммитим.
 					}
-
 					return TRUE;
 				}
 			}
 			return FALSE;
 		}
-
 		/* $ 05.06.2001 tran
 			новые ACTL_ для работы с окнами */
 		case ACTL_GETWINDOWINFO:
@@ -601,7 +569,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				string strType, strName;
 				window_ptr f = nullptr;
 				bool modal=false;
-
 				/* $ 22.12.2001 VVM
 					+ Если Pos == -1 то берем текущее окно */
 				if (wi->Pos == -1)
@@ -617,12 +584,9 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 						modal = Global->WindowManager->IsModal(wi->Pos);
 					}
 				}
-
 				if (!f)
 					return FALSE;
-
 				f->GetTypeAndName(strType, strName);
-
 				if (wi->TypeNameSize && wi->TypeName)
 				{
 					xwcsncpy(wi->TypeName, strType.c_str(), wi->TypeNameSize);
@@ -631,7 +595,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				{
 					wi->TypeNameSize=strType.size()+1;
 				}
-
 				if (wi->NameSize && wi->Name)
 				{
 					xwcsncpy(wi->Name, strName.c_str(), wi->NameSize);
@@ -640,7 +603,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				{
 					wi->NameSize=strName.size()+1;
 				}
-
 				if(-1==wi->Pos) wi->Pos = Global->WindowManager->IndexOf(f);
 				wi->Type=WindowTypeToPluginWindowType(f->GetType());
 				wi->Flags=0;
@@ -650,7 +612,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 					wi->Flags|=WIF_CURRENT;
 				if (modal)
 					wi->Flags|=WIF_MODAL;
-
 				switch (wi->Type)
 				{
 					case WTYPE_VIEWER:
@@ -672,13 +633,10 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				}
 				return TRUE;
 			}
-
 			return FALSE;
 		}
-
 		case ACTL_GETWINDOWCOUNT:
 			return Global->WindowManager->GetWindowCount();
-
 		case ACTL_SETCURRENTWINDOW:
 		{
 			// Запретим переключение фрэймов, если находимся в модальном редакторе/вьюере.
@@ -689,7 +647,6 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				Global->WindowManager->PluginCommit();
 				return TRUE;
 			}
-
 			return FALSE;
 		}
 		/*$ 26.06.2001 SKV
@@ -698,21 +655,17 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 		*/
 		case ACTL_COMMIT:
 			return TRUE;
-
 		case ACTL_GETFARHWND:
 			return reinterpret_cast<intptr_t>(console.GetWindow());
-
 		case ACTL_REDRAWALL:
 		{
 			Global->WindowManager->RefreshAll();
 			Global->WindowManager->PluginCommit();
 			return TRUE;
 		}
-
 		case ACTL_SETPROGRESSSTATE:
 			taskbar::set_state(static_cast<TBPFLAG>(Param1));
 			return TRUE;
-
 		case ACTL_SETPROGRESSVALUE:
 		{
 			BOOL Result=FALSE;
@@ -724,30 +677,24 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 			}
 			return Result;
 		}
-
 		case ACTL_QUIT:
 			Global->CloseFARMenu = true;
 			Global->WindowManager->ExitMainLoop(FALSE);
 			return TRUE;
-
 		case ACTL_GETFARRECT:
 			{
 				if (!Param2)
 					return false;
-
 				auto& Rect = *static_cast<SMALL_RECT*>(Param2);
-
 				if(Global->Opt->WindowMode)
 				{
 					rectangle FarRect;
 					if (!console.GetWorkingRect(FarRect))
 						return false;
-
 					Rect.Left = FarRect.left;
 					Rect.Top = FarRect.top;
 					Rect.Right = FarRect.right;
 					Rect.Bottom = FarRect.bottom;
-
 					return true;
 				}
 				else
@@ -755,50 +702,39 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 					point Size;
 					if (!console.GetSize(Size))
 						return false;
-
 					Rect.Left = 0;
 					Rect.Top = 0;
 					Rect.Right = Size.x - 1;
 					Rect.Bottom = Size.y - 1;
-
 					return true;
 				}
 			}
-
 		case ACTL_GETCURSORPOS:
 			{
 				if (!Param2)
 					return false;
-
 				point CursorPosition;
 				if (!console.GetCursorPosition(CursorPosition))
 					return false;
-
 				auto& Pos = *static_cast<PCOORD>(Param2);
 				Pos.X = CursorPosition.x;
 				Pos.Y = CursorPosition.y;
-
 				return true;
 			}
-
 		case ACTL_SETCURSORPOS:
 			{
 				if (!Param2)
 					return false;
-
 				return console.SetCursorPosition(*static_cast<COORD const*>(Param2));
 			}
-
 		case ACTL_PROGRESSNOTIFY:
 		{
 			taskbar::flash();
 			return TRUE;
 		}
-
 		default:
 			break;
 		}
-
 		return FALSE;
 	},
 	[]
@@ -829,44 +765,33 @@ intptr_t WINAPI apiMenuFn(
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return -1;
-
 		if (Global->DisablePluginsOutput)
 			return -1;
-
 		int ExitCode;
 		{
 			DWORD MenuFlags = 0;
-
 			if (Flags & FMENU_SHOWAMPERSAND)
 				MenuFlags |= VMENU_SHOWAMPERSAND;
-
 			if (Flags & FMENU_WRAPMODE)
 				MenuFlags |= VMENU_WRAPMODE;
-
 			if (Flags & FMENU_CHANGECONSOLETITLE)
 				MenuFlags |= VMENU_CHANGECONSOLETITLE;
-
 			const auto FarMenu = VMenu2::create(NullToEmpty(Title), {}, MaxHeight, MenuFlags);
 			FarMenu->SetPosition({ static_cast<int>(X), static_cast<int>(Y), 0, 0 });
 			if(Id)
 			{
 				FarMenu->SetId(*Id);
 			}
-
 			if (BreakCode)
 				*BreakCode=-1;
-
 			{
 				const auto Topic = help::make_topic(UuidToPlugin(PluginId), NullToEmpty(HelpTopic));
 				if (!Topic.empty())
 					FarMenu->SetHelp(Topic);
 			}
-
 			if (Bottom)
 				FarMenu->SetBottomTitle(Bottom);
-
 			size_t Selected=0;
-
 			for (const auto& i: span(Item, ItemsNumber))
 			{
 				MenuItemEx CurItem;
@@ -875,13 +800,11 @@ intptr_t WINAPI apiMenuFn(
 				// исключаем MultiSelected, т.к. у нас сейчас движок к этому не приспособлен, оставляем только первый
 				const auto SelCurItem = CurItem.Flags&LIF_SELECTED;
 				CurItem.Flags&=~LIF_SELECTED;
-
 				if (!Selected && !(CurItem.Flags&LIF_SEPARATOR) && SelCurItem)
 				{
 					CurItem.Flags|=SelCurItem;
 					Selected++;
 				}
-
 				CurItem.Name = NullToEmpty(i.Text);
 				if(CurItem.Flags&LIF_SEPARATOR)
 				{
@@ -895,15 +818,11 @@ intptr_t WINAPI apiMenuFn(
 				}
 				FarMenu->AddItem(CurItem);
 			}
-
 			if (!Selected)
 				FarMenu->SetSelectPos(0,1);
-
 			if (Flags & (FMENU_AUTOHIGHLIGHT | FMENU_REVERSEAUTOHIGHLIGHT))
 				FarMenu->AssignHighlights((Flags & FMENU_REVERSEAUTOHIGHLIGHT) != 0);
-
 			FarMenu->SetTitle(NullToEmpty(Title));
-
 			int BoxType = DOUBLE_BOX;
 			if (Flags & FMENU_SHOWNOBOX)
 				BoxType = NO_BOX;
@@ -914,23 +833,18 @@ intptr_t WINAPI apiMenuFn(
 			FarMenu->SetBoxType(BoxType);
 			if (Flags & FMENU_NODRAWSHADOW)
 				FarMenu->SetDialogMode(DMODE_NODRAWSHADOW);
-
 			ExitCode=FarMenu->RunEx([&](int Msg, void *param)
 			{
 				if (Msg!=DN_INPUT || !BreakKeys)
 					return 0;
-
 				const auto& ReadRec = *static_cast<INPUT_RECORD const*>(param);
 				const auto ReadKey = InputRecordToKey(&ReadRec);
-
 				if (ReadKey==KEY_NONE)
 					return 0;
-
 				for (size_t i = 0; BreakKeys[i].VirtualKeyCode; ++i)
 				{
 					if (ReadRec.Event.KeyEvent.wVirtualKeyCode != BreakKeys[i].VirtualKeyCode)
 						continue;
-
 					const auto NormalizeControlKeys = [](DWORD const Value)
 					{
 						// BUGBUG What if they actually want to handle left & right separately, or other control keys?
@@ -939,12 +853,10 @@ intptr_t WINAPI apiMenuFn(
 							(Value & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED) ? LEFT_ALT_PRESSED : 0) |
 							(Value & SHIFT_PRESSED);
 					};
-
 					if (NormalizeControlKeys(ReadRec.Event.KeyEvent.dwControlKeyState) == NormalizeControlKeys(BreakKeys[i].ControlKeyState))
 					{
 						if (BreakCode)
 							*BreakCode = i;
-
 						FarMenu->Close(-2, true);
 						return 1;
 					}
@@ -987,12 +899,10 @@ intptr_t WINAPI apiSendDlgMessage(HANDLE hDlg,intptr_t Msg,intptr_t Param1,void*
 		case DM_GETFOCUS:
 		case DM_LISTADDSTR:
 			return -1;
-
 		default:
 			return 0;
 		}
 	};
-
 	return cpp_try(
 	[&]
 	{
@@ -1015,13 +925,10 @@ HANDLE WINAPI apiDialogInit(const UUID* PluginId, const UUID* Id, intptr_t X1, i
 	[&]
 	{
 		auto hDlg = INVALID_HANDLE_VALUE;
-
 		if (Global->WindowManager->ManagerIsDown())
 			return hDlg;
-
 		if (Global->DisablePluginsOutput || !ItemsNumber || !Item)
 			return hDlg;
-
 		// ФИЧА! нельзя указывать отрицательные X2 и Y2
 		const auto fixCoord = [](intptr_t first, intptr_t second) { return (first < 0 && second == 0)? 1 : second; };
 		X2 = fixCoord(X1, X2);
@@ -1029,69 +936,52 @@ HANDLE WINAPI apiDialogInit(const UUID* PluginId, const UUID* Id, intptr_t X1, i
 		const auto checkCoord = [](intptr_t first, intptr_t second) { return second >= 0 && ((first < 0)? (second > 0) : (first <= second)); };
 		if (!checkCoord(X1, X2) || !checkCoord(Y1, Y2))
 			return hDlg;
-
 		if (const auto Plugin = Global->CtrlObject->Plugins->FindPlugin(*PluginId))
 		{
 			class plugin_dialog: public Dialog
 			{
 				struct private_tag { explicit private_tag() = default; };
-
 			public:
 				static dialog_ptr create(span<const FarDialogItem> const Src, FARWINDOWPROC const DlgProc, void* const InitParam)
 				{
 					return std::make_shared<plugin_dialog>(private_tag(), Src, DlgProc, InitParam);
 				}
-
 				intptr_t Proc(Dialog* hDlg, intptr_t Msg, intptr_t Param1, void* Param2) const
 				{
 					return m_Proc(hDlg, Msg, Param1, Param2);
 				}
-
 				plugin_dialog(private_tag, span<const FarDialogItem> const Src, FARWINDOWPROC const DlgProc, void* const InitParam):
 					Dialog(Dialog::private_tag(), Src, DlgProc? [this](Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2) { return Proc(Dlg, Msg, Param1, Param2); } : dialog_handler(), InitParam),
 					m_Proc(DlgProc)
 				{}
-
 			private:
 				FARWINDOWPROC m_Proc;
 			};
-
 			const auto FarDialog = plugin_dialog::create({ Item, ItemsNumber }, DlgProc, Param);
-
 			if (FarDialog->InitOK())
 			{
 				if (Flags & FDLG_NONMODAL)
 					FarDialog->SetCanLoseFocus(TRUE);
 				else
 					Plugin->AddDialog(FarDialog);
-
 				hDlg = FarDialog.get();
-
 				FarDialog->SetPosition({ static_cast<int>(X1), static_cast<int>(Y1), static_cast<int>(X2), static_cast<int>(Y2) });
-
 				if (Flags & FDLG_WARNING)
 					FarDialog->SetDialogMode(DMODE_WARNINGSTYLE);
-
 				if (Flags & FDLG_SMALLDIALOG)
 					FarDialog->SetDialogMode(DMODE_SMALLDIALOG);
-
 				if (Flags & FDLG_NODRAWSHADOW)
 					FarDialog->SetDialogMode(DMODE_NODRAWSHADOW);
-
 				if (Flags & FDLG_NODRAWPANEL)
 					FarDialog->SetDialogMode(DMODE_NODRAWPANEL);
-
 				if (Flags & FDLG_KEEPCONSOLETITLE)
 					FarDialog->SetDialogMode(DMODE_KEEPCONSOLETITLE);
-
 				FarDialog->SetHelp(NullToEmpty(HelpTopic));
-
 				FarDialog->SetId(*Id);
 				/* $ 29.08.2000 SVS
 				   Запомним номер плагина - сейчас в основном для формирования HelpTopic
 				*/
 				FarDialog->SetPluginOwner(UuidToPlugin(PluginId));
-
 				if (FarDialog->GetCanLoseFocus())
 				{
 					FarDialog->Process();
@@ -1115,12 +1005,9 @@ intptr_t WINAPI apiDialogRun(HANDLE hDlg) noexcept
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return -1;
-
 		const auto FarDialog = static_cast<Dialog*>(hDlg);
-
 		if (FarDialog->GetCanLoseFocus())
 			return -1;
-
 		FarDialog->Process();
 		return FarDialog->GetExitCode();
 	},
@@ -1138,13 +1025,10 @@ void WINAPI apiDialogFree(HANDLE hDlg) noexcept
 	{
 		if (hDlg == INVALID_HANDLE_VALUE)
 			return;
-
 		const auto FarDialog = static_cast<Dialog*>(hDlg);
 		if (FarDialog->GetCanLoseFocus())
 			return;
-
 		const auto Dlg = FarDialog->shared_from_this();
-
 		for (const auto& i: *Global->CtrlObject->Plugins)
 		{
 			if (i->RemoveDialog(Dlg))
@@ -1166,7 +1050,6 @@ const wchar_t* WINAPI apiGetMsgFn(const UUID* PluginId, intptr_t MsgId) noexcept
 		{
 			string_view Path = pPlugin->ModuleName();
 			CutToSlash(Path);
-
 			if (pPlugin->InitLang(Path, Global->Opt->strLanguage))
 				return pPlugin->Msg(MsgId);
 		}
@@ -1187,52 +1070,40 @@ intptr_t WINAPI apiMessageFn(const UUID* PluginId, const UUID* Id, unsigned long
 	[&]() -> intptr_t
 	{
 		const error_state_ex ErrorState = Flags & FMSG_ERRORTYPE? last_error() : error_state();
-
 		if (Global->WindowManager->ManagerIsDown())
 			return -1;
-
 		if (Global->DisablePluginsOutput)
 			return -1;
-
 		if ((!(Flags&(FMSG_ALLINONE|FMSG_ERRORTYPE)) && ItemsNumber<2) || !Items)
 			return -1;
-
 		string Title;
 		std::vector<string> MsgItems;
 		std::vector<string> Buttons;
-
 		switch (Flags & 0x000F0000)
 		{
 		case FMSG_MB_OK:
 			Buttons = { msg(lng::MOk) };
 			break;
-
 		case FMSG_MB_OKCANCEL:
 			Buttons = { msg(lng::MOk), msg(lng::MCancel) };
 			break;
-
 		case FMSG_MB_ABORTRETRYIGNORE:
 			Buttons = { msg(lng::MAbort), msg(lng::MRetry), msg(lng::MIgnore) };
 			break;
-
 		case FMSG_MB_YESNO:
 			Buttons = { msg(lng::MYes), msg(lng::MNo) };
 			break;
-
 		case FMSG_MB_YESNOCANCEL:
 			Buttons = { msg(lng::MYes), msg(lng::MNo), msg(lng::MCancel) };
 			break;
-
 		case FMSG_MB_RETRYCANCEL:
 			Buttons = { msg(lng::MRetry), msg(lng::MCancel) };
 			break;
 		}
-
 		const auto AssignStrings = [&](auto&& Source)
 		{
 			if (Source.empty())
 				return;
-
 			Title = std::move(*Source.begin());
 			if (Buttons.empty())
 			{
@@ -1245,7 +1116,6 @@ intptr_t WINAPI apiMessageFn(const UUID* PluginId, const UUID* Id, unsigned long
 				std::move(std::next(Source.begin()), Source.end(), std::back_inserter(MsgItems));
 			}
 		};
-
 		if (Flags & FMSG_ALLINONE)
 		{
 			std::vector<string> Strings;
@@ -1262,16 +1132,13 @@ intptr_t WINAPI apiMessageFn(const UUID* PluginId, const UUID* Id, unsigned long
 			std::transform(Items, Items + ItemsNumber, ItemsCopy.begin(), NullToEmpty<wchar_t>);
 			AssignStrings(std::move(ItemsCopy));
 		}
-
 		const auto PluginNumber = UuidToPlugin(PluginId);
 		// запоминаем топик
 		const auto strTopic = PluginNumber? help::make_topic(PluginNumber, NullToEmpty(HelpTopic)) : L""s;
-
 		const DWORD InternalFlags =
 			((Flags & FMSG_WARNING)? MSG_WARNING : 0) |
 			((Flags & FMSG_KEEPBACKGROUND)? MSG_KEEPBACKGROUND : 0) |
 			((Flags & FMSG_LEFTALIGN)? MSG_LEFTALIGN : 0);
-
 		return static_cast<intptr_t>(Message(
 			InternalFlags,
 			Flags & FMSG_ERRORTYPE? &ErrorState : nullptr,
@@ -1295,28 +1162,22 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 	{
 		if (Command == FCTL_CHECKPANELSEXIST)
 			return Global->OnlyEditorViewerUsed? FALSE : TRUE;
-
 		if (!Global->CtrlObject || Global->WindowManager->ManagerIsDown())
 			return FALSE;
-
 		if (Command == FCTL_GETUSERSCREEN)
 		{
 			Global->WindowManager->Desktop()->ConsoleSession().EnterPluginContext(!Param1);
 			return TRUE;
 		}
-
 		if (Command == FCTL_SETUSERSCREEN)
 		{
 			Global->WindowManager->Desktop()->ConsoleSession().LeavePluginContext(!Param1);
 			return TRUE;
 		}
-
 		if (Global->OnlyEditorViewerUsed)
 			return FALSE;
-
 		const auto FPanels = Global->CtrlObject->Cp();
 		const auto CmdLine = Global->CtrlObject->CmdLine();
-
 		switch (Command)
 		{
 		case FCTL_CLOSEPANEL:
@@ -1345,56 +1206,45 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 		{
 			if (!FPanels)
 				return FALSE;
-
 			if (!hPlugin || hPlugin == PANEL_ACTIVE || hPlugin == PANEL_PASSIVE)
 			{
 				const auto pPanel = (!hPlugin || hPlugin == PANEL_ACTIVE) ? FPanels->ActivePanel() : FPanels->PassivePanel();
-
 				if (Command == FCTL_SETACTIVEPANEL && hPlugin == PANEL_ACTIVE)
 					return TRUE;
-
 				if (pPanel)
 				{
 					return pPanel->SetPluginCommand(Command,Param1,Param2);
 				}
-
 				return FALSE; //???
 			}
-
 			HANDLE hInternal;
 			const auto LeftPanel = FPanels->LeftPanel();
 			const auto RightPanel = FPanels->RightPanel();
 			int Processed=FALSE;
-
 			if (LeftPanel && LeftPanel->GetMode() == panel_mode::PLUGIN_PANEL)
 			{
 				if (const auto PlHandle = LeftPanel->GetPluginHandle())
 				{
 					hInternal=PlHandle->panel();
-
 					if (hPlugin==hInternal)
 					{
 						Processed=LeftPanel->SetPluginCommand(Command,Param1,Param2);
 					}
 				}
 			}
-
 			if (RightPanel && RightPanel->GetMode() == panel_mode::PLUGIN_PANEL)
 			{
 				if (const auto PlHandle = RightPanel->GetPluginHandle())
 				{
 					hInternal=PlHandle->panel();
-
 					if (hPlugin==hInternal)
 					{
 						Processed=RightPanel->SetPluginCommand(Command,Param1,Param2);
 					}
 				}
 			}
-
 			return Processed;
 		}
-
 		case FCTL_GETCMDLINE:
 		{
 			const auto& Str = CmdLine->GetString();
@@ -1402,10 +1252,8 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 			{
 				xwcsncpy(static_cast<wchar_t*>(Param2), Str.c_str(), Param1);
 			}
-
 			return Str.size() + 1;
 		}
-
 		case FCTL_SETCMDLINE:
 		case FCTL_INSERTCMDLINE:
 		{
@@ -1419,14 +1267,12 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 			CmdLine->Redraw();
 			return TRUE;
 		}
-
 		case FCTL_SETCMDLINEPOS:
 		{
 			CmdLine->SetCurPos(Param1);
 			CmdLine->Redraw();
 			return TRUE;
 		}
-
 		case FCTL_GETCMDLINEPOS:
 		{
 			if (Param2)
@@ -1434,10 +1280,8 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 				*static_cast<int*>(Param2) = CmdLine->GetCurPos();
 				return TRUE;
 			}
-
 			return FALSE;
 		}
-
 		case FCTL_GETCMDLINESELECTION:
 		{
 			const auto sel = static_cast<CmdLineSelect*>(Param2);
@@ -1446,10 +1290,8 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 				CmdLine->GetSelection(sel->SelStart,sel->SelEnd);
 				return TRUE;
 			}
-
 			return FALSE;
 		}
-
 		case FCTL_SETCMDLINESELECTION:
 		{
 			const auto sel=static_cast<const CmdLineSelect*>(Param2);
@@ -1459,17 +1301,13 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 				CmdLine->Redraw();
 				return TRUE;
 			}
-
 			return FALSE;
 		}
-
 		case FCTL_ISACTIVEPANEL:
 		{
 			if (!hPlugin || hPlugin == PANEL_ACTIVE)
 				return TRUE;
-
 			const auto pPanel = FPanels->ActivePanel();
-
 			if (pPanel && (pPanel->GetMode() == panel_mode::PLUGIN_PANEL))
 			{
 				if (const auto PlHandle = pPanel->GetPluginHandle())
@@ -1478,10 +1316,8 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 						return TRUE;
 				}
 			}
-
 			return FALSE;
 		}
-
 		default:
 			return FALSE;
 		}
@@ -1493,7 +1329,6 @@ intptr_t WINAPI apiPanelControl(HANDLE hPlugin,FILE_CONTROL_COMMANDS Command,int
 	});
 }
 
-
 HANDLE WINAPI apiSaveScreen(intptr_t X1,intptr_t Y1,intptr_t X2,intptr_t Y2) noexcept
 {
 	return cpp_try(
@@ -1501,13 +1336,10 @@ HANDLE WINAPI apiSaveScreen(intptr_t X1,intptr_t Y1,intptr_t X2,intptr_t Y2) noe
 	{
 		if (Global->DisablePluginsOutput || Global->WindowManager->ManagerIsDown())
 			return nullptr;
-
 		if (X2 == -1)
 			X2 = ScrX;
-
 		if (Y2 == -1)
 			Y2 = ScrY;
-
 		return std::make_unique<SaveScreen>(rectangle{ static_cast<int>(X1), static_cast<int>(Y1), static_cast<int>(X2), static_cast<int>(Y2) }).release();
 	},
 	[]
@@ -1523,10 +1355,8 @@ void WINAPI apiRestoreScreen(HANDLE hScreen) noexcept
 	[&]
 	{
 		std::unique_ptr<SaveScreen> Screen(static_cast<SaveScreen*>(hScreen));
-
 		if (Global->DisablePluginsOutput || Global->WindowManager->ManagerIsDown())
 			return;
-
 		if (Screen)
 		{
 			Screen.reset();
@@ -1549,7 +1379,6 @@ void WINAPI apiFreeScreen(HANDLE hScreen) noexcept
 	[&]
 	{
 		std::unique_ptr<SaveScreen> const Screen(static_cast<SaveScreen*>(hScreen));
-
 		if (Screen)
 			Screen->Discard();
 	},
@@ -1571,7 +1400,6 @@ namespace magic
 		Items.release();
 		return Result;
 	}
-
 	template<typename T>
 	static auto CastRawDataToVector(span<T> const RawItems)
 	{
@@ -1588,7 +1416,6 @@ intptr_t WINAPI apiGetDirList(const wchar_t *Dir,PluginPanelItem **pPanelItem,si
 	{
 		if (Global->WindowManager->ManagerIsDown() || !Dir || !*Dir || !pItemsNumber || !pPanelItem)
 			return FALSE;
-
 		{
 			const auto PR_FarGetDirListMsg = []
 			{
@@ -1599,7 +1426,6 @@ intptr_t WINAPI apiGetDirList(const wchar_t *Dir,PluginPanelItem **pPanelItem,si
 					},
 					{});
 			};
-
 			SCOPED_ACTION(SaveScreen);
 			os::fs::find_data FindData;
 			string strFullName;
@@ -1607,9 +1433,7 @@ intptr_t WINAPI apiGetDirList(const wchar_t *Dir,PluginPanelItem **pPanelItem,si
 			ScTree.SetFindPath(ConvertNameToFull(Dir), L"*"sv);
 			*pItemsNumber=0;
 			*pPanelItem=nullptr;
-
 			auto Items = std::make_unique<std::vector<PluginPanelItem>>();
-
 			const time_check TimeCheck;
 			bool MsgOut = false;
 			while (ScTree.GetNextName(FindData,strFullName))
@@ -1621,7 +1445,6 @@ intptr_t WINAPI apiGetDirList(const wchar_t *Dir,PluginPanelItem **pPanelItem,si
 						FreePluginPanelItemsData(*Items);
 						return FALSE;
 					}
-
 					if (!MsgOut)
 					{
 						SetCursorType(false, 0);
@@ -1629,13 +1452,11 @@ intptr_t WINAPI apiGetDirList(const wchar_t *Dir,PluginPanelItem **pPanelItem,si
 						MsgOut = true;
 					}
 				}
-
 				FindData.FileName = strFullName;
 				PluginPanelItemHolderHeapNonOwning Item;
 				FindDataExToPluginPanelItemHolder(FindData, Item);
 				Items->emplace_back(Item.Item);
 			}
-
 			std::tie(*pPanelItem, *pItemsNumber) = magic::CastVectorToRawData(std::move(Items));
 		}
 		return TRUE;
@@ -1654,30 +1475,23 @@ intptr_t WINAPI apiGetPluginDirList(const UUID* PluginId, HANDLE hPlugin, const 
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return false;
-
 		if (IsParentDirectory(Dir))
 			return false;
-
 		auto Items = std::make_unique<std::vector<PluginPanelItem>>();
-
 		// BUGBUG This is API, shouldn't the callback be empty?
 
 		const time_check TimeCheck;
 		std::optional<dirinfo_progress> DirinfoProgress;
-
 		const auto DirInfoCallback = [&](string_view const Name, unsigned long long const ItemsCount, unsigned long long const Size)
 		{
 			if (!TimeCheck)
 				return;
-
 			if (!DirinfoProgress)
 				DirinfoProgress.emplace(msg(lng::MPreparingList));
-
 			DirinfoProgress->set_name(Name);
 			DirinfoProgress->set_count(ItemsCount);
 			DirinfoProgress->set_size(Size);
 		};
-
 		const auto Result = GetPluginDirList(UuidToPlugin(PluginId), hPlugin, Dir, nullptr, *Items, DirInfoCallback);
 		std::tie(*pPanelItem, *pItemsNumber) = magic::CastVectorToRawData(std::move(Items));
 		return Result;
@@ -1725,15 +1539,10 @@ intptr_t WINAPI apiViewer(const wchar_t *FileName,const wchar_t *Title,
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return FALSE;
-
 		const auto DisableHistory = (Flags & VF_DISABLEHISTORY) != 0;
-
 		// $ 15.05.2002 SKV - Запретим вызов немодального редактора viewer-а из модального.
 		if (Global->WindowManager->InModal())
-		{
 			Flags&=~VF_NONMODAL;
-		}
-
 		if (Flags & VF_NONMODAL)
 		{
 			/* 09.09.2001 IS ! Добавим имя файла в историю, если потребуется */
@@ -1749,19 +1558,15 @@ intptr_t WINAPI apiViewer(const wchar_t *FileName,const wchar_t *Title,
 					static_cast<int>(Y2)
 				},
 				CodePage);
-
 			if (!Viewer)
 				return FALSE;
-
 			/* $ 14.06.2002 IS
 			   Обработка VF_DELETEONLYFILEONCLOSE - этот флаг имеет более низкий
 			   приоритет по сравнению с VF_DELETEONCLOSE
 			*/
 			if (Flags & (VF_DELETEONCLOSE|VF_DELETEONLYFILEONCLOSE))
 				Viewer->SetTempViewName(FileName, (Flags&VF_DELETEONCLOSE) != 0);
-
 			Viewer->SetEnableF6(Flags & VF_ENABLE_F6);
-
 			/* $ 21.05.2002 SKV
 			  Запускаем свой цикл только если не был указан флаг.
 			*/
@@ -1773,13 +1578,13 @@ intptr_t WINAPI apiViewer(const wchar_t *FileName,const wchar_t *Title,
 			{
 				if (Global->GlobalSaveScrPtr)
 					Global->GlobalSaveScrPtr->Discard();
-
 				Global->WindowManager->PluginCommit();
 			}
 		}
 		else
 		{
-			/* 09.09.2001 IS ! Добавим имя файла в историю, если потребуется */
+			/* 09.09.2001 IS !
+				Добавим имя файла в историю, если потребуется */
 			const auto Viewer = FileViewer::create(
 				FileName,
 				false,
@@ -1792,25 +1597,20 @@ intptr_t WINAPI apiViewer(const wchar_t *FileName,const wchar_t *Title,
 					static_cast<int>(Y2)
 				},
 				CodePage);
-
 			Viewer->SetEnableF6(Flags & VF_ENABLE_F6);
-
-			/* $ 28.05.2001 По умолчанию viewer, поэтому нужно здесь признак выставить явно */
-			if(Viewer->GetExitCode()) Global->WindowManager->ExecuteModal(Viewer);
-
+			/* $ 28.05.2001 По умолчанию viewer,
+				поэтому нужно здесь признак выставить явно */
+			if(Viewer->GetExitCode())
+				Global->WindowManager->ExecuteModal(Viewer);
 			/* $ 14.06.2002 IS
-			   Обработка VF_DELETEONLYFILEONCLOSE - этот флаг имеет более низкий
-			   приоритет по сравнению с VF_DELETEONCLOSE
-			*/
+				Обработка VF_DELETEONLYFILEONCLOSE
+				- этот флаг имеет более низкий приоритет
+				по сравнению с VF_DELETEONCLOSE */
 			if (Flags & (VF_DELETEONCLOSE|VF_DELETEONLYFILEONCLOSE))
 				Viewer->SetTempViewName(FileName, (Flags&VF_DELETEONCLOSE) != 0);
-
 			if (!Viewer->GetExitCode())
-			{
 				return FALSE;
-			}
 		}
-
 		return TRUE;
 	},
 	[]
@@ -1827,46 +1627,38 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 	{
 		if (Global->WindowManager->ManagerIsDown())
 			return EEC_OPEN_ERROR;
-
 		/* $ 12.07.2000 IS
-		 Проверка флагов редактора (раньше они игнорировались) и открытие
-		 немодального редактора, если есть соответствующий флаг
-		 */
+			Проверка флагов редактора (раньше они игнорировались)
+			и открытие немодального редактора,
+			если есть соответствующий флаг */
 		const auto CreateNew = (Flags & EF_CREATENEW) != 0;
 		const auto  Locked = (Flags & EF_LOCKED) != 0;
 		const auto  DisableHistory = (Flags & EF_DISABLEHISTORY) != 0;
 		const auto  DisableSavePos = (Flags & EF_DISABLESAVEPOS) != 0;
 		/* $ 14.06.2002 IS
-		   Обработка EF_DELETEONLYFILEONCLOSE - этот флаг имеет более низкий
-		   приоритет по сравнению с EF_DELETEONCLOSE
-		   */
+			Обработка EF_DELETEONLYFILEONCLOSE - этот флаг имеет более низкий
+			приоритет по сравнению с EF_DELETEONCLOSE */
 		int DeleteOnClose = 0;
-
 		if (Flags & EF_DELETEONCLOSE)
 			DeleteOnClose = 1;
 		else if (Flags & EF_DELETEONLYFILEONCLOSE)
 			DeleteOnClose = 2;
-
 		int OpMode = EF_OPENMODE_QUERY;
-
 		if ((Flags&EF_OPENMODE_MASK))
 			OpMode = Flags&EF_OPENMODE_MASK;
-
 		/*$ 15.05.2002 SKV
-		  Запретим вызов немодального редактора, если находимся в модальном
-		  редакторе или viewer-е.
-		  */
+			Запретим вызов немодального редактора,
+			если находимся в модальном редакторе или viewer-е. */
 		if (Global->WindowManager->InModal())
 		{
 			Flags&=~EF_NONMODAL;
 		}
-
 		auto ExitCode = EEC_OPEN_ERROR;
 		const string strTitle = NullToEmpty(Title);
-
 		if (Flags & EF_NONMODAL)
 		{
-			/* 09.09.2001 IS ! Добавим имя файла в историю, если потребуется */
+			/* 09.09.2001 IS !
+				Добавим имя файла в историю, если потребуется */
 			if (const auto Editor = FileEditor::create(NullToEmpty(FileName), CodePage,
 				(CreateNew ? FFILEEDIT_CANNEWFILE : 0) | FFILEEDIT_ENABLEF6 |
 				(DisableHistory ? FFILEEDIT_DISABLEHISTORY : 0) |
@@ -1877,32 +1669,24 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 				DeleteOnClose, nullptr, OpMode))
 			{
 				const auto editorExitCode = Editor->GetExitCode();
-
 				// добавочка - проверка кода возврата (почему возникает XC_OPEN_ERROR - см. код FileEditor::Init())
-				if (editorExitCode == XC_OPEN_ERROR || editorExitCode == XC_LOADING_INTERRUPTED)
+				if(editorExitCode == XC_OPEN_ERROR
+				|| editorExitCode == XC_LOADING_INTERRUPTED)
 				{
 					return editorExitCode == XC_OPEN_ERROR ? EEC_OPEN_ERROR : EEC_LOADING_INTERRUPTED;
-				}
-				else if (editorExitCode == XC_EXISTS)
+				} else
+				if (editorExitCode == XC_EXISTS)
 				{
 					if (Global->GlobalSaveScrPtr)
 						Global->GlobalSaveScrPtr->Discard();
-
 					Global->WindowManager->PluginCommit();
-
 					if constexpr (features::mantis_2562)
-					{
 						return EEC_OPENED_EXISTING;
-					}
 					else
-					{
 						return EEC_MODIFIED;
-					}
 				}
-
 				Editor->SetEnableF6((Flags & EF_ENABLE_F6) != 0);
 				Editor->SetPluginTitle(&strTitle);
-
 				/* $ 21.05.2002 SKV - Запускаем свой цикл, только если не был указан флаг. */
 				if (!(Flags&EF_IMMEDIATERETURN))
 				{
@@ -1916,17 +1700,11 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 				{
 					if (Global->GlobalSaveScrPtr)
 						Global->GlobalSaveScrPtr->Discard();
-
 					Global->WindowManager->PluginCommit();
-
 					if constexpr (features::mantis_2562)
-					{
 						ExitCode = editorExitCode == XC_RELOAD ? EEC_RELOAD : Editor->IsFileChanged() ? EEC_MODIFIED : EEC_NOT_MODIFIED;
-					}
 					else
-					{
 						ExitCode = EEC_MODIFIED;
-					}
 				}
 			}
 		}
@@ -1941,7 +1719,6 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 				StartLine, StartChar, &strTitle,
 				{ static_cast<int>(X1), static_cast<int>(Y1), static_cast<int>(X2), static_cast<int>(Y2) },
 				DeleteOnClose, nullptr, OpMode);
-
 			// выполним предпроверку (ошибки разные могут быть)
 			switch (const auto editorExitCode = Editor->GetExitCode())
 			{
@@ -1959,7 +1736,6 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 					  */
 					if (any_of(editorExitCode, -1, XC_OPEN_NEWINSTANCE))
 						Global->WindowManager->ExecuteModal(Editor);
-
 					if (Editor->GetExitCode() == XC_OPEN_ERROR)
 					{
 						ExitCode = EEC_OPEN_ERROR;
@@ -1967,7 +1743,6 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 					else
 					{
 #if 0
-
 						if (OpMode == EF_OPENMODE_BREAKIFOPEN && ExitCode == XC_QUIT)
 							ExitCode = XC_OPEN_ERROR;
 						else
@@ -1978,7 +1753,6 @@ intptr_t WINAPI apiEditor(const wchar_t* FileName, const wchar_t* Title, intptr_
 				break;
 			}
 		}
-
 		return ExitCode;
 	},
 	[]
@@ -1995,7 +1769,6 @@ void WINAPI apiText(intptr_t X,intptr_t Y,const FarColor* Color,const wchar_t *S
 	{
 		if (Global->DisablePluginsOutput || Global->WindowManager->ManagerIsDown())
 			return;
-
 		if (!Str)
 		{
 			const auto PrevLockCount = Global->ScrBuf->GetLockCount();
@@ -2019,7 +1792,6 @@ static intptr_t apiTControl(intptr_t Id, command_type Command, intptr_t Param1, 
 {
 	if (Global->WindowManager->ManagerIsDown())
 		return 0;
-
 	if (Id == -1)
 	{
 		const auto CurrentObject = std::invoke(Getter, Global->WindowManager);
@@ -2032,15 +1804,12 @@ static intptr_t apiTControl(intptr_t Id, command_type Command, intptr_t Param1, 
 			if (const auto CurrentWindow = std::dynamic_pointer_cast<window_type>(Global->WindowManager->GetWindow(i)))
 			{
 				if (const auto CurrentControlWindow = CurrentWindow->GetById(Id))
-				{
 					return std::invoke(Control, CurrentControlWindow, Command, Param1, Param2);
-				}
 			}
 		}
 	}
 	return 0;
 }
-
 
 intptr_t WINAPI apiEditorControl(intptr_t EditorID, EDITOR_CONTROL_COMMANDS Command, intptr_t Param1, void* Param2) noexcept
 {
@@ -2317,10 +2086,8 @@ size_t WINAPI apiGetFileOwner(const wchar_t *Computer, const wchar_t *Name, wcha
 		string strOwner;
 		if (!GetFileOwner(NullToEmpty(Computer), NullToEmpty(Name), strOwner))
 			return size_t{};
-
 		if (Owner && Size)
 			xwcsncpy(Owner, strOwner.c_str(), Size);
-
 		return strOwner.size() + 1;
 	},
 	[]
@@ -2337,26 +2104,21 @@ size_t WINAPI apiConvertPath(CONVERTPATHMODES Mode, const wchar_t *Src, wchar_t 
 	[&]
 	{
 		string strDest;
-
 		switch (Mode)
 		{
 		case CPM_NATIVE:
 			strDest=NTPath(Src);
 			break;
-
 		case CPM_REAL:
 			strDest = ConvertNameToReal(Src);
 			break;
-
 		case CPM_FULL:
 		default:
 			strDest = ConvertNameToFull(Src);
 			break;
 		}
-
 		if (Dest && DestSize)
 			xwcsncpy(Dest, strDest.c_str(), DestSize);
-
 		return strDest.size() + 1;
 	},
 	[]
@@ -2376,10 +2138,8 @@ size_t WINAPI apiGetReparsePointInfo(const wchar_t *Src, wchar_t *Dest, size_t D
 		AddEndSlash(strDest);
 		if (!GetReparsePointInfo(strSrc, strDest, nullptr))
 			return size_t{};
-
 		if (DestSize && Dest)
 			xwcsncpy(Dest,strDest.c_str(),DestSize);
-
 		return strDest.size()+1;
 	},
 	[]
@@ -2410,10 +2170,8 @@ size_t WINAPI apiGetPathRoot(const wchar_t *Path, wchar_t *Root, size_t DestSize
 	[&]
 	{
 		const auto strRoot = GetPathRoot(Path);
-
 		if (DestSize && Root)
 			xwcsncpy(Root,strRoot.c_str(),DestSize);
-
 		return strRoot.size()+1;
 	},
 	[]
@@ -2432,10 +2190,8 @@ BOOL WINAPI apiCopyToClipboard(enum FARCLIPBOARD_TYPE Type, const wchar_t *Data)
 		{
 		case FCT_STREAM:
 			return Data? SetClipboardText(Data) : ClearClipboard();
-
 		case FCT_COLUMN:
 			return Data? SetClipboardVText(Data) : ClearClipboard();
-
 		default:
 			return false;
 		}
@@ -2482,7 +2238,6 @@ size_t WINAPI apiPasteFromClipboard(enum FARCLIPBOARD_TYPE Type, wchar_t *Data, 
 		case FCT_ANY:
 			size = apiPasteFromClipboardEx(false, { Data, Length });
 			break;
-
 		case FCT_COLUMN:
 			size = apiPasteFromClipboardEx(true, { Data, Length });
 			break;
@@ -2531,7 +2286,6 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 	{
 		if (!Global->CtrlObject)
 			return false;
-
 		auto& Macro = Global->CtrlObject->Macro; //??
 
 		switch (Command)
@@ -2545,11 +2299,9 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 					(!Data || CheckStructSize(Data)) &&
 					Macro.LoadMacros(false, !Macro.IsExecuting(), Data);
 			}
-
 		// Param1=0, Param2 - 0
 		case MCTL_SAVEALL:
 			return !Macro.IsRecording() && Macro.SaveMacros(true);
-
 		// Param1=FARMACROSENDSTRINGCOMMAND, Param2 - MacroSendMacroText*
 		case MCTL_SENDSTRING:
 			{
@@ -2567,22 +2319,18 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 				}
 			}
 			break;
-
 		// Param1=0, Param2 - MacroExecuteString*
 		case MCTL_EXECSTRING:
 			{
 				const auto Data = static_cast<MacroExecuteString*>(Param2);
 				return CheckStructSize(Data) && Macro.ExecuteString(Data) ? 1 : 0;
 			}
-
 		// Param1=0, Param2 - 0
 		case MCTL_GETSTATE:
 			return Macro.GetState();
-
 		// Param1=0, Param2 - 0
 		case MCTL_GETAREA:
 			return Macro.GetArea();
-
 		case MCTL_ADDMACRO:
 			{
 				const auto Data = static_cast<const MacroAddMacroV1*>(Param2);
@@ -2592,24 +2340,18 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 				}
 			}
 			break;
-
 		case MCTL_DELMACRO:
 			return Macro.DelMacro(*PluginId, Param2) ? 1 : 0;
-
 		//Param1=size of buffer, Param2 - MacroParseResult*
 		case MCTL_GETLASTERROR:
 			{
 				point ErrPos;
 				string ErrSrc;
-
 				const auto ErrCode = Macro.GetMacroParseError(ErrPos, ErrSrc);
-
 				auto Size = static_cast<int>(aligned_sizeof<MacroParseResult, alignof(wchar_t)>);
 				const size_t stringOffset = Size;
 				Size += static_cast<int>((ErrSrc.size() + 1)*sizeof(wchar_t));
-
 				const auto Result = static_cast<MacroParseResult*>(Param2);
-
 				if (Param1 >= Size && CheckStructSize(Result))
 				{
 					Result->StructSize = sizeof(MacroParseResult);
@@ -2619,14 +2361,11 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 					assert(is_aligned(*Result->ErrSrc));
 					*copy_string(ErrSrc, const_cast<wchar_t*>(Result->ErrSrc)) = {};
 				}
-
 				return Size;
 			}
-
 		default: //FIXME
 			break;
 		}
-
 		return false;
 	},
 	[]
@@ -2648,7 +2387,6 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 			if (Param1 == PLT_PATH && Param2)
 				return reinterpret_cast<intptr_t>(Global->CtrlObject->Plugins->LoadPluginExternal(ConvertNameToFull(static_cast<const wchar_t*>(Param2)), Command == PCTL_FORCEDLOADPLUGIN));
 			break;
-
 		case PCTL_FINDPLUGIN:
 		{
 			Plugin* plugin = nullptr;
@@ -2657,7 +2395,6 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 			case PFM_GUID:
 				plugin = Global->CtrlObject->Plugins->FindPlugin(*static_cast<UUID*>(Param2));
 				break;
-
 			case PFM_MODULENAME:
 				{
 					const auto strPath = ConvertNameToFull(static_cast<const wchar_t*>(Param2));
@@ -2671,7 +2408,6 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 					}
 					break;
 				}
-
 			default:
 				break;
 			}
@@ -2679,10 +2415,8 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 				plugin = nullptr;
 			return reinterpret_cast<intptr_t>(plugin);
 		}
-
 		case PCTL_UNLOADPLUGIN:
 			return Global->CtrlObject->Plugins->UnloadPluginExternal(static_cast<Plugin*>(Handle));
-
 		case PCTL_GETPLUGININFORMATION:
 			{
 				const auto Info = static_cast<FarGetPluginInformation*>(Param2);
@@ -2692,7 +2426,6 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 				}
 			}
 			break;
-
 		case PCTL_GETPLUGINS:
 			{
 				const auto PluginsCount = Global->CtrlObject->Plugins->size();
@@ -2702,7 +2435,6 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 				}
 				return PluginsCount;
 			}
-
 		default:
 			break;
 		}
@@ -2722,7 +2454,6 @@ intptr_t WINAPI apiFileFilterControl(HANDLE hHandle, FAR_FILE_FILTER_CONTROL_COM
 	{
 		if (Command != FFCTL_CREATEFILEFILTER && !hHandle)
 			return false;
-
 		switch (Command)
 		{
 		case FFCTL_CREATEFILEFILTER:
@@ -2734,7 +2465,6 @@ intptr_t WINAPI apiFileFilterControl(HANDLE hHandle, FAR_FILE_FILTER_CONTROL_COM
 				PANEL_NONE
 			))
 				return false;
-
 			if (none_of(
 				Param1,
 				FFT_PANEL,
@@ -2744,26 +2474,20 @@ intptr_t WINAPI apiFileFilterControl(HANDLE hHandle, FAR_FILE_FILTER_CONTROL_COM
 				FFT_CUSTOM
 			))
 				return false;
-
 			if (!Param2)
 				return false;
-
 			*static_cast<multifilter**>(Param2) = std::make_unique<multifilter>(GetHostPanel(hHandle), static_cast<FAR_FILE_FILTER_TYPE>(Param1)).release();
 			return true;
 		}
-
 		case FFCTL_FREEFILEFILTER:
 			delete static_cast<multifilter*>(hHandle);
 			return true;
-
 		case FFCTL_OPENFILTERSMENU:
 			filters::EditFilters(static_cast<multifilter*>(hHandle)->area(), static_cast<multifilter*>(hHandle)->panel());
 			return true;
-
 		case FFCTL_STARTINGTOFILTER:
 			static_cast<multifilter*>(hHandle)->UpdateCurrentTime();
 			return true;
-
 		case FFCTL_ISFILEINFILTER:
 			if (!Param2)
 				break;
@@ -2785,17 +2509,14 @@ intptr_t WINAPI apiRegExpControl(HANDLE hHandle, FAR_REGEXP_CONTROL_COMMANDS Com
 	{
 		if (Command != RECTL_CREATE && !hHandle)
 			return false;
-
 		switch (Command)
 		{
 		case RECTL_CREATE:
 			*static_cast<RegExp**>(Param2) = std::make_unique<RegExp>().release();
 			return true;
-
 		case RECTL_FREE:
 			delete static_cast<RegExp const*>(hHandle);
 			return true;
-
 		case RECTL_COMPILE:
 			try
 			{
@@ -2807,39 +2528,32 @@ intptr_t WINAPI apiRegExpControl(HANDLE hHandle, FAR_REGEXP_CONTROL_COMMANDS Com
 				LOGERROR(L"RECTL_COMPILE error: {}; position {}"sv, e.message(), e.position());
 				return false;
 			}
-
 		case RECTL_OPTIMIZE:
 			return static_cast<RegExp *>(hHandle)->Optimize();
-
 		case RECTL_MATCHEX:
 		{
 			const auto data = static_cast<RegExpSearch*>(Param2);
 			std::vector<RegExpMatch> Match;
 			if (!static_cast<RegExp const*>(hHandle)->MatchEx({ data->Text, static_cast<size_t>(data->Length) }, data->Position, Match))
 				return false;
-
 			const auto MaxSize = std::min(static_cast<size_t>(data->Count), Match.size());
 			std::copy_n(Match.cbegin(), MaxSize, data->Match);
 			data->Count = MaxSize;
 			return true;
 		}
-
 		case RECTL_SEARCHEX:
 		{
 			const auto data = static_cast<RegExpSearch*>(Param2);
 			std::vector<RegExpMatch> Match;
 			if (!static_cast<RegExp const*>(hHandle)->SearchEx({ data->Text, static_cast<size_t>(data->Length) }, data->Position, Match))
 				return false;
-
 			const auto MaxSize = std::min(static_cast<size_t>(data->Count), Match.size());
 			std::copy_n(Match.cbegin(), MaxSize, data->Match);
 			data->Count = MaxSize;
 			return true;
 		}
-
 		case RECTL_BRACKETSCOUNT:
 			return static_cast<RegExp const*>(hHandle)->GetBracketsCount();
-
 		default:
 			return false;
 		}
@@ -2858,7 +2572,6 @@ intptr_t WINAPI apiSettingsControl(HANDLE hHandle, FAR_SETTINGS_CONTROL_COMMANDS
 	{
 		if (Command != SCTL_CREATE && !hHandle)
 			return false;
-
 		switch (Command)
 		{
 		case SCTL_CREATE:
@@ -2866,52 +2579,42 @@ intptr_t WINAPI apiSettingsControl(HANDLE hHandle, FAR_SETTINGS_CONTROL_COMMANDS
 			const auto data = static_cast<FarSettingsCreate*>(Param2);
 			if (!CheckStructSize(data))
 				return false;
-
 			if (data->Guid == FarUuid)
 			{
 				data->Handle = AbstractSettings::CreateFarSettings().release();
 				return true;
 			}
-
 			if (!Global->CtrlObject->Plugins->FindPlugin(data->Guid))
 				return false;
-
 			auto Settings = AbstractSettings::CreatePluginSettings(data->Guid, Param1 == PSL_LOCAL);
 			if (!Settings)
 				return false;
-
 			data->Handle = Settings.release();
 			return true;
 		}
-
 		case SCTL_FREE:
 			delete static_cast<AbstractSettings const*>(hHandle);
 			return true;
-
 		case SCTL_SET:
 			{
 				const auto Item = static_cast<FarSettingsItem const*>(Param2);
 				return CheckStructSize(Item) && static_cast<AbstractSettings*>(hHandle)->Set(*Item);
 			}
-
 		case SCTL_GET:
 			{
 				const auto Item = static_cast<FarSettingsItem*>(Param2);
 				return CheckStructSize(Item) && static_cast<AbstractSettings*>(hHandle)->Get(*Item);
 			}
-
 		case SCTL_ENUM:
 			{
 				const auto Enum = static_cast<FarSettingsEnum*>(Param2);
 				return CheckStructSize(Enum) && static_cast<AbstractSettings*>(hHandle)->Enum(*Enum);
 			}
-
 		case SCTL_DELETE:
 			{
 				const auto Value = static_cast<FarSettingsValue const*>(Param2);
 				return CheckStructSize(Value) && static_cast<AbstractSettings*>(hHandle)->Delete(*Value);
 			}
-
 		case SCTL_CREATESUBKEY:
 		case SCTL_OPENSUBKEY:
 			{
@@ -2934,12 +2637,10 @@ size_t WINAPI apiGetCurrentDirectory(size_t Size, wchar_t* Buffer) noexcept
 	[&]
 	{
 		const auto strCurDir = os::fs::get_current_directory();
-
 		if (Buffer && Size)
 		{
 			xwcsncpy(Buffer, strCurDir.c_str(), Size);
 		}
-
 		return strCurDir.size() + 1;
 	},
 	[]
@@ -2963,17 +2664,14 @@ size_t WINAPI apiFormatFileSize(unsigned long long Size, intptr_t Width, FARFORM
 			{ FFFS_MINSIZEINDEX,   COLFLAGS_USE_MULTIPLIER  },    // Минимально допустимая единица измерения при форматировании
 			{ FFFS_SHOWBYTESINDEX, COLFLAGS_SHOW_MULTIPLIER },    // Показывать суффиксы B,K,M,G,T,P,E
 		};
-
 		const auto strDestStr = FileSizeToStr(Size, Width, std::accumulate(ALL_CONST_RANGE(FlagsPair), Flags & COLFLAGS_MULTIPLIER_MASK, [Flags](auto FinalFlags, const auto& i)
 		{
 			return FinalFlags | ((Flags & i.first) ? i.second : 0);
 		}));
-
 		if (Dest && DestSize)
 		{
 			xwcsncpy(Dest,strDestStr.c_str(),DestSize);
 		}
-
 		return strDestStr.size()+1;
 	},
 	[]
@@ -2989,15 +2687,12 @@ void WINAPI apiRecursiveSearch(const wchar_t *InitDir, const wchar_t *Mask, FRSU
 	[&]
 	{
 		filemasks FMask;
-
 		if (!FMask.assign(Mask, FMF_SILENT)) return;
-
 		Flags=Flags&0x000000FF; // только младший байт!
 		ScanTree ScTree((Flags & FRS_RETUPDIR)!=0, (Flags & FRS_RECUR)!=0, (Flags & FRS_SCANSYMLINK)!=0, true);
 		os::fs::find_data FindData;
 		string strFullName;
 		ScTree.SetFindPath(InitDir, L"*"sv);
-
 		bool Found = false;
 		while (!Found && ScTree.GetNextName(FindData,strFullName))
 		{
@@ -3044,12 +2739,10 @@ size_t WINAPI apiProcessName(const wchar_t *param1, wchar_t *param2, size_t size
 		// 0xFFFFFFFFFF000000 - flags
 
 		const PROCESSNAME_FLAGS Flags = flags&0xFFFFFFFFFF000000;
-
 		switch(const PROCESSNAME_FLAGS Mode = flags & 0xFF0000)
 		{
 		case PN_CMPNAME:
 			return CmpName(param1, param2, (Flags&PN_SKIPPATH)!=0);
-
 		case PN_CMPNAMELIST:
 		case PN_CHECKMASK:
 		{
@@ -3075,21 +2768,17 @@ size_t WINAPI apiProcessName(const wchar_t *param1, wchar_t *param2, size_t size
 			}
 			return Result;
 		}
-
 		case PN_GENERATENAME:
 		{
 			string_view const SrcName = NullToEmpty(param1);
 			const size_t Size = flags & 0xFFFF;
 			auto const SrcNamePart = Size? SrcName.substr(0, Size) : SrcName;
-
 			auto strResult = ConvertWildcards(SrcNamePart, NullToEmpty(param2));
 			if (Size)
 				strResult += SrcName.substr(Size);
-
 			xwcsncpy(param2, strResult.c_str(), size);
 			return strResult.size() + 1;
 		}
-
 		default:
 			return false;
 		}
@@ -3123,11 +2812,9 @@ size_t WINAPI apiInputRecordToKeyName(const INPUT_RECORD* Key, wchar_t *KeyText,
 		const auto iKey = InputRecordToKey(Key);
 		if (iKey == KEY_NONE)
 			return 0;
-
 		const auto strKT = KeyToText(iKey);
 		if (strKT.empty())
 			return 0;
-
 		auto len = strKT.size();
 		if (Size && KeyText)
 		{
@@ -3168,7 +2855,6 @@ BOOL WINAPI apiMkLink(const wchar_t *Target, const wchar_t *LinkName, LINK_TYPE 
 	[&]
 	{
 		bool Result{};
-
 		if (Target && *Target && LinkName && *LinkName)
 		{
 			switch (Type)
@@ -3176,7 +2862,6 @@ BOOL WINAPI apiMkLink(const wchar_t *Target, const wchar_t *LinkName, LINK_TYPE 
 			case LINK_HARDLINK:
 				Result = MkHardLink(Target, LinkName, (Flags&MLF_SHOWERRMSG) == 0);
 				break;
-
 			case LINK_JUNCTION:
 			case LINK_VOLMOUNT:
 			case LINK_SYMLINKFILE:
@@ -3184,7 +2869,6 @@ BOOL WINAPI apiMkLink(const wchar_t *Target, const wchar_t *LinkName, LINK_TYPE 
 			case LINK_SYMLINK:
 			{
 				auto LinkType = RP_JUNCTION;
-
 				switch (Type)
 				{
 				case LINK_VOLMOUNT:
@@ -3202,19 +2886,15 @@ BOOL WINAPI apiMkLink(const wchar_t *Target, const wchar_t *LinkName, LINK_TYPE 
 				default:
 					break;
 				}
-
 				Result = MkSymLink(Target, LinkName, LinkType, (Flags&MLF_SHOWERRMSG) == 0, (Flags&MLF_HOLDTARGET) != 0);
 				break;
 			}
-
 			default:
 				break;
 			}
 		}
-
 		if (Result && !(Flags&MLF_DONOTUPDATEPANEL))
 			ShellUpdatePanels(nullptr, false);
-
 		return Result;
 	},
 	[]
@@ -3359,7 +3039,6 @@ intptr_t WINAPI apiCallFar(intptr_t CheckCode, FarMacroCall* Data) noexcept
 	{
 		if (Global->CtrlObject)
 			Global->CtrlObject->Macro.CallFar(CheckCode, Data);
-
 		return 0;
 	},
 	[]

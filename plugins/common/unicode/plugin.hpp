@@ -1389,6 +1389,9 @@ enum VIEWER_CONTROL_COMMANDS
 	VCTL_SELECT                     = 5,
 	VCTL_SETMODE                    = 6,
 	VCTL_GETFILENAME                = 7,
+	// [feature@Xer0X] viewer control Get/Set screen coordinates commands
+	VCTL_GETCOORD					= 101,
+	VCTL_SETCOORD					= 102,
 };
 
 typedef unsigned long long VIEWER_OPTIONS;
@@ -1563,7 +1566,7 @@ enum EDITOR_CONTROL_COMMANDS
 	ECTL_SUBSCRIBECHANGEEVENT       = 36,
 	ECTL_UNSUBSCRIBECHANGEEVENT     = 37,
 	ECTL_GETTITLE                   = 38,
-	// [feature@Xer0X] editor control Get / Set screen coordinates commands
+	// [feature@Xer0X] editor control Get/Set screen coordinates commands
 	ECTL_GETCOORD                   = 101,
 	ECTL_SETCOORD					= 102
 };

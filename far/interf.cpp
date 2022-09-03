@@ -103,9 +103,7 @@ void consoleicons::set_icon(int const IconId)
 			return;
 		const auto PreviousIcon = ::set_icon(hWnd, Icon.IsBig, RawIcon);
 		if (!Icon.InitialIcon)
-		{
 			Icon.InitialIcon = PreviousIcon;
-		}
 	};
 	Set(m_Large);
 	Set(m_Small);
@@ -132,19 +130,15 @@ size_t consoleicons::size() const
 	return FAR_ICON_COUNT;
 }
 
-static int CurX,CurY;
+static int CurX, CurY;
 static FarColor CurColor;
-
 static CONSOLE_CURSOR_INFO InitialCursorInfo;
-
 static rectangle windowholder_rect;
-
 wchar_t BoxSymbols[BS_COUNT];
-
-point InitSize{};
-point CurSize{};
-int ScrX=0, ScrY=0;
-int PrevScrX=-1, PrevScrY=-1;
+point InitSize { };
+point CurSize { };
+int ScrX = 0, ScrY = 0;
+int PrevScrX = -1, PrevScrY = -1;
 std::optional<console_mode> InitialConsoleMode;
 static rectangle InitWindowRect;
 static point InitialSize;
@@ -341,8 +335,6 @@ void InitConsole()
 			}
 		}
 	}
-
-
 	SetFarConsoleMode();
 	UpdateScreenSize();
 	Global->ScrBuf->FillBuf();
@@ -384,7 +376,6 @@ void CloseConsole()
 	consoleicons::instance().restore_icon();
 	CancelIoInProgress().close();
 }
-
 
 void SetFarConsoleMode(bool SetsActiveBuffer)
 {
@@ -608,24 +599,20 @@ void GotoXY(int X,int Y)
 	CurY=Y;
 }
 
-
 int WhereX()
 {
 	return CurX;
 }
-
 
 int WhereY()
 {
 	return CurY;
 }
 
-
 void MoveCursor(point const Point)
 {
 	Global->ScrBuf->MoveCursor(Point);
 }
-
 
 point GetCursorPos()
 {
@@ -647,12 +634,10 @@ void SetInitialCursorType()
 	Global->ScrBuf->SetCursorType(InitialCursorInfo.bVisible!=FALSE,InitialCursorInfo.dwSize);
 }
 
-
 void GetCursorType(bool& Visible, size_t& Size)
 {
 	Global->ScrBuf->GetCursorType(Visible,Size);
 }
-
 
 void MoveRealCursor(int X,int Y)
 {
@@ -840,7 +825,6 @@ static void HiTextBase(string_view const Str, function_ref<void(string_view, boo
 		return;
 	}
 }
-
 
 static size_t unescape(string_view const Str, function_ref<bool(wchar_t)> const PutChar)
 {
@@ -1040,9 +1024,7 @@ void ClearScreen(const FarColor& Color)
 {
 	Global->ScrBuf->FillRect({ 0, 0, ScrX, ScrY }, { L' ', Color });
 	if (Global->Opt->WindowMode)
-	{
 		console.ClearExtraRegions(Color, CR_BOTH);
-	}
 	Global->ScrBuf->Flush();
 	console.SetTextAttributes(Color);
 }
@@ -1051,7 +1033,6 @@ const FarColor& GetColor()
 {
 	return CurColor;
 }
-
 
 void ScrollScreen(int Count)
 {
@@ -1072,7 +1053,6 @@ bool DoWeReallyHaveToScroll(short Rows)
 
 	This function reads the specified number of the last lines from the screen buffer and checks if there's anything else in them but spaces.
 	*/
-
 	rectangle const Region{ 0, ScrY - Rows + 1, ScrX, ScrY };
 	// TODO: matrix_view to avoid copying
 	matrix<FAR_CHAR_INFO> BufferBlock(Rows, ScrX + 1);

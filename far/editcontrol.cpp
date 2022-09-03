@@ -85,7 +85,7 @@ EditControl::EditControl(window_ptr Owner, SimpleScreenObject* Parent, parent_pr
 	SetObjectColor();
 	if (aCallback)
 	{
-		m_Callback=*aCallback;
+		m_Callback = *aCallback;
 	}
 	else
 	{
@@ -374,9 +374,7 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 					MenuItemEx Item(i.Text);
 					// Preserve the case of the already entered part
 					if (Global->Opt->AutoComplete.AppendCompletion)
-					{
-						Item.ComplexUserData = cmp_user_data{ Str + string_view(i.Text + Str.size()) };
-					}
+						Item.ComplexUserData = cmp_user_data { Str + string_view(i.Text + Str.size()) };
 					ComplMenu->AddItem(Item);
 				}
 			}
@@ -385,14 +383,13 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 			bool StartQuote;
 			if (!ParseStringWithQuotes(Str, Prefix, Token, StartQuote))
 				return;
+
 			if (ECFlags.Check(EC_COMPLETE_FILESYSTEM) && CompletionEnabled(Global->Opt->AutoComplete.UseFilesystem))
-			{
 				EnumFiles(Menu, Prefix, Token, StartQuote);
-			}
+
 			if (ECFlags.Check(EC_COMPLETE_ENVIRONMENT) && CompletionEnabled(Global->Opt->AutoComplete.UseEnvironment))
-			{
 				EnumEnvironment(Menu, Prefix, Token, StartQuote);
-			}
+
 			if (ECFlags.Check(EC_COMPLETE_PATH) && CompletionEnabled(Global->Opt->AutoComplete.UsePath))
 			{
 				if (FindSlash(Str) == string::npos)
@@ -422,13 +419,16 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 					else
 						--SelStart;
 				}
-				SetString((Data && !Data->OriginalCaseStr.empty())? Data->OriginalCaseStr : FirstItem);
+				SetString((Data && !Data->OriginalCaseStr.empty()) ? Data->OriginalCaseStr : FirstItem);
 				if (m_Where.width() - 1 > GetLength())
 					SetLeftPos(0);
 				Select(SelStart, GetLength());
 			}
 		};
-		if (ComplMenu->size() > 1 || (ComplMenu->size() == 1 && !equal_icase(CurrentInput, ComplMenu->at(0).Name)))
+		if (ComplMenu->size() > 1
+		|| (ComplMenu->size() == 1
+		&& !equal_icase(CurrentInput, ComplMenu->at(0).Name))
+			)
 		{
 			ComplMenu->SetMenuFlags(VMENU_WRAPMODE | VMENU_SHOWAMPERSAND);
 			if (!DelBlock && Global->Opt->AutoComplete.AppendCompletion && (!m_Flags.Check(FEDITLINE_PERSISTENTBLOCKS) || Global->Opt->AutoComplete.ShowList))
@@ -440,7 +440,7 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 			{
 				ComplMenu->AddItem(MenuItemEx(), 0);
 				SetMenuPos(*ComplMenu);
-				ComplMenu->SetSelectPos(0,0);
+				ComplMenu->SetSelectPos(0, 0);
 				ComplMenu->SetBoxType(SHORT_SINGLE_BOX);
 				Show();
 				int PrevPos = 0;
@@ -455,9 +455,9 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 						if (Global->Opt->AutoComplete.ModalList)
 							return 0;
 						const auto CurPos = ComplMenu->GetSelectPos();
-						if (CurPos>=0 && (PrevPos!=CurPos || IsChanged))
+						if (CurPos >= 0 && (PrevPos != CurPos || IsChanged))
 						{
-							PrevPos=CurPos;
+							PrevPos = CurPos;
 							IsChanged = false;
 							SetString(CurPos? ComplMenu->at(CurPos).Name : CurrentInput);
 							Show();
@@ -467,161 +467,161 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 					const auto& ReadRec = *static_cast<INPUT_RECORD const*>(Param);
 					auto MenuKey = InputRecordToKey(&ReadRec);
 					::SetCursorType(Visible, Size);
-						if (MenuKey == KEY_NONE)
-							return 0;
-						// ввод
-						if (in_closed_range(L' ', MenuKey, std::numeric_limits<wchar_t>::max()) || any_of(MenuKey, KEY_BS, KEY_DEL, KEY_NUMDEL))
+					if (MenuKey == KEY_NONE)
+						return 0;
+					// ввод
+					if (in_closed_range(L' ', MenuKey, std::numeric_limits<wchar_t>::max()) || any_of(MenuKey, KEY_BS, KEY_DEL, KEY_NUMDEL))
+					{
+						DeleteBlock();
+						const auto strPrev = GetString();
+						ProcessKey(Manager::Key(MenuKey));
+						CurrentInput = GetString();
+						if (strPrev != CurrentInput)
 						{
-							DeleteBlock();
-							const auto strPrev = GetString();
-							ProcessKey(Manager::Key(MenuKey));
-							CurrentInput = GetString();
-							if (strPrev != CurrentInput)
+							SCOPED_ACTION(Dialog::suppress_redraw)(ComplMenu.get());
+							ComplMenu->clear();
+							PrevPos = 0;
+							Complete(*ComplMenu, CurrentInput);
+							if (ComplMenu->size() > 1
+							|| (ComplMenu->size() == 1
+							&& !equal_icase(CurrentInput, ComplMenu->at(0).Name))
+								)
 							{
-								SCOPED_ACTION(Dialog::suppress_redraw)(ComplMenu.get());
-								ComplMenu->clear();
-								PrevPos = 0;
-								Complete(*ComplMenu, CurrentInput);
-								if (ComplMenu->size() > 1
-								|| (ComplMenu->size() == 1
-								&& !equal_icase(CurrentInput, ComplMenu->at(0).Name))
-									)
-								{
-									if (none_of(MenuKey, KEY_BS, KEY_DEL, KEY_NUMDEL) && Global->Opt->AutoComplete.AppendCompletion)
-										AppendCmd();
-									ComplMenu->AddItem(MenuItemEx(), 0);
-									SetMenuPos(*ComplMenu);
-									ComplMenu->SetSelectPos(0,0);
-								}
-								else
-								{
-									ComplMenu->Close(-1);
-								}
+								if (none_of(MenuKey, KEY_BS, KEY_DEL, KEY_NUMDEL) && Global->Opt->AutoComplete.AppendCompletion)
+									AppendCmd();
+								ComplMenu->AddItem(MenuItemEx(), 0);
+								SetMenuPos(*ComplMenu);
+								ComplMenu->SetSelectPos(0,0);
 							}
-							Show();
-							return 1;
-						}
-						else
-						{
-							switch(MenuKey)
+							else
 							{
-							// "классический" перебор
-							case KEY_CTRLEND:
-							case KEY_RCTRLEND:
+								ComplMenu->Close(-1);
+							}
+						}
+						Show();
+						return 1;
+					}
+					else
+					{
+						switch(MenuKey)
+						{
+						// "классический" перебор
+						case KEY_CTRLEND:
+						case KEY_RCTRLEND:
 
-							case KEY_CTRLSPACE:
-							case KEY_RCTRLSPACE:
+						case KEY_CTRLSPACE:
+						case KEY_RCTRLSPACE:
+							{
+								ComplMenu->Key(KEY_DOWN);
+								return 1;
+							}
+						case KEY_SHIFTDEL:
+						case KEY_SHIFTNUMDEL:
+							{
+								if (ComplMenu->size() > 1)
 								{
-									ComplMenu->Key(KEY_DOWN);
-									return 1;
-								}
-							case KEY_SHIFTDEL:
-							case KEY_SHIFTNUMDEL:
-								{
-									if (ComplMenu->size() > 1)
+									const auto Data = ComplMenu->GetComplexUserDataPtr<cmp_user_data>();
+									if (Data && Data->HistoryRecordId && pHistory->DeleteIfUnlocked(Data->HistoryRecordId))
 									{
-										const auto Data = ComplMenu->GetComplexUserDataPtr<cmp_user_data>();
-										if (Data && Data->HistoryRecordId && pHistory->DeleteIfUnlocked(Data->HistoryRecordId))
+										ComplMenu->DeleteItem(ComplMenu->GetSelectPos());
+										if (ComplMenu->size() > 1)
 										{
-											ComplMenu->DeleteItem(ComplMenu->GetSelectPos());
-											if (ComplMenu->size() > 1)
-											{
-												IsChanged = true;
-												SetMenuPos(*ComplMenu);
-												Show();
-											}
-											else
-											{
-												ComplMenu->Close(-1);
-											}
+											IsChanged = true;
+											SetMenuPos(*ComplMenu);
+											Show();
+										}
+										else
+										{
+											ComplMenu->Close(-1);
 										}
 									}
 								}
+							}
+							break;
+						// навигация по строке ввода
+						case KEY_LEFT:
+						case KEY_NUMPAD4:
+						case KEY_CTRLS:     case KEY_RCTRLS:
+						case KEY_RIGHT:
+						case KEY_NUMPAD6:
+						case KEY_CTRLD:     case KEY_RCTRLD:
+						case KEY_CTRLLEFT:  case KEY_RCTRLLEFT:
+						case KEY_CTRLRIGHT: case KEY_RCTRLRIGHT:
+						case KEY_CTRLHOME:  case KEY_RCTRLHOME:
+							{
+								if (any_of(MenuKey, KEY_LEFT, KEY_NUMPAD4))
+								{
+									MenuKey = KEY_CTRLS;
+								}
+								else if(any_of(MenuKey, KEY_RIGHT, KEY_NUMPAD6))
+								{
+									MenuKey = KEY_CTRLD;
+								}
+								m_ParentProcessKey(Manager::Key(MenuKey));
+								Show();
+								return 1;
+							}
+						// навигация по списку
+						case KEY_SHIFT:
+						case KEY_ALT:
+						case KEY_RALT:
+						case KEY_CTRL:
+						case KEY_RCTRL:
+						case KEY_HOME:
+						case KEY_NUMPAD7:
+						case KEY_END:
+						case KEY_NUMPAD1:
+						case KEY_NONE:
+						case KEY_ESC:
+						case KEY_F10:
+						case KEY_ALTF9:
+						case KEY_RALTF9:
+						case KEY_UP:
+						case KEY_NUMPAD8:
+						case KEY_DOWN:
+						case KEY_NUMPAD2:
+						case KEY_PGUP:
+						case KEY_NUMPAD9:
+						case KEY_PGDN:
+						case KEY_NUMPAD3:
+						case KEY_ALTLEFT:
+						case KEY_ALTRIGHT:
+						case KEY_ALTHOME:
+						case KEY_ALTEND:
+						case KEY_RALTLEFT:
+						case KEY_RALTRIGHT:
+						case KEY_RALTHOME:
+						case KEY_RALTEND:
+						case KEY_MSWHEEL_UP:
+						case KEY_MSWHEEL_DOWN:
+						case KEY_MSWHEEL_LEFT:
+						case KEY_MSWHEEL_RIGHT:
+							{
 								break;
-							// навигация по строке ввода
-							case KEY_LEFT:
-							case KEY_NUMPAD4:
-							case KEY_CTRLS:     case KEY_RCTRLS:
-							case KEY_RIGHT:
-							case KEY_NUMPAD6:
-							case KEY_CTRLD:     case KEY_RCTRLD:
-							case KEY_CTRLLEFT:  case KEY_RCTRLLEFT:
-							case KEY_CTRLRIGHT: case KEY_RCTRLRIGHT:
-							case KEY_CTRLHOME:  case KEY_RCTRLHOME:
-								{
-									if (any_of(MenuKey, KEY_LEFT, KEY_NUMPAD4))
-									{
-										MenuKey = KEY_CTRLS;
-									}
-									else if(any_of(MenuKey, KEY_RIGHT, KEY_NUMPAD6))
-									{
-										MenuKey = KEY_CTRLD;
-									}
-									m_ParentProcessKey(Manager::Key(MenuKey));
-									Show();
-									return 1;
-								}
-							// навигация по списку
-							case KEY_SHIFT:
-							case KEY_ALT:
-							case KEY_RALT:
-							case KEY_CTRL:
-							case KEY_RCTRL:
-							case KEY_HOME:
-							case KEY_NUMPAD7:
-							case KEY_END:
-							case KEY_NUMPAD1:
-							case KEY_NONE:
-							case KEY_ESC:
-							case KEY_F10:
-							case KEY_ALTF9:
-							case KEY_RALTF9:
-							case KEY_UP:
-							case KEY_NUMPAD8:
-							case KEY_DOWN:
-							case KEY_NUMPAD2:
-							case KEY_PGUP:
-							case KEY_NUMPAD9:
-							case KEY_PGDN:
-							case KEY_NUMPAD3:
-							case KEY_ALTLEFT:
-							case KEY_ALTRIGHT:
-							case KEY_ALTHOME:
-							case KEY_ALTEND:
-							case KEY_RALTLEFT:
-							case KEY_RALTRIGHT:
-							case KEY_RALTHOME:
-							case KEY_RALTEND:
-							case KEY_MSWHEEL_UP:
-							case KEY_MSWHEEL_DOWN:
-							case KEY_MSWHEEL_LEFT:
-							case KEY_MSWHEEL_RIGHT:
-								{
-									break;
-								}
-							case KEY_MSLCLICK:
-								MenuKey = KEY_ENTER;
-								[[fallthrough]];
-							case KEY_ENTER:
-							case KEY_NUMENTER:
-								{
-									if (!Global->Opt->AutoComplete.ModalList)
-									{
-										ComplMenu->Close(-1);
-										BackKey = Manager::Key(MenuKey);
-										Result = 1;
-									}
-									break;
-								}
-							// всё остальное закрывает список и идёт владельцу
-							default:
+							}
+						case KEY_MSLCLICK:
+							MenuKey = KEY_ENTER;
+							[[fallthrough]];
+						case KEY_ENTER:
+						case KEY_NUMENTER:
+							{
+								if (!Global->Opt->AutoComplete.ModalList)
 								{
 									ComplMenu->Close(-1);
-									BackKey = Manager::Key(MenuKey, ReadRec);
+									BackKey = Manager::Key(MenuKey);
 									Result = 1;
 								}
+								break;
+							}
+						// всё остальное закрывает список и идёт владельцу
+						default:
+							{
+								ComplMenu->Close(-1);
+								BackKey = Manager::Key(MenuKey, ReadRec);
+								Result = 1;
 							}
 						}
+					}
 					return 0;
 				});
 				// mouse click
@@ -753,18 +753,18 @@ bool EditControl::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 	return true;
 }
 
-void EditControl::SetObjectColor(PaletteColors Color,PaletteColors SelColor,PaletteColors ColorUnChanged)
+void EditControl::SetObjectColor(PaletteColors Color, PaletteColors SelColor, PaletteColors ColorUnChanged)
 {
-	m_Color=colors::PaletteColorToFarColor(Color);
-	m_SelectedColor=colors::PaletteColorToFarColor(SelColor);
-	m_UnchangedColor=colors::PaletteColorToFarColor(ColorUnChanged);
+	m_Color = colors::PaletteColorToFarColor(Color);
+	m_SelectedColor = colors::PaletteColorToFarColor(SelColor);
+	m_UnchangedColor = colors::PaletteColorToFarColor(ColorUnChanged);
 }
 
-void EditControl::SetObjectColor(const FarColor& Color,const FarColor& SelColor, const FarColor& ColorUnChanged)
+void EditControl::SetObjectColor(const FarColor& Color, const FarColor& SelColor, const FarColor& ColorUnChanged)
 {
-	m_Color=Color;
-	m_SelectedColor=SelColor;
-	m_UnchangedColor=ColorUnChanged;
+	m_Color = Color;
+	m_SelectedColor = SelColor;
+	m_UnchangedColor = ColorUnChanged;
 }
 
 void EditControl::GetObjectColor(FarColor& Color, FarColor& SelColor, FarColor& ColorUnChanged) const

@@ -69,8 +69,8 @@ enum FFILEEDIT_FLAGS
 	FFILEEDIT_DISABLEHISTORY        = 19_bit,  // Запретить запись в историю?
 	FFILEEDIT_ENABLEF6              = 20_bit,  // Переключаться во вьювер можно?
 	FFILEEDIT_SAVETOSAVEAS          = 21_bit,  // $ 17.08.2001 KM  Добавлено для поиска по AltF7.
-	//   При редактировании найденного файла из архива для
-	//   клавиши F2 сделать вызов ShiftF2.
+	/* При редактировании найденного файла из архива для
+		клавиши F2 сделать вызов ShiftF2. */
 	FFILEEDIT_SAVEWQUESTIONS        = 22_bit,  // сохранить без вопросов
 	FFILEEDIT_LOCKED                = 23_bit,  // заблокировать?
 	FFILEEDIT_OPENFAILED            = 24_bit,  // файл открыть не удалось

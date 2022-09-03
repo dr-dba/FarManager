@@ -1414,137 +1414,6 @@ static int editor_GetColor(lua_State *L)
 	return 1;
 }
 
-// [feature@Xer0X] APi to read editor's window coordinates
-static int editor_GetCoord(lua_State *L)
-{
-	PSInfo *Info = GetPluginData(L)->Info;
-	intptr_t EditorId;
-	COORD coord;
-	EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
-	if (Info->EditorControl(EditorId, ECTL_GETCOORD, 0, &coord))
-	{
-		lua_createtable(L, 0, 2);
-		PutNumToTable(L, "X", coord.X);
-		PutNumToTable(L, "Y", coord.Y);
-		return 1;
-	}
-	else
-	{
-		lua_pushnil(L);
-	}
-	return 1;
-}
-
-// [feature@Xer0X] editor control update the screen coordinates
-static int editor_SetCoord(lua_State* L)
-{
-	PSInfo* Info = GetPluginData(L)->Info;
-	intptr_t EditorId = luaL_optinteger(L, 1, CURRENT_EDITOR);
-	void* Param2 = NULL;
-	SMALL_RECT new_rect, res_rect;
-	luaL_checktype(L, 2, LUA_TTABLE);
-	int is_delta = FALSE;
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "Delta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "delta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "IsDelta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "isdelta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "Is_Delta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "is_delta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "delta"	, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "D"		, FALSE);
-	if(!is_delta)is_delta=GetOptBoolFromTable(L, "d"		, FALSE);
-	const SHORT NO_VAL = -12345; 
-	const SHORT NV = NO_VAL; // just a short name
-	const SHORT NA = NO_VAL + 1; // value what is not applicable
-	new_rect.Left		= GetOptIntFromTable (L, "Left"		, NO_VAL);
-	new_rect.Top		= GetOptIntFromTable (L, "Top"		, NO_VAL);
-	new_rect.Right		= GetOptIntFromTable (L, "Right"	, NO_VAL);
-	new_rect.Bottom		= GetOptIntFromTable (L, "Bottom"	, NO_VAL);
-	if (new_rect.Left	== NO_VAL)
-		new_rect.Left	= GetOptIntFromTable(L, "X"			, NO_VAL);
-	if (new_rect.Top	== NO_VAL)
-		new_rect.Top	= GetOptIntFromTable(L, "Y"			, NO_VAL);
-	if (new_rect.Left	== NO_VAL)
-		new_rect.Left	= GetOptIntFromTable(L, "X"			, NO_VAL);
-	if (new_rect.Top	== NO_VAL)
-		new_rect.Top	= GetOptIntFromTable(L, "Y"			, NO_VAL);
-	if (new_rect.Left	== NO_VAL)
-		new_rect.Left	= GetOptIntFromTable(L, "x"			, NO_VAL);
-	if (new_rect.Top	== NO_VAL)
-		new_rect.Top	= GetOptIntFromTable(L, "y"			, NO_VAL);
-	if (new_rect.Left	== NO_VAL)
-		new_rect.Left	= GetOptIntFromTable(L, "x1"		, NO_VAL);
-	if (new_rect.Left	== NO_VAL)
-		new_rect.Left	= GetOptIntFromTable(L, "X1"		, NO_VAL);
-	if (new_rect.Top	== NO_VAL)
-		new_rect.Top	= GetOptIntFromTable(L, "y1"		, NO_VAL);
-	if (new_rect.Top	== NO_VAL)
-		new_rect.Top	= GetOptIntFromTable(L, "Y1"		, NO_VAL);
-	if (new_rect.Right	== NO_VAL)
-		new_rect.Right	= GetOptIntFromTable(L, "x2"		, NO_VAL);
-	if (new_rect.Bottom == NO_VAL)
-		new_rect.Bottom = GetOptIntFromTable(L, "y2"		, NO_VAL);
-	if (new_rect.Right	== NO_VAL)
-		new_rect.Right	= GetOptIntFromTable(L, "X2"		, NO_VAL);
-	if (new_rect.Bottom == NO_VAL)
-		new_rect.Bottom = GetOptIntFromTable(L, "Y2"		, NO_VAL);
-	if (new_rect.Left	== NO_VAL)
-		new_rect.Left	= GetOptIntFromArray(L, 1			, NO_VAL);
-	if (new_rect.Top	== NO_VAL)
-		new_rect.Top	= GetOptIntFromArray(L, 2			, NO_VAL);
-	if (new_rect.Right	== NO_VAL)
-		new_rect.Right	= GetOptIntFromArray(L, 3			, NO_VAL);
-	if (new_rect.Bottom	== NO_VAL)
-		new_rect.Bottom	= GetOptIntFromArray(L, 4			, NO_VAL);
-	int new_W = new_rect.Right == NO_VAL ? NO_VAL : NA;
-	if (new_W==NV)new_W = GetOptIntFromTable(L, "Width"		, NO_VAL);
-	if (new_W==NV)new_W = GetOptIntFromTable(L, "width"		, NO_VAL);
-	if (new_W==NV)new_W = GetOptIntFromTable(L, "W"			, NO_VAL);
-	if (new_W==NV)new_W = GetOptIntFromTable(L, "w"			, NO_VAL);
-	if (new_W==NA)new_W = NO_VAL;
-	int new_H = new_rect.Bottom== NO_VAL ? NO_VAL : NA;
-	if (new_H==NV)new_H = GetOptIntFromTable(L, "Height"	, NO_VAL);
-	if (new_H==NV)new_H = GetOptIntFromTable(L, "height"	, NO_VAL);
-	if (new_H==NV)new_H = GetOptIntFromTable(L, "H"			, NO_VAL);
-	if (new_H==NV)new_H = GetOptIntFromTable(L, "h"			, NO_VAL);
-	if (new_H==NA)new_H = NO_VAL;
-	if (new_W!=NV
-	&&	new_rect.Right == NO_VAL) {
-		new_rect.Right  = new_W;
-	} else
-		new_W = NO_VAL;
-	if (new_H!= NO_VAL
-	&&	new_rect.Bottom== NO_VAL) {
-		new_rect.Bottom = new_H;
-	} else
-		new_H = NO_VAL;
-	new_rect.Left	= new_rect.Left	!= NO_VAL ? new_rect.Left	: (is_delta ? 0 : -1);
-	new_rect.Top	= new_rect.Top	!= NO_VAL ? new_rect.Top	: (is_delta ? 0 : -1);
-	new_rect.Right	= new_rect.Right!= NO_VAL ? new_rect.Right	: (is_delta ? 0 : -1);
-	new_rect.Bottom = new_rect.Bottom!=NO_VAL ? new_rect.Bottom	: (is_delta ? 0 : -1);
-	int Param1 = 0
-		+ (!is_delta ? 0 : 1)
-		+ (new_W==NV ? 0 : 2)
-		+ (new_H==NV ? 0 : 4);
-	Param2 = &new_rect;
-	res_rect = new_rect;
-	if (Info->EditorControl(EditorId, ECTL_SETCOORD, Param1, &res_rect))
-	{
-		lua_createtable(L, 0, 6);
-		PutNumToTable(L, "Left"	, res_rect.Left	);
-		PutNumToTable(L, "Top"	, res_rect.Top	);
-		PutNumToTable(L, "Right", res_rect.Right);
-		PutNumToTable(L, "Bottom",res_rect.Bottom);
-		PutNumToTable(L, "Width", res_rect.Right - res_rect.Left+ 1);
-		PutNumToTable(L, "Height",res_rect.Bottom- res_rect.Top	+ 1);
-	}
-	else
-	{
-		lua_pushnil(L);
-	}
-	return 1;
-}
-
 static int editor_SaveFile(lua_State *L)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
@@ -3846,6 +3715,167 @@ static int far_SubscribeDialogDrawEvents(lua_State *L)
 	return 0;
 }
 
+// [feature@Xer0X] APi to read screen's window coordinates
+static int screen_GetCoord(enum WINDOWINFO_TYPE wind_type, lua_State *L)
+{
+	int CURRENT_SCREEN = -1;
+	switch (wind_type) {
+	case WTYPE_EDITOR: CURRENT_SCREEN = CURRENT_EDITOR	; break;
+	case WTYPE_VIEWER: CURRENT_SCREEN = -1				; break; }
+	intptr_t ScreenId = luaL_optinteger(L, 1, CURRENT_SCREEN);
+	PSInfo *Info = GetPluginData(L)->Info;
+	COORD coord;
+	int res_val = FALSE;
+	switch (wind_type) {
+	case WTYPE_EDITOR: res_val = Info->EditorControl(ScreenId, VCTL_GETCOORD, 0, &coord); break;
+	case WTYPE_VIEWER: res_val = Info->ViewerControl(ScreenId, ECTL_GETCOORD, 0, &coord); break; }
+	if (res_val)
+	{
+		lua_createtable(L, 0, 2);
+		PutNumToTable(L, "X", coord.X);
+		PutNumToTable(L, "Y", coord.Y);
+		return 1;
+	}
+	else
+	{
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+// [feature@Xer0X] screen control update the screen coordinates
+static int screen_SetCoord(enum WINDOWINFO_TYPE wind_type, lua_State* L)
+{
+	int CURRENT_SCREEN = -1;
+	switch (wind_type) {
+	case WTYPE_EDITOR: CURRENT_SCREEN = CURRENT_EDITOR	; break;
+	case WTYPE_VIEWER: CURRENT_SCREEN = -1				; break;
+	}
+	intptr_t ScreenId = luaL_optinteger(L, 1, CURRENT_SCREEN);
+	PSInfo *Info = GetPluginData(L)->Info;
+	void *Param2 = NULL;
+	SMALL_RECT new_rect, res_rect;
+	luaL_checktype(L, 2, LUA_TTABLE);
+	int is_delta = FALSE;
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "Delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "IsDelta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "isdelta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "Is_Delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "is_delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "delta"	, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "D"		, FALSE);
+	if(!is_delta)is_delta=GetOptBoolFromTable(L, "d"		, FALSE);
+	const SHORT NO_VAL = -12345; 
+	const SHORT NV = NO_VAL; // just a short name
+	const SHORT NA = NO_VAL + 1; // value what is not applicable
+	new_rect.Left		= GetOptIntFromTable (L, "Left"		, NO_VAL);
+	new_rect.Top		= GetOptIntFromTable (L, "Top"		, NO_VAL);
+	new_rect.Right		= GetOptIntFromTable (L, "Right"	, NO_VAL);
+	new_rect.Bottom		= GetOptIntFromTable (L, "Bottom"	, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "X"			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "Y"			, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "X"			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "Y"			, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "x"			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "y"			, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "x1"		, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromTable(L, "X1"		, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "y1"		, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromTable(L, "Y1"		, NO_VAL);
+	if (new_rect.Right	== NO_VAL)
+		new_rect.Right	= GetOptIntFromTable(L, "x2"		, NO_VAL);
+	if (new_rect.Bottom == NO_VAL)
+		new_rect.Bottom = GetOptIntFromTable(L, "y2"		, NO_VAL);
+	if (new_rect.Right	== NO_VAL)
+		new_rect.Right	= GetOptIntFromTable(L, "X2"		, NO_VAL);
+	if (new_rect.Bottom == NO_VAL)
+		new_rect.Bottom = GetOptIntFromTable(L, "Y2"		, NO_VAL);
+	if (new_rect.Left	== NO_VAL)
+		new_rect.Left	= GetOptIntFromArray(L, 1			, NO_VAL);
+	if (new_rect.Top	== NO_VAL)
+		new_rect.Top	= GetOptIntFromArray(L, 2			, NO_VAL);
+	if (new_rect.Right	== NO_VAL)
+		new_rect.Right	= GetOptIntFromArray(L, 3			, NO_VAL);
+	if (new_rect.Bottom	== NO_VAL)
+		new_rect.Bottom	= GetOptIntFromArray(L, 4			, NO_VAL);
+	int new_W = new_rect.Right == NO_VAL ? NO_VAL : NA;
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "Width"		, NO_VAL);
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "width"		, NO_VAL);
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "W"			, NO_VAL);
+	if (new_W==NV)new_W = GetOptIntFromTable(L, "w"			, NO_VAL);
+	if (new_W==NA)new_W = NO_VAL;
+	int new_H = new_rect.Bottom== NO_VAL ? NO_VAL : NA;
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "Height"	, NO_VAL);
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "height"	, NO_VAL);
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "H"			, NO_VAL);
+	if (new_H==NV)new_H = GetOptIntFromTable(L, "h"			, NO_VAL);
+	if (new_H==NA)new_H = NO_VAL;
+	if (new_W!=NV
+	&&	new_rect.Right == NO_VAL) {
+		new_rect.Right  = new_W;
+	} else
+		new_W = NO_VAL;
+	if (new_H!= NO_VAL
+	&&	new_rect.Bottom== NO_VAL) {
+		new_rect.Bottom = new_H;
+	} else
+		new_H = NO_VAL;
+	new_rect.Left	= new_rect.Left	!= NO_VAL ? new_rect.Left	: (is_delta ? 0 : -1);
+	new_rect.Top	= new_rect.Top	!= NO_VAL ? new_rect.Top	: (is_delta ? 0 : -1);
+	new_rect.Right	= new_rect.Right!= NO_VAL ? new_rect.Right	: (is_delta ? 0 : -1);
+	new_rect.Bottom = new_rect.Bottom!=NO_VAL ? new_rect.Bottom	: (is_delta ? 0 : -1);
+	int Param1 = 0
+		+ (!is_delta ? 0 : 1)
+		+ (new_W==NV ? 0 : 2)
+		+ (new_H==NV ? 0 : 4);
+	Param2 = &new_rect;
+	res_rect = new_rect;
+	int res_val = FALSE;
+	switch (wind_type) {
+	case WTYPE_EDITOR: res_val = Info->EditorControl(ScreenId, VCTL_SETCOORD, Param1, &res_rect); break;
+	case WTYPE_VIEWER: res_val = Info->ViewerControl(ScreenId, ECTL_SETCOORD, Param1, &res_rect); break; }
+	if (res_val)
+	{
+		lua_createtable(L, 0, 6);
+		PutNumToTable(L, "Left"	, res_rect.Left	);
+		PutNumToTable(L, "Top"	, res_rect.Top	);
+		PutNumToTable(L, "Right", res_rect.Right);
+		PutNumToTable(L, "Bottom",res_rect.Bottom);
+		PutNumToTable(L, "Width", res_rect.Right - res_rect.Left+ 1);
+		PutNumToTable(L, "Height",res_rect.Bottom- res_rect.Top	+ 1);
+	}
+	else
+	{
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+// [feature@Xer0X] screen control update the screen coordinates
+static int editor_GetCoord(lua_State *L) {
+	return screen_GetCoord(WTYPE_EDITOR, L);
+}
+static int editor_SetCoord(lua_State* L) {
+	return screen_SetCoord(WTYPE_EDITOR, L);
+}
+static int viewer_GetCoord(lua_State* L) {
+	return screen_GetCoord(WTYPE_VIEWER, L);
+}
+static int viewer_SetCoord(lua_State* L) {
+	return screen_SetCoord(WTYPE_VIEWER, L);
+}
+
 static int editor_Editor(lua_State *L)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
@@ -3859,8 +3889,7 @@ static int editor_Editor(lua_State *L)
 	intptr_t StartLine = luaL_optinteger(L, 8, -1);
 	intptr_t StartChar = luaL_optinteger(L, 9, -1);
 	intptr_t CodePage  = luaL_optinteger(L, 10, CP_DEFAULT);
-	intptr_t ret = Info->Editor(FileName, Title, X1, Y1, X2, Y2, Flags,
-	                            StartLine, StartChar, CodePage);
+	intptr_t ret = Info->Editor(FileName, Title, X1, Y1, X2, Y2, Flags, StartLine, StartChar, CodePage);
 	lua_pushinteger(L, (int)ret);
 	return 1;
 }
@@ -3869,7 +3898,7 @@ static int viewer_Viewer(lua_State *L)
 {
 	PSInfo *Info = GetPluginData(L)->Info;
 	const wchar_t* FileName = check_utf8_string(L, 1, NULL);
-	const wchar_t* Title    = opt_utf8_string(L, 2, NULL);
+	const wchar_t* Title = opt_utf8_string(L, 2, NULL);
 	intptr_t X1 = luaL_optinteger(L, 3, 0);
 	intptr_t Y1 = luaL_optinteger(L, 4, 0);
 	intptr_t X2 = luaL_optinteger(L, 5, -1);
@@ -3895,11 +3924,11 @@ static int viewer_GetInfo(lua_State *L)
 	PSInfo *Info = GetPluginData(L)->Info;
 	struct ViewerInfo vi;
 	vi.StructSize = sizeof(vi);
-	if(Info->ViewerControl(ViewerId, VCTL_GETINFO, 0, &vi))
+	if (Info->ViewerControl(ViewerId, VCTL_GETINFO, 0, &vi))
 	{
 		lua_createtable(L, 0, 10);
 		PutNumToTable(L, "ViewerID", (double) vi.ViewerID);
-		if(push_ev_filename(L, 0, ViewerId))
+		if (push_ev_filename(L, 0, ViewerId))
 			lua_setfield(L, -2, "FileName");
 		PutNumToTable(L,  "FileSize", (double) vi.FileSize);
 		PutNumToTable(L,  "FilePos", (double) vi.FilePos);
@@ -3915,7 +3944,9 @@ static int viewer_GetInfo(lua_State *L)
 		lua_setfield(L, -2, "CurMode");
 	}
 	else
+	{
 		lua_pushnil(L);
+	}
 	return 1;
 }
 
@@ -5973,10 +6004,7 @@ const luaL_Reg editor_funcs[] =
 	{"Editor",              editor_Editor},
 	{"ExpandTabs",          editor_ExpandTabs},
 	{"GetBookmarks",        editor_GetBookmarks},
-	{"GetColor",            editor_GetColor},
-	// [feature@Xer0X] Api to read editor's window coordinates
-	{"GetCoord",            editor_GetCoord},
-	{"SetCoord",			editor_SetCoord},
+	{"GetColor",            editor_GetColor},	
 	{"GetFileName",         editor_GetFileName},
 	{"GetInfo",             editor_GetInfo},
 	{"GetSelection",        editor_GetSelection},
@@ -6005,6 +6033,9 @@ const luaL_Reg editor_funcs[] =
 	{"SubscribeChangeEvent",editor_SubscribeChangeEvent},
 	{"TabToReal",           editor_TabToReal},
 	{"UndoRedo",            editor_UndoRedo},
+	// [feature@Xer0X] Api to read editor's window coordinates
+	{"GetCoord",			editor_GetCoord },
+	{"SetCoord",			editor_SetCoord },
 	{NULL, NULL},
 };
 
@@ -6018,6 +6049,8 @@ const luaL_Reg viewer_funcs[] =
 	{"SetKeyBar",           viewer_SetKeyBar},
 	{"SetMode",             viewer_SetMode},
 	{"SetPosition",         viewer_SetPosition},
+	{"GetCoord",			viewer_GetCoord},
+	{"SetCoord",			viewer_SetCoord},
 	{"Viewer",              viewer_Viewer},
 	{NULL, NULL},
 };

@@ -79,21 +79,16 @@ foldertree_ptr FolderTree::create(string &strResultFolder, int ModalMode, int Is
 void FolderTree::init(string &strResultFolder)
 {
 	m_windowKeyBar = std::make_unique<KeyBar>(shared_from_this());
-
 	SetRestoreScreenMode(true);
 	if (m_ModalMode != MODALTREE_FREE)
 		strResultFolder.clear();
 	SetCoords();
-
 	m_Tree = TreeList::create(nullptr, m_ModalMode);
-
 	SetMacroMode(MACROAREA_FINDFOLDER);
 	m_LastName.clear();
 	m_Tree->SetPosition(m_Where);
-
 	if (m_ModalMode == MODALTREE_FREE)
 		m_Tree->SetRootDir(strResultFolder);
-
 	m_Tree->SetVisible(true);
 	m_Tree->Update(0);
 
@@ -135,7 +130,6 @@ void FolderTree::DisplayObject()
 		m_windowKeyBar->Hide();
 }
 
-
 void FolderTree::SetCoords()
 {
 	if (m_IsFullScreen)
@@ -162,7 +156,6 @@ void FolderTree::SetScreenPosition()
 {
 	if (m_IsFullScreen)
 		m_windowKeyBar->Hide();
-
 	SetCoords();
 	Show();
 }

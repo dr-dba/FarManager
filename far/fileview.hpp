@@ -47,7 +47,28 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //----------------------------------------------------------------------------
 
-class FileViewer final: public window,public ViewerContainer
+// [feature@Xer0X] viewer flags as it done for editor
+enum FFILEVIEW_FLAGS
+{
+	FFILEVIEW_REDRAWTITLE		= 17_bit, // Нужно редравить заголовок?
+	FFILEVIEW_FULLSCREEN		= 18_bit, // Полноэкранный режим?
+	FFILEVIEW_DISABLEHISTORY	= 19_bit, // Запретить запись в историю?
+	FFILEVIEW_ENABLEF6			= 20_bit, // Переключаться во вьювер можно?
+	FFILEVIEW_SAVETOSAVEAS		= 21_bit, // $ 17.08.2001 KM  Добавлено для поиска по AltF7.
+	// При редактировании найденного файла из архива для
+	// клавиши F2 сделать вызов ShiftF2.
+	FFILEVIEW_SAVEWQUESTIONS	= 22_bit, // сохранить без вопросов
+	FFILEVIEW_LOCKED			= 23_bit, // заблокировать?
+	FFILEVIEW_OPENFAILED		= 24_bit, // файл открыть не удалось
+	FFILEVIEW_DELETEONCLOSE		= 25_bit, // удалить в деструкторе файл вместе с каталогом (если тот пуст)
+	FFILEVIEW_DELETEONLYFILEONCLOSE
+								= 26_bit, // удалить в деструкторе только файл
+	FFILEVIEW_DISABLESAVEPOS	= 27_bit, // не сохранять позицию для файла
+	FFILEVIEW_CANNEWFILE		= 28_bit, // допускается новый файл?
+	FFILEVIEW_SERVICEREGION		= 29_bit, // используется сервисная область
+};
+
+class FileViewer final: public window, public ViewerContainer
 {
 	struct private_tag { explicit private_tag() = default; };
 
@@ -58,13 +79,14 @@ public:
 		bool DisableHistory = false,
 		bool DisableEdit = false,
 		long long ViewStartPos = -1,
-		string_view PluginData = {},
+		string_view PluginData = { },
 		NamesList* ViewNamesList = nullptr,
 		bool ToSaveAs = false,
 		uintptr_t aCodePage = CP_DEFAULT,
-		string_view Title = {},
+		string_view Title = { },
 		int DeleteOnClose = 0,
-		window_ptr Update = nullptr);
+		window_ptr Update = nullptr
+	);
 
 	static fileviewer_ptr create(
 		string_view Name,
@@ -72,7 +94,8 @@ public:
 		bool DisableHistory,
 		string_view Title,
 		rectangle Position,
-		uintptr_t aCodePage = CP_DEFAULT);
+		uintptr_t aCodePage = CP_DEFAULT
+	);
 
 	FileViewer(private_tag, bool DisableEdit, string_view Title);
 	~FileViewer() override;
@@ -104,15 +127,25 @@ public:
 		Добавлено для поиска по AltF7. При редактировании найденного файла из
 		архива для клавиши F2 сделать вызов ShiftF2.
 	*/
-	void SetSaveToSaveAs(bool ToSaveAs) { m_SaveToSaveAs=ToSaveAs; InitKeyBar(); }
-	int  ViewerControl(int Command, intptr_t Param1, void *Param2) const;
-	bool IsFullScreen() const {return m_FullScreen;}
+	void SetSaveToSaveAs(bool ToSaveAs) { m_SaveToSaveAs = ToSaveAs; InitKeyBar(); }
+	int ViewerControl(int Command, intptr_t Param1, void *Param2) const;
+	// [refactor@Xer0X] dealing with Viewer's dynamic moving+resize
+	bool IsFullScreen() const { return m_View->IsFullScreen(); }
+	/* // [experimental@Xer0X] junk
+	intptr_t ViewerControl2__junk_Xer0X(int Command, intptr_t Param1, void* Param2); // ? not const
+	rectangle GetWhereFV_C() const { return m_View->GetWhereV_C(); }
+	rectangle GetWhereFV() { return m_View->GetWhereV(); } */
 	long long GetViewFileSize() const;
 	long long GetViewFilePos() const;
 	void ShowStatus() const;
-	int GetId() const { return m_View->ViewerID; }
+	int GetId() const { return m_View	->ViewerID; }
 	void OnReload();
 	void ReadEvent();
+	rectangle AdjustScreenPosition(rectangle Position) {
+		rectangle rect_res = m_View->AdjustScreenPosition(Position);
+		m_Where = rect_res;
+		return rect_res;
+	};
 
 private:
 	void Show() override;
@@ -127,17 +160,19 @@ private:
 		NamesList *ViewNamesList,
 		bool ToSaveAs,
 		uintptr_t aCodePage,
-		window_ptr Update = nullptr);
+		window_ptr Update = nullptr
+	);
 
 	std::unique_ptr<Viewer> m_View;
-	bool m_RedrawTitle{};
-	bool m_bClosing{};
-	bool m_FullScreen{true};
+	bool m_RedrawTitle { };
+	bool m_bClosing { };
+	// [refactor@Xer0X] Moved to underlaying viewer.cpp:
+//	bool m_FullScreen { true };
 	bool m_DisableEdit;
-	bool m_DisableHistory{};
+	bool m_DisableHistory { };
 	string m_Name;
-	bool m_SaveToSaveAs{};
-	int m_DeleteOnClose{};
+	bool m_SaveToSaveAs { };
+	int m_DeleteOnClose { };
 	string m_StrTitle;
 
 	class f3_key_timer;

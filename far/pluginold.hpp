@@ -1010,7 +1010,6 @@ PACK_PUSH(2)
 		void* Param
 	);
 
-
 	enum VIEWER_CONTROL_COMMANDS
 	{
 		VCTL_GETINFO,
@@ -1020,6 +1019,9 @@ PACK_PUSH(2)
 		VCTL_SETPOSITION,
 		VCTL_SELECT,
 		VCTL_SETMODE,
+		// [feature@Xer0X] viewer control Get/Set screen coordinates commands
+		VCTL_GETCOORD,
+		VCTL_SETCOORD
 	};
 
 	enum VIEWER_OPTIONS
@@ -1175,7 +1177,7 @@ PACK_PUSH(2)
 		ECTL_DELETESTACKBOOKMARK,
 		ECTL_GETSTACKBOOKMARKS,
 		ECTL_SERVICEREGION,
-		// [feature@Xer0X] editor control Get / Set screen coordinates commands
+		// [feature@Xer0X] editor control Get/Set screen coordinates commands
 		ECTL_GETCOORD,
 		ECTL_SETCOORD
 	};

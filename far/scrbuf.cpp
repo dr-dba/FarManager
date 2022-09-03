@@ -353,13 +353,13 @@ void ScreenBuf::FillRect(rectangle Where, const FAR_CHAR_INFO& Info)
 
 void ScreenBuf::Invalidate(flush_type const FlushType)
 {
-	if (FlushType & flush_type::screen)
-	{
+	if (FlushType & flush_type::screen) {
 		SBFlags.Clear(SBFLAGS_FLUSHED);
 		Shadow.vector().assign(Shadow.vector().size(), {});
 	}
 	if (FlushType & flush_type::cursor)
 		SBFlags.Clear(SBFLAGS_FLUSHEDCURPOS | SBFLAGS_FLUSHEDCURTYPE);
+
 	if (FlushType & flush_type::title)
 		SBFlags.Clear(SBFLAGS_FLUSHEDTITLE);
 }
