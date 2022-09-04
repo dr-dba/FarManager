@@ -56,7 +56,7 @@ HANDLE Open_Luamacro(lua_State* L, const struct OpenInfo *Info)
 		LF_Message(L, L"too many values to place onto Lua stack", L"LuaMacro", L"OK", "wl", NULL, NULL);
 		return NULL;
 	}
-	if(pcall_msg(L, 2+(int)argc, 2) == 0)
+	if (pcall_msg(L, 2+(int)argc, 2) == 0)
 	{
 		intptr_t ReturnType;
 		if (!lua_toboolean(L,-2))

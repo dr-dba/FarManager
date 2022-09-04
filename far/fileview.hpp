@@ -138,7 +138,7 @@ public:
 	long long GetViewFileSize() const;
 	long long GetViewFilePos() const;
 	void ShowStatus() const;
-	int GetId() const { return m_View	->ViewerID; }
+	int GetId() const { return m_View->ViewerID; }
 	void OnReload();
 	void ReadEvent();
 	rectangle AdjustScreenPosition(rectangle Position) {

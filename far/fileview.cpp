@@ -289,6 +289,7 @@ void FileViewer::Show()
 	rectangle r2 = m_View->GetWhereV_C();
 	rectangle r3 = GetWhereFV();
 	rectangle r4 = GetWhereFV_C(); */
+//	rectangle rect_where = m_View->GetWhere();
 	if (IsFullScreen())
 	{
 		if (m_View->m_Where == RECT_ZERO) {

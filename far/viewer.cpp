@@ -593,7 +593,7 @@ void Viewer::ShowPage(int nMode)
 				SetColor(COL_VIEWERARROWS);
 				Text(L'»');
 			}
-			if (LeftPos>0 && !i.Data.empty() && ViOpt.ShowArrows)
+			if (LeftPos > 0 && !i.Data.empty() && ViOpt.ShowArrows)
 			{
 				GotoXY(m_Where.left, Y);
 				SetColor(COL_VIEWERARROWS);
