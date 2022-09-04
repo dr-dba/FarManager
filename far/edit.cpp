@@ -66,12 +66,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class positions_cache
 {
 public:
+
 	NONCOPYABLE(positions_cache);
 	using accessor_type = function_ref<int(int, position_parser_state*)>;
-	explicit positions_cache(accessor_type const Accessor):
-		m_Accessor(Accessor)
+
+	explicit positions_cache(accessor_type const Accessor)
+		:m_Accessor(Accessor)
 	{
 	}
+
 	int get(int const Position)
 	{
 		if (static_cast<size_t>(Position) < std::size(m_SmallPositions))
@@ -88,11 +91,13 @@ public:
 	}
 
 private:
+
 	std::pair<int, std::optional<int>> m_SmallPositions[512];
 	std::unordered_map<int, int> m_BigPositions;
 	position_parser_state m_State;
 	accessor_type m_Accessor;
 };
+
 void ColorItem::SetOwner(const UUID& Value)
 {
 	static std::unordered_set<UUID> UuidSet;
@@ -114,8 +119,8 @@ static const wchar_t EDMASK_HEX    = L'H'; // позволяет вводить 
 static const wchar_t EDMASK_DIGITS = L'N';  // позволяет вводить в строку ввода только цифры и пробелы;
 static const wchar_t EDMASK_BIN    = L'\1'; // 0 and 1 only
 
-Edit::Edit(window_ptr Owner):
-	SimpleScreenObject(std::move(Owner))
+Edit::Edit(window_ptr Owner)
+	:SimpleScreenObject(std::move(Owner))
 {
 	m_Flags.Set(FEDITLINE_EDITBEYONDEND);
 	const auto& EdOpt = Global->Opt->EdOpt;
@@ -133,7 +138,8 @@ void Edit::DisplayObject()
 	FastShow();
 	/* $ 26.07.2000 tran
 		при DropDownBox курсор выключаем
-		не знаю даже - попробовал но не очень красиво вышло */
+		не знаю даже - попробовал но не очень красиво вышло
+	*/
 	if (m_Flags.Check(FEDITLINE_DROPDOWNBOX))
 	{
 		::SetCursorType(false, 10);
@@ -205,9 +211,7 @@ int Edit::GetNextCursorPos(int Position,int Where) const
 		{
 			const auto It = std::find_if(ALL_CONST_RANGE(Mask), CheckCharMask);
 			if (It != Mask.cend())
-			{
 				Result = It - Mask.cbegin();
-			}
 		}
 	}
 	return Result;
@@ -226,22 +230,16 @@ void Edit::FastShow(const ShowInfo* Info)
 	if (GetMaxLength() != -1)
 	{
 		if (m_Str.size() > GetMaxLength())
-		{
 			m_Str.resize(GetMaxLength());
-		}
 		if (m_CurPos > GetMaxLength() - 1)
-		{
 			m_CurPos = GetMaxLength() > 0 ? (GetMaxLength() - 1) : 0;
-		}
 	}
 	const auto TabCurPos = RealToVisual.get(m_CurPos);
 	/* $ 31.07.2001 KM
 		! Для комбобокса сделаем отображение строки с первой позиции.
 	*/
 	if (!m_Flags.CheckAny(FEDITLINE_DROPDOWNBOX | FEDITLINE_EDITORMODE))
-	{
 		FixLeftPos(TabCurPos);
-	}
 	int FocusedLeftPos = LeftPos, XPos = TabCurPos - LeftPos;
 	if (Info)
 	{
@@ -283,7 +281,13 @@ void Edit::FastShow(const ShowInfo* Info)
 		auto TrailingSpaces = m_Str.cend();
 		if (m_Flags.Check(FEDITLINE_PARENT_SINGLELINE|FEDITLINE_PARENT_MULTILINE) && Mask.empty() && !m_Str.empty())
 		{
-			TrailingSpaces = std::find_if_not(m_Str.crbegin(), m_Str.crend(), [](wchar_t i) { return std::iswblank(i);}).base();
+			TrailingSpaces = std::find_if_not(
+				m_Str.crbegin(),
+				m_Str.crend(),
+				[](wchar_t i) {
+					return std::iswblank(i);
+				}
+					).base();
 		}
 		const auto Begin = m_Str.cbegin() + std::min(static_cast<size_t>(RealLeftPos), m_Str.usize());
 		for(auto i = Begin, End = m_Str.cend(); i != End && OutStr.size() < EditLength; ++i)
@@ -370,9 +374,7 @@ void Edit::FastShow(const ShowInfo* Info)
 		if (TabSelStart == -1)
 		{
 			if (m_Flags.Check(FEDITLINE_CLEARFLAG))
-			{
 				Global->ScrBuf->ApplyColor(m_Where, GetUnchangedColor());
-			}
 		}
 		else
 		{
@@ -618,7 +620,11 @@ bool Edit::ProcessKey(const Manager::Key& Key)
 			}
 		}
 	}
-	if (((Global->Opt->Dialogs.EULBsClear && LocalKey == KEY_BS) || any_of(LocalKey, KEY_DEL, KEY_NUMDEL)) && m_Flags.Check(FEDITLINE_CLEARFLAG) && m_CurPos >= m_Str.size())
+	if (((Global->Opt->Dialogs.EULBsClear
+	&& LocalKey == KEY_BS)
+	|| any_of(LocalKey, KEY_DEL, KEY_NUMDEL))
+	&& m_Flags.Check(FEDITLINE_CLEARFLAG)
+	&& m_CurPos >= m_Str.size())
 		LocalKey = KEY_CTRLY;
 	if (any_of(LocalKey, KEY_SHIFTDEL, KEY_SHIFTNUMDEL, KEY_SHIFTDECIMAL) && m_Flags.Check(FEDITLINE_CLEARFLAG) && m_CurPos >= m_Str.size() && m_SelStart == -1)
 	{

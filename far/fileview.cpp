@@ -77,6 +77,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class FileViewer::f3_key_timer
 {
 public:
+
 	f3_key_timer():
 		m_Timer(500ms, {}, [this]{ m_Expired = true; })
 	{
@@ -375,8 +376,7 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 #if 0
 		/* $ 30.05.2003 SVS
 			Фича :-) Shift-F4 в редакторе/вьювере позволяет открывать другой редактор/вьювер
-			Пока закомментим
-		*/
+			Пока закомментим */
 		case KEY_SHIFTF4:
 		{
 			if (!Global->OnlyEditorViewerUsed)
@@ -432,17 +432,21 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 						return true;
 				}
 				const auto FilePos = m_View->GetFilePos();
-				const auto flags	= (GetCanLoseFocus()? FFILEEDIT_ENABLEF6	 : 0)
-									| (m_SaveToSaveAs	? FFILEEDIT_SAVETOSAVEAS : 0)
-									| (m_DisableHistory ? FFILEEDIT_DISABLEHISTORY:0);
+				const auto flags =
+					(GetCanLoseFocus()	? FFILEEDIT_ENABLEF6	 : 0)
+					| (m_SaveToSaveAs	? FFILEEDIT_SAVETOSAVEAS : 0)
+					| (m_DisableHistory ? FFILEEDIT_DISABLEHISTORY:0);
 				const auto ShellEditor = FileEditor::create(
 					strViewFileName, cp, flags, -2,
 					static_cast<int>(FilePos), // TODO: Editor StartChar should be long long
-					m_StrTitle.empty() ? nullptr: &m_StrTitle,
-					{ -1, -1, -1, -1 }, m_DeleteOnClose, shared_from_this()
+					m_StrTitle.empty() ? nullptr : &m_StrTitle,
+					{ -1, -1, -1, -1 },
+					m_DeleteOnClose,
+					shared_from_this()
 				);
 				const auto load = ShellEditor->GetExitCode();
-				if (!(load == XC_LOADING_INTERRUPTED || load == XC_OPEN_ERROR))
+				if (!(load == XC_LOADING_INTERRUPTED
+					||load == XC_OPEN_ERROR))
 				{
 					ShellEditor->SetEnableF6(true);
 					/* $ 07.05.2001 DJ сохраняем NamesList */

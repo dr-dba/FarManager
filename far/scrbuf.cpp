@@ -163,9 +163,7 @@ void ScreenBuf::Write(int X, int Y, span<const FAR_CHAR_INFO> Text)
 	if(X + Text.size() > Buf.width())
 		Text.pop_back(Text.size() - (Buf.width() - X));
 	for (const auto& i: irange(Text.size()))
-	{
 		Buf[Y][X + i] = Text[i];
-	}
 	if (char_width::is_enabled())
 	{
 		rectangle const Where{ X, Y, static_cast<int>(X + Text.size() - 1), Y };
@@ -359,7 +357,6 @@ void ScreenBuf::Invalidate(flush_type const FlushType)
 	}
 	if (FlushType & flush_type::cursor)
 		SBFlags.Clear(SBFLAGS_FLUSHEDCURPOS | SBFLAGS_FLUSHEDCURTYPE);
-
 	if (FlushType & flush_type::title)
 		SBFlags.Clear(SBFLAGS_FLUSHEDTITLE);
 }
@@ -450,9 +447,9 @@ void ScreenBuf::Flush(flush_type FlushType)
 				auto& Where = Buf[0][0];
 				MacroChar = Where;
 				MacroCharUsed = true;
-				Global->CtrlObject->Macro.IsRecording() ?
-					SetMacroChar(Where, L'R', B_LIGHTRED | F_WHITE) :
-					SetMacroChar(Where, L'P', B_GREEN | F_WHITE);
+				Global->CtrlObject->Macro.IsRecording()
+					? SetMacroChar(Where, L'R', B_LIGHTRED | F_WHITE)
+					: SetMacroChar(Where, L'P', B_GREEN | F_WHITE);
 			}
 			if (elevation::instance().Elevated())
 			{
@@ -525,11 +522,10 @@ void ScreenBuf::Flush(flush_type FlushType)
 							{
 								auto& Last = WriteList.back();
 								const int MAX_DELTA = 1;
-								if (
-									WriteRegion.top - Last.bottom < 1 + MAX_DELTA &&
-									std::abs(WriteRegion.left - Last.left) < MAX_DELTA &&
-									std::abs(WriteRegion.right - Last.right) < MAX_DELTA
-								)
+								if (WriteRegion.top - Last.bottom < 1 + MAX_DELTA
+									&& std::abs(WriteRegion.left - Last.left) < MAX_DELTA
+									&& std::abs(WriteRegion.right - Last.right) < MAX_DELTA
+										)
 								{
 									Last.bottom = WriteRegion.bottom;
 									Last.left = std::min(Last.left, WriteRegion.left);
@@ -577,19 +573,13 @@ void ScreenBuf::Flush(flush_type FlushType)
 				// To address this, we allow it to write into the buffer and pass Shadow instead:
 				Shadow = Buf;
 				for (const auto& i: WriteList)
-				{
 					console.WriteOutput(Shadow, { i.left, i.top }, i);
-				}
 				console.Commit();
 			}
 			if (MacroCharUsed)
-			{
 				Buf[0][0] = MacroChar;
-			}
 			if (ElevationCharUsed)
-			{
 				Buf.back().back() = ElevationChar;
-			}
 			SBFlags.Set(SBFLAGS_FLUSHED);
 		}
 	}
@@ -605,10 +595,11 @@ void ScreenBuf::Flush(flush_type FlushType)
 			{
 				const auto& Cell = Buf[m_CurPos.y][m_CurPos.x];
 				const auto& PrevCell = Buf[m_CurPos.y][m_CurPos.x - 1];
-				if (is_valid_surrogate_pair(PrevCell.Char, Cell.Char) || (char_width::is_enabled() && Cell.Attributes.Flags & COMMON_LVB_TRAILING_BYTE))
-				{
+				if (is_valid_surrogate_pair(PrevCell.Char, Cell.Char)
+				|| (char_width::is_enabled()
+				&& Cell.Attributes.Flags & COMMON_LVB_TRAILING_BYTE)
+						)
 					--CorrectedPosition.x;
-				}
 			}
 			console.SetCursorPosition(CorrectedPosition);
 			SBFlags.Set(SBFLAGS_FLUSHEDCURPOS);
@@ -644,9 +635,7 @@ void ScreenBuf::MoveCursor(point const Point)
 		return;
 	m_CurPos = Point;
 	if (!is_visible(m_CurPos))
-	{
 		CurVisible = false;
-	}
 	SBFlags.Clear(SBFLAGS_FLUSHEDCURPOS);
 }
 

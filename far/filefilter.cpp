@@ -173,7 +173,6 @@ static void ParseAndAddMasks(std::map<string, int, string_sort::less_t>& Extensi
 {
 	if ((FileAttr & FILE_ATTRIBUTE_DIRECTORY) || IsParentDirectory(FileName))
 		return;
-
 	const auto Ext = name_ext(FileName).second;
 	Extensions.emplace(Ext.empty()? L"*."s : concat(L'*', Ext), Check);
 }
@@ -181,13 +180,10 @@ static void ParseAndAddMasks(std::map<string, int, string_sort::less_t>& Extensi
 static wchar_t GetCheck(filter_area const Type, const FileFilterParams& FFP)
 {
 	const auto Flags = FFP.GetFlags(Type);
-
 	if (Flags & FFF_INCLUDE)
 		return Flags & FFF_STRONG? L'I' : L'+';
-
 	if (Flags & FFF_EXCLUDE)
 		return Flags & FFF_STRONG? L'X' : L'-';
-
 	return 0;
 }
 
@@ -200,16 +196,13 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 		return;
 	bMenuOpen = true;
 	SCOPE_EXIT{ bMenuOpen = false; };
-
 	bool NeedUpdate = false;
-
 	const auto FilterList = VMenu2::create(msg(lng::MFilterTitle), {}, ScrY - 6);
 	FilterList->SetHelp(L"FiltersMenu"sv);
 	FilterList->SetPosition({ -1, -1, 0, 0 });
 	FilterList->SetBottomTitle(KeysToLocalizedText(L'+', L'-', KEY_SPACE, L'I', L'X', KEY_BS, KEY_SHIFTBS, KEY_INS, KEY_DEL, KEY_F4, KEY_F5, KEY_CTRLUP, KEY_CTRLDOWN));
 	FilterList->SetMenuFlags(VMENU_WRAPMODE);
 	FilterList->SetId(FiltersMenuId);
-
 	for (auto& i: FilterData())
 	{
 		MenuItemEx ListItem(MenuString(&i));
@@ -217,55 +210,41 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 			ListItem.SetCustomCheck(Check);
 		FilterList->AddItem(ListItem);
 	}
-
 	if (Area != filter_area::custom)
 	{
 		std::map<string, int, string_sort::less_t> Extensions;
-
 		{
 			for (const auto& [Key, CurFilterData]: TempFilterData())
 			{
 				//AY: Будем показывать только те выбранные авто фильтры
 				//(для которых нету файлов на панели) которые выбраны в области данного меню
 				if (CurFilterData.GetFlags(Area))
-				{
 					ParseAndAddMasks(Extensions, unquote(CurFilterData.GetMask()), 0, GetCheck(Area, CurFilterData));
-				}
 			}
 		}
-
 		{
 			MenuItemEx ListItem;
 			ListItem.Flags = LIF_SEPARATOR;
 			FilterList->AddItem(ListItem);
 		}
-
 		{
 			FoldersFilter->SetTitle(msg(lng::MFolderFileType));
 			MenuItemEx ListItem(MenuString(FoldersFilter,false,L'0'));
-
 			if (const auto Check = GetCheck(Area, *FoldersFilter))
 				ListItem.SetCustomCheck(Check);
-
 			FilterList->AddItem(ListItem);
 		}
-
 		{
 			string strFileName;
 			os::fs::attributes FileAttr;
-
 			for (int i = 0; HostPanel->GetFileName(strFileName, i, FileAttr); i++)
 				ParseAndAddMasks(Extensions, strFileName, FileAttr, 0);
-
 			if (const auto* FilteredExtensions = HostPanel->GetFilteredExtensions())
 			{
 				for (const auto& i: *FilteredExtensions)
-				{
 					ParseAndAddMasks(Extensions, i, 0, 0);
-				}
 			}
 		}
-
 		wchar_t h = L'1';
 		for (const auto& [Ext, Mark]: Extensions)
 		{
@@ -273,20 +252,16 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 			Mark? ListItem.SetCustomCheck(Mark) : ListItem.ClearCheck();
 			ListItem.ComplexUserData = Ext;
 			FilterList->AddItem(ListItem);
-
 			h == L'9' ? h = L'A' : ((h == L'Z' || !h)? h = 0 : ++h);
 		}
 	}
-
 	FilterList->RunEx([&](int Msg, void *param)
 	{
 		if (Msg==DN_LISTHOTKEY)
 			return 1;
 		if (Msg!=DN_INPUT)
 			return 0;
-
 		auto Key = InputRecordToKey(static_cast<INPUT_RECORD const*>(param));
-
 		if (Key==KEY_ADD)
 			Key=L'+';
 		else if (Key==KEY_SUBTRACT)
@@ -295,9 +270,7 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 			Key=L'I';
 		else if (Key==L'x')
 			Key=L'X';
-
 		int KeyProcessed = 1;
-
 		switch (Key)
 		{
 			case L'+':
@@ -308,20 +281,16 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 			case KEY_BS:
 			{
 				const auto SelPos = FilterList->GetSelectPos();
-
 				if (SelPos<0)
 					break;
-
 				const auto Check = FilterList->GetCheck(SelPos);
 				int NewCheck;
-
 				if (Key==KEY_BS)
 					NewCheck = 0;
 				else if (Key==KEY_SPACE)
 					NewCheck = Check ? 0 : L'+';
 				else
 					NewCheck = (Check == Key) ? 0 : Key;
-
 				NewCheck? FilterList->SetCustomCheck(NewCheck, SelPos) : FilterList->ClearCheck();
 				FilterList->SetSelectPos(SelPos,1);
 				FilterList->Key(KEY_DOWN);
@@ -342,16 +311,13 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 				const auto SelPos = FilterList->GetSelectPos();
 				if (SelPos<0)
 					break;
-
 				if (static_cast<size_t>(SelPos) < FilterData().size())
 				{
 					if (FileFilterConfig(FilterData()[SelPos]))
 					{
 						MenuItemEx ListItem(MenuString(&FilterData()[SelPos]));
-
 						if (const auto Check = FilterList->GetCheck(SelPos))
 							ListItem.SetCustomCheck(Check);
-
 						FilterList->DeleteItem(SelPos);
 						FilterList->AddItem(ListItem,SelPos);
 						FilterList->SetSelectPos(SelPos,1);
@@ -367,7 +333,6 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 						},
 						{ lng::MOk });
 				}
-
 				break;
 			}
 			case KEY_NUMPAD0:
@@ -381,9 +346,7 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 						break;
 					pos=0;
 				}
-
 				FileFilterParams NewFilter;
-
 				if (Key==KEY_F5)
 				{
 					const size_t ListPos = pos;
@@ -415,7 +378,6 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 					//AY: Раз создаём новый фильтр то думаю будет логично если он будет только для файлов
 					NewFilter.SetAttr(true, 0, FILE_ATTRIBUTE_DIRECTORY);
 				}
-
 				if (FileFilterConfig(NewFilter))
 				{
 					const auto NewPos = std::min(FilterData().size(), static_cast<size_t>(pos));
@@ -426,13 +388,11 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 				}
 				break;
 			}
-			case KEY_NUMDEL:
-			case KEY_DEL:
+			case KEY_NUMDEL:	case KEY_DEL:
 			{
 				const auto SelPos = FilterList->GetSelectPos();
 				if (SelPos<0)
 					break;
-
 				if (static_cast<size_t>(SelPos) < FilterData().size())
 				{
 					if (Message(0,
@@ -458,7 +418,6 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 						},
 						{ lng::MOk });
 				}
-
 				break;
 			}
 			case KEY_CTRLUP:
@@ -469,7 +428,6 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 				const auto SelPos = FilterList->GetSelectPos();
 				if (SelPos<0)
 					break;
-
 				if (static_cast<size_t>(SelPos) < FilterData().size() && !(any_of(Key, KEY_CTRLUP, KEY_RCTRLUP) && !SelPos) &&
 					!(any_of(Key, KEY_CTRLDOWN, KEY_RCTRLDOWN) && static_cast<size_t>(SelPos) == FilterData().size() - 1))
 				{
@@ -480,26 +438,19 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 					FilterList->SetSelectPos(NewPos,1);
 					NeedUpdate = true;
 				}
-
 				break;
 			}
-
 			default:
 				KeyProcessed = 0;
 		}
 		return KeyProcessed;
 	});
-
 	if (!NeedUpdate)
 		return;
-
 	Changed = true;
-
 	ProcessSelection(FilterList.get(), Area);
-
 	if (Global->Opt->AutoSaveSetup)
 		filters::Save(false);
-
 	if (any_of(Area, filter_area::panel_left, filter_area::panel_right))
 	{
 		HostPanel->Update(UPDATE_KEEP_SELECTION);
@@ -513,7 +464,6 @@ static void ProcessSelection(VMenu2* const FilterList, filter_area const Area)
 	{
 		const auto Check = FilterList->GetCheck(static_cast<int>(i));
 		FileFilterParams* CurFilterData = nullptr;
-
 		if (i < FilterData().size())
 		{
 			CurFilterData = &FilterData()[i];
@@ -530,7 +480,6 @@ static void ProcessSelection(VMenu2* const FilterList, filter_area const Area)
 				if (!Check)
 				{
 					bool bCheckedNowhere = true;
-
 					for (const auto& n: irange(filter_area::count))
 					{
 						if (static_cast<filter_area>(n) != Area && Iterator->second.GetFlags(static_cast<filter_area>(n)))
@@ -539,14 +488,12 @@ static void ProcessSelection(VMenu2* const FilterList, filter_area const Area)
 							break;
 						}
 					}
-
 					if (bCheckedNowhere)
 					{
 						TempFilterData().erase(Iterator);
 						continue;
 					}
 				}
-
 				CurFilterData = &Iterator->second;
 			}
 			else if (Check)
@@ -559,10 +506,8 @@ static void ProcessSelection(VMenu2* const FilterList, filter_area const Area)
 				CurFilterData = &NewIterator->second;
 			}
 		}
-
 		if (!CurFilterData)
 			continue;
-
 		const auto KeyToFlags = [](int Key) -> DWORD
 		{
 			switch (Key)
@@ -575,7 +520,6 @@ static void ProcessSelection(VMenu2* const FilterList, filter_area const Area)
 				return 0;
 			}
 		};
-
 		CurFilterData->SetFlags(Area, KeyToFlags(Check));
 	}
 }
@@ -588,19 +532,15 @@ void multifilter::UpdateCurrentTime()
 filter_result multifilter::FileInFilterEx(const os::fs::find_data& fde, string_view const FullName) const
 {
 	filter_result Result;
-
 	const auto IsFolder = (fde.Attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-
 	const auto Process = [&](FileFilterParams const& Filter, bool const FastPath)
 	{
 		const auto Flags = Filter.GetFlags(m_Area);
 		if (!Flags)
 			return true;
-
 		const auto IsStrong = (Flags & FFF_STRONG) != 0;
 		if (Result.Action != filter_action::ignore && !IsStrong)
 			return true;
-
 		const auto IsInclude = (Flags & FFF_INCLUDE) != 0;
 		if (IsInclude)
 		{
@@ -609,26 +549,19 @@ filter_result multifilter::FileInFilterEx(const os::fs::find_data& fde, string_v
 				os::fs::attributes ExcludeAttributes;
 				const auto AttrUsed = Filter.GetAttr(nullptr, &ExcludeAttributes);
 				const auto ExcludeFolders = (ExcludeAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-
 				if (!(Result.State & filter_state::has_file_include) && (!AttrUsed || ExcludeFolders))
 					Result.State |= filter_state::has_file_include;
-
 				if (!(Result.State & filter_state::has_folder_include) && (!AttrUsed || !ExcludeFolders))
 					Result.State |= filter_state::has_folder_include;
 			}
 		}
-
 		if (FastPath)
 			return true;
-
 		if (!Filter.FileInFilter(fde, CurrentTime, FullName))
 			return true;
-
 		Result.Action = IsInclude? filter_action::include : filter_action::exclude;
-
 		return !IsStrong;
 	};
-
 	const auto ProcessFilters = [&]
 	{
 		const auto& Filters = FilterData();
@@ -637,12 +570,10 @@ filter_result multifilter::FileInFilterEx(const os::fs::find_data& fde, string_v
 			return Process(Filter, false);
 		});
 	};
-
 	const auto ProcessFoldersAutoFilter = [&]
 	{
 		return Process(*FoldersFilter, !IsFolder);
 	};
-
 	const auto ProcessAutoFilters = [&]
 	{
 		const auto& Filters = TempFilterData();
@@ -651,9 +582,7 @@ filter_result multifilter::FileInFilterEx(const os::fs::find_data& fde, string_v
 			return Process(Filter.second, IsFolder);
 		});
 	};
-
 	(void)(ProcessFilters() && ProcessFoldersAutoFilter() && ProcessAutoFilters());
-
 	return Result;
 }
 
@@ -663,15 +592,12 @@ filter_result::operator bool() const
 	{
 	case filter_action::include:
 		return true;
-
 	case filter_action::exclude:
 		return false;
-
 	case filter_action::ignore:
 		//Если элемент не попал ни под один фильтр то он будет включен
 		//только если не было ни одного Include фильтра (т.е. были только фильтры исключения).
 		return !(State & filter_state::has_include);
-
 	default:
 		UNREACHABLE;
 	}
@@ -710,13 +636,10 @@ bool multifilter::IsEnabledOnPanel() const
 {
 	if (m_Area != filter_area::panel_left && m_Area != filter_area::panel_right)
 		return false;
-
 	if (std::any_of(CONST_RANGE(FilterData(), i) { return i.GetFlags(m_Area); }))
 		return true;
-
 	if (FoldersFilter->GetFlags(m_Area))
 		return true;
-
 	return std::any_of(CONST_RANGE(TempFilterData(), i) { return i.second.GetFlags(m_Area); });
 }
 
@@ -733,11 +656,8 @@ Panel* multifilter::panel() const
 FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned long long KeyId)
 {
 	FileFilterParams Item;
-
 	const HierarchicalConfig::key Key(KeyId);
-
 	Item.SetTitle(cfg.GetValue<string>(Key, names::Title));
-
 	unsigned long long UseMask = 1;
 	if (!cfg.GetValue(Key, names::UseMask, UseMask))
 	{
@@ -751,9 +671,7 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.DeleteValue(Key, legacy_names::IgnoreMask);
 		}
 	}
-
 	Item.SetMask(UseMask != 0, cfg.GetValue<string>(Key, names::Mask));
-
 	unsigned long long DateAfter = 0;
 	if (!cfg.GetValue(Key, names::DateTimeAfter, DateAfter))
 	{
@@ -765,7 +683,6 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.DeleteValue(Key, legacy_names::DateAfter);
 		}
 	}
-
 	unsigned long long DateBefore = 0;
 	if (!cfg.GetValue(Key, names::DateTimeBefore, DateBefore))
 	{
@@ -777,10 +694,8 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.DeleteValue(Key, legacy_names::DateBefore);
 		}
 	}
-
 	const auto UseDate = cfg.GetValue<bool>(Key, names::UseDate);
 	const auto DateType = cfg.GetValue<unsigned long long>(Key, names::DateType);
-
 	unsigned long long DateRelative = 0;
 	if (!cfg.GetValue(Key, names::DateRelative, DateRelative))
 	{
@@ -792,22 +707,17 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.DeleteValue(Key, legacy_names::RelativeDate);
 		}
 	}
-
 	Item.SetDate(UseDate, static_cast<enumFDateType>(DateType), DateRelative?
 		filter_dates(os::chrono::hectonanoseconds(DateAfter), os::chrono::hectonanoseconds(DateBefore)) :
 		filter_dates(os::chrono::nt_clock::from_hectonanoseconds(DateAfter), os::chrono::nt_clock::from_hectonanoseconds(DateBefore)));
-
 	const auto UseSize = cfg.GetValue<bool>(Key, names::UseSize);
-
 	const auto SizeAbove = cfg.GetValue<string>(Key, names::SizeAboveS);
 	const auto SizeBelow = cfg.GetValue<string>(Key, names::SizeBelowS);
 	Item.SetSize(UseSize, SizeAbove, SizeBelow);
-
 	const auto UseHardLinks = cfg.GetValue<bool>(Key, names::UseHardLinks);
 	const auto HardLinksAbove = cfg.GetValue<unsigned long long>(Key, names::HardLinksAbove);
 	const auto HardLinksBelow = cfg.GetValue<unsigned long long>(Key, names::HardLinksBelow);
 	Item.SetHardLinks(UseHardLinks, HardLinksAbove, HardLinksBelow);
-
 	unsigned long long AttrSet = 0;
 	if (!cfg.GetValue(Key, names::AttrSet, AttrSet))
 	{
@@ -819,7 +729,6 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.DeleteValue(Key, legacy_names::IncludeAttributes);
 		}
 	}
-
 	unsigned long long AttrClear = 0;
 	if (!cfg.GetValue(Key, names::AttrClear, AttrClear))
 	{
@@ -831,7 +740,6 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.DeleteValue(Key, legacy_names::ExcludeAttributes);
 		}
 	}
-
 	unsigned long long UseAttr = 0;
 	if (!cfg.GetValue(Key, names::UseAttr, UseAttr))
 	{
@@ -843,16 +751,13 @@ FileFilterParams filters::LoadFilter(/*const*/ HierarchicalConfig& cfg, unsigned
 			cfg.SetValue(Key, names::UseAttr, UseAttr);
 		}
 	}
-
 	Item.SetAttr(UseAttr != 0, static_cast<os::fs::attributes>(AttrSet), static_cast<os::fs::attributes>(AttrClear));
-
 	return Item;
 }
 
 static void SaveFlags(HierarchicalConfig& Cfg, HierarchicalConfig::key const FilterKey, const FileFilterParams& Item)
 {
 	const auto FlagsKey = Cfg.CreateKey(FilterKey, names::Flags);
-
 	for (const auto& [Flag, Index]: enumerate(FilterFlagNames))
 	{
 		Cfg.SetValue(FlagsKey, Flag, Item.GetFlags(static_cast<filter_area>(Index)));
@@ -864,9 +769,7 @@ static bool LoadAreaFlags(const HierarchicalConfig& Cfg, HierarchicalConfig::key
 	const auto FlagsKey = Cfg.FindByName(FilterKey, names::Flags);
 	if (!FlagsKey)
 		return false;
-
 	auto AnyLoaded = false;
-
 	for (const auto& i: irange(std::size(FilterFlagNames)))
 	{
 		unsigned long long Value;
@@ -876,7 +779,6 @@ static bool LoadAreaFlags(const HierarchicalConfig& Cfg, HierarchicalConfig::key
 			Item.SetFlags(static_cast<filter_area>(i), Value);
 		}
 	}
-
 	return AnyLoaded;
 }
 
@@ -886,14 +788,11 @@ static bool LoadLegacyAreaFlags(HierarchicalConfig& Cfg, HierarchicalConfig::key
 {
 	const auto LegacyCount = static_cast<size_t>(filter_area::custom) + 1;
 	static_assert(static_cast<size_t>(filter_area::count) >= LegacyCount);
-
 	DWORD LegacyFlags[LegacyCount]{};
 	if (bytes Blob; !Cfg.GetValue(Key, Name, Blob) || !deserialise(Blob, LegacyFlags))
 		return false;
-
 	for (const auto& i: irange(LegacyCount))
 		Item.SetFlags(static_cast<filter_area>(i), LegacyFlags[i]);
-
 	return true;
 }
 
@@ -903,13 +802,10 @@ void filters::InitFilters()
 	FoldersFilter = &_FoldersFilter;
 	FoldersFilter->SetMask(false, L"*"sv);
 	FoldersFilter->SetAttr(true, FILE_ATTRIBUTE_DIRECTORY, 0);
-
 	const auto cfg = ConfigProvider().CreateFiltersConfig();
 	const auto root = cfg->FindByName(cfg->root_key, names::Filters);
-
 	if (!root)
 		return;
-
 	if (const auto FoldersFilterKey = cfg->FindByName(root, names::FoldersFilter))
 	{
 		LoadAreaFlags(*cfg, FoldersFilterKey, *FoldersFilter);
@@ -924,11 +820,9 @@ void filters::InitFilters()
 			cfg->DeleteValue(root, legacy_names::FoldersFilterFFlags);
 		}
 	}
-
 	for (const auto& Key: cfg->KeysEnumerator(root, names::Filter))
 	{
 		auto NewItem = filters::LoadFilter(*cfg, Key.get());
-
 		if (!LoadAreaFlags(*cfg, Key, NewItem))
 		{
 			// Old format
@@ -939,20 +833,15 @@ void filters::InitFilters()
 				cfg->DeleteValue(Key, legacy_names::FFlags);
 			}
 		}
-
 		FilterData().emplace_back(std::move(NewItem));
 	}
-
 	for (const auto& Key: cfg->KeysEnumerator(root, L"PanelMask"sv))
 	{
 		FileFilterParams NewItem;
-
 		auto Mask = cfg->GetValue<string>(Key, names::Mask);
 		NewItem.SetMask(true, Mask);
-
 		//Авто фильтры они только для файлов, папки не должны к ним подходить
 		NewItem.SetAttr(true, 0, FILE_ATTRIBUTE_DIRECTORY);
-
 		if (!LoadAreaFlags(*cfg, Key, NewItem))
 		{
 			// Old format
@@ -963,7 +852,6 @@ void filters::InitFilters()
 				cfg->DeleteValue(Key, legacy_names::FFlags);
 			}
 		}
-
 		TempFilterData().emplace(unquote(std::move(Mask)), std::move(NewItem));
 	}
 }
@@ -971,16 +859,13 @@ void filters::InitFilters()
 void filters::SaveFilter(HierarchicalConfig& cfg, unsigned long long KeyId, const FileFilterParams& Item)
 {
 	const HierarchicalConfig::key Key(KeyId);
-
 	cfg.SetValue(Key, names::Title, Item.GetTitle());
 	cfg.SetValue(Key, names::UseMask, Item.IsMaskUsed());
 	cfg.SetValue(Key, names::Mask, Item.GetMask());
-
 	DWORD DateType;
 	filter_dates Dates;
 	cfg.SetValue(Key, names::UseDate, Item.GetDate(&DateType, &Dates));
 	cfg.SetValue(Key, names::DateType, DateType);
-
 	Dates.visit(overload
 	{
 		[&](os::chrono::duration After, os::chrono::duration Before)
@@ -996,16 +881,13 @@ void filters::SaveFilter(HierarchicalConfig& cfg, unsigned long long KeyId, cons
 			cfg.SetValue(Key, names::DateRelative, false);
 		}
 	});
-
 	cfg.SetValue(Key, names::UseSize, Item.IsSizeUsed());
 	cfg.SetValue(Key, names::SizeAboveS, Item.GetSizeAbove());
 	cfg.SetValue(Key, names::SizeBelowS, Item.GetSizeBelow());
-
 	DWORD HardLinksAbove,HardLinksBelow;
 	cfg.SetValue(Key, names::UseHardLinks, Item.GetHardLinks(&HardLinksAbove,&HardLinksBelow)? 1 : 0);
 	cfg.SetValue(Key, names::HardLinksAbove, HardLinksAbove);
 	cfg.SetValue(Key, names::HardLinksBelow, HardLinksBelow);
-
 	os::fs::attributes AttrSet, AttrClear;
 	cfg.SetValue(Key, names::UseAttr, Item.GetAttr(&AttrSet, &AttrClear));
 	cfg.SetValue(Key, names::AttrSet, AttrSet);
@@ -1016,34 +898,25 @@ void filters::Save(bool always)
 {
 	if (!always && !Changed)
 		return;
-
 	const auto cfg = ConfigProvider().CreateFiltersConfig();
-
 	SCOPED_ACTION(auto)(cfg->ScopedTransaction());
-
 	if (const auto Key = cfg->FindByName(cfg->root_key, names::Filters))
 		cfg->DeleteKeyTree(Key);
-
 	const auto root = cfg->CreateKey(cfg->root_key, names::Filters);
-
 	for (const auto& i: irange(FilterData().size()))
 	{
 		const auto Key = cfg->CreateKey(root, names::Filter + str(i));
 		const auto& CurFilterData = FilterData()[i];
-
 		filters::SaveFilter(*cfg, Key.get(), CurFilterData);
 		SaveFlags(*cfg, Key, CurFilterData);
 	}
-
 	for (const auto& [CurFilterData, i]: enumerate(TempFilterData()))
 	{
 		const auto Key = cfg->CreateKey(root, names::PanelMask + str(i));
 		cfg->SetValue(Key, names::Mask, CurFilterData.second.GetMask());
 		SaveFlags(*cfg, Key, CurFilterData.second);
 	}
-
 	SaveFlags(*cfg, cfg->CreateKey(root, names::FoldersFilter), *FoldersFilter);
-
 	Changed = false;
 }
 
@@ -1058,12 +931,9 @@ static void SwapPanelFlags(FileFilterParams& CurFilterData)
 void filters::SwapPanelFilters()
 {
 	Changed = true;
-
 	for (auto& i: FilterData())
 		SwapPanelFlags(i);
-
 	SwapPanelFlags(*FoldersFilter);
-
 	for (auto& i: TempFilterData())
 		SwapPanelFlags(i.second);
 }

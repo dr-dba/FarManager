@@ -383,13 +383,10 @@ int EditControl::AutoCompleteProc(bool Manual, bool DelBlock, Manager::Key& Back
 			bool StartQuote;
 			if (!ParseStringWithQuotes(Str, Prefix, Token, StartQuote))
 				return;
-
 			if (ECFlags.Check(EC_COMPLETE_FILESYSTEM) && CompletionEnabled(Global->Opt->AutoComplete.UseFilesystem))
 				EnumFiles(Menu, Prefix, Token, StartQuote);
-
 			if (ECFlags.Check(EC_COMPLETE_ENVIRONMENT) && CompletionEnabled(Global->Opt->AutoComplete.UseEnvironment))
 				EnumEnvironment(Menu, Prefix, Token, StartQuote);
-
 			if (ECFlags.Check(EC_COMPLETE_PATH) && CompletionEnabled(Global->Opt->AutoComplete.UsePath))
 			{
 				if (FindSlash(Str) == string::npos)

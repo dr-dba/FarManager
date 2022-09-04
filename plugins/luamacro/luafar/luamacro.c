@@ -23,9 +23,7 @@ static int FL_PushParams(lua_State* L, const struct FarMacroCall* Data)
 			PushFarMacroValue(L, Data->Values + i);
 	}
 	if (Data->Callback)
-	{
 		Data->Callback(Data->CallbackData, Data->Values, Data->Count);
-	}
 	return ret;
 }
 
@@ -58,7 +56,6 @@ HANDLE Open_Luamacro(lua_State* L, const struct OpenInfo *Info)
 		LF_Message(L, L"too many values to place onto Lua stack", L"LuaMacro", L"OK", "wl", NULL, NULL);
 		return NULL;
 	}
-
 	if(pcall_msg(L, 2+(int)argc, 2) == 0)
 	{
 		intptr_t ReturnType;
@@ -176,7 +173,7 @@ static void WINAPI MacroCallFarCallback(void *Data, struct FarMacroValue *Val, s
 
 int far_MacroCallFar(lua_State *L)
 {
-	enum { MAXARG=32, MAXRET=32 };
+	enum { MAXARG = 32, MAXRET = 32 };
 	struct FarMacroValue args[MAXARG];
 	struct FarMacroCall fmc;
 	int idx, ret, pushed;
@@ -222,9 +219,7 @@ int far_FarMacroCallToLua(lua_State *L)
 		struct FarMacroCall* Data = (struct FarMacroCall*)lua_touserdata(L, 1);
 		lua_settop(L, 0);
 		if (Data && !FL_PushParams(L, Data))
-		{
 			LF_Message(L, L"too many values to place onto Lua stack", L"LuaMacro", L"OK", "wl", NULL, NULL);
-		}
 		return lua_gettop(L);
 	}
 	return 0;

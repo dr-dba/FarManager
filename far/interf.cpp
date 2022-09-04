@@ -330,9 +330,7 @@ void InitConsole()
 		{
 			point CurrentSize;
 			if (console.GetSize(CurrentSize))
-			{
 				SaveNonMaximisedBufferSize(CurrentSize);
-			}
 		}
 	}
 	SetFarConsoleMode();
@@ -446,10 +444,9 @@ void RestoreConsoleWindowRect()
 {
 	rectangle WindowRect;
 	console.GetWindowRect(WindowRect);
-	if (WindowRect.width() < windowholder_rect.width() || WindowRect.height() < windowholder_rect.height())
-	{
+	if(WindowRect.width() < windowholder_rect.width()
+	|| WindowRect.height()< windowholder_rect.height())
 		console.SetWindowRect(windowholder_rect);
-	}
 }
 
 void FlushInputBuffer()
@@ -466,7 +463,6 @@ void SetVideoMode()
 		DWORD dmode = 0;
 		if (IsWindows10OrGreater() && console.GetDisplayMode(dmode) && (dmode & CONSOLE_FULLSCREEN) != 0)
 			return; // ignore Alt-F9 in Win10 full-screen mode
-
 		ChangeVideoMode(!IsZoomed(console.GetWindow()));
 	}
 	else
@@ -593,21 +589,11 @@ void ShowTime()
 	}
 }
 
-void GotoXY(int X,int Y)
-{
-	CurX=X;
-	CurY=Y;
-}
+void GotoXY(int X, int Y) { CurX = X; CurY = Y; }
 
-int WhereX()
-{
-	return CurX;
-}
+int WhereX() { return CurX; }
 
-int WhereY()
-{
-	return CurY;
-}
+int WhereY() { return CurY; }
 
 void MoveCursor(point const Point)
 {
@@ -1329,13 +1315,9 @@ string make_progressbar(size_t Size, size_t Percent, bool ShowPercent, bool Prop
 	const auto Pos = std::min(Percent, size_t{ 100 })* Size / 100;
 	std::fill_n(Str.begin(), Pos, BoxSymbols[BS_X_DB]);
 	if (ShowPercent)
-	{
 		Str += StrPercent;
-	}
 	if (PropagateToTasbkar)
-	{
 		taskbar::set_value(Percent, 100);
-	}
 	return Str;
 }
 
@@ -1358,9 +1340,7 @@ size_t HiStrlen(string_view const Str)
 		return true;
 	});
 	if (First)
-	{
 		++Result;
-	}
 	return Result;
 }
 
@@ -1408,13 +1388,9 @@ void AdjustConsoleScreenBufferSize()
 		if (get_console_screen_buffer_info(console.GetOutputHandle(), &csbi))
 		{
 			if (!Global->Opt->WindowModeStickyX)
-			{
 				Size.x = csbi.dwSize.X;
-			}
 			if (!Global->Opt->WindowModeStickyY)
-			{
 				Size.y = csbi.dwSize.Y;
-			}
 		}
 	}
 	console.SetScreenBufferSize(Size);
@@ -1582,20 +1558,17 @@ TEST_CASE("wide_chars")
 		{
 			L"残酷な天使のように少年よ神話になれ"sv,
 			{ {17, +17}, },
-			{ {34, -17} } },
+			{ {34, -17} }
+		},
 	};
 	char_width::enable(1);
 	for (const auto& i: Tests)
 		{
 			position_parser_state State[2];
 			for (const auto& [StringPos, VisualShift]: i.StringToVisual)
-			{
 				REQUIRE(string_pos_to_visual_pos(i.Str, StringPos, 1, &State[0]) == StringPos + VisualShift);
-			}
 			for (const auto& [VisualPos, StringShift] : i.VisualToString)
-			{
 				REQUIRE(visual_pos_to_string_pos(i.Str, VisualPos, 1, &State[1]) == VisualPos + StringShift);
-			}
 		}
 	char_width::enable(0);
 }

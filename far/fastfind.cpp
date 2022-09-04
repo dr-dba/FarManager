@@ -69,7 +69,6 @@ namespace
 			if (rec.Event.KeyEvent.uChar.UnicodeChar && (Key&KEY_MASKF) != rec.Event.KeyEvent.uChar.UnicodeChar) //???
 				Key = (Key & 0xFFF10000) | rec.Event.KeyEvent.uChar.UnicodeChar;   //???
 		}
-
 		return Key;
 	}
 }
@@ -90,7 +89,6 @@ FastFind::FastFind(private_tag, Panel* Owner, const Manager::Key& FirstKey):
 bool FastFind::ProcessKey(const Manager::Key& Key)
 {
 	auto LocalKey = Key;
-
 	// для вставки воспользуемся макродвижком...
 	if (any_of(LocalKey(), KEY_CTRLV, KEY_RCTRLV, KEY_SHIFTINS, KEY_SHIFTNUMPAD0))
 	{
@@ -100,7 +98,6 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 			ProcessName(ClipText);
 			ShowBorder();
 		}
-
 		return true;
 	}
 	else if (LocalKey() == KEY_OP_XLAT)
@@ -123,26 +120,21 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 	}
 	else
 		LocalKey = CorrectFastFindKbdLayout(Key.Event(), LocalKey());
-
 	if (any_of(LocalKey(), KEY_ESC, KEY_F10))
 	{
 		Close(-1);
 		return true;
 	}
-
 	if (LocalKey() >= KEY_ALT_BASE + 0x01 && LocalKey() <= KEY_ALT_BASE + 65535)
 		LocalKey = lower(static_cast<wchar_t>(LocalKey() - KEY_ALT_BASE));
 	else if (LocalKey() >= KEY_RALT_BASE + 0x01 && LocalKey() <= KEY_RALT_BASE + 65535)
 		LocalKey = lower(static_cast<wchar_t>(LocalKey() - KEY_RALT_BASE));
-
 	if (LocalKey() >= KEY_ALTSHIFT_BASE + 0x01 && LocalKey() <= KEY_ALTSHIFT_BASE + 65535)
 		LocalKey = lower(static_cast<wchar_t>(LocalKey() - KEY_ALTSHIFT_BASE));
 	else if (LocalKey() >= KEY_RALTSHIFT_BASE + 0x01 && LocalKey() <= KEY_RALTSHIFT_BASE + 65535)
 		LocalKey = lower(static_cast<wchar_t>(LocalKey() - KEY_RALTSHIFT_BASE));
-
 	if (LocalKey() == KEY_MULTIPLY)
 		LocalKey = L'*';
-
 	switch (LocalKey())
 	{
 	case KEY_F1:
@@ -154,22 +146,18 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 		Show();
 		break;
 	}
-
 	case KEY_CTRLNUMENTER:   case KEY_RCTRLNUMENTER:
 	case KEY_CTRLENTER:      case KEY_RCTRLENTER:
 		m_Owner->FindPartName(m_FindEdit->GetString(), TRUE, 1);
 		Redraw();
 		break;
-
 	case KEY_CTRLSHIFTNUMENTER:  case KEY_RCTRLSHIFTNUMENTER:
 	case KEY_CTRLSHIFTENTER:     case KEY_RCTRLSHIFTENTER:
 		m_Owner->FindPartName(m_FindEdit->GetString(), TRUE, -1);
 		Redraw();
 		break;
-
 	case KEY_NONE:
 		break;
-
 	default:
 		if ((LocalKey() < 32 || LocalKey() >= 65536) &&
 			none_of(LocalKey(), KEY_BS, KEY_CTRLY, KEY_RCTRLY, KEY_CTRLBS, KEY_RCTRLBS, KEY_CTRLINS, KEY_CTRLNUMPAD0, KEY_SHIFTINS, KEY_SHIFTNUMPAD0) &&
@@ -185,7 +173,6 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 		if (m_FindEdit->ProcessKey(LocalKey))
 		{
 			auto strName = m_FindEdit->GetString();
-
 			// уберем двойные '**'
 			if (strName.size() > 1
 				&& strName.back() == L'*'
@@ -194,7 +181,6 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 				strName.pop_back();
 				m_FindEdit->SetString(strName);
 			}
-
 			/* $ 09.04.2001 SVS
 			   проблемы с быстрым поиском.
 			   Подробнее в 00573.ChangeDirCrash.txt
@@ -204,7 +190,6 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 				strName.erase(0, 1);
 				m_FindEdit->SetString(strName);
 			}
-
 			if (m_Owner->FindPartName(strName, FALSE, 1))
 			{
 				strLastName = strName;
@@ -217,13 +202,10 @@ bool FastFind::ProcessKey(const Manager::Key& Key)
 					//Global->CtrlObject->Macro.PopState();
 					// ;
 				}
-
 				m_FindEdit->SetString(strLastName);
 			}
-
 			Redraw();
 		}
-
 		break;
 	}
 	return true;
@@ -233,7 +215,6 @@ bool FastFind::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 {
 	if (MouseEvent->dwButtonState & 3)
 		Close(-1);
-
 	return true;
 }
 
@@ -288,21 +269,17 @@ void FastFind::init()
 {
 	SetMacroMode(MACROAREA_SEARCH);
 	SetRestoreScreenMode(true);
-
 	m_FindEdit = std::make_unique<EditControl>(shared_from_this(), this);
 	m_FindEdit->SetEditBeyondEnd(false);
 	m_FindEdit->SetObjectColor(COL_DIALOGEDIT);
-
 	InitPositionAndSize();
 }
 
 void FastFind::ProcessName(string_view const Src) const
 {
 	auto Buffer = unquote(m_FindEdit->GetString() + Src);
-
 	while (!Buffer.empty() && !m_Owner->FindPartName(Buffer, FALSE, 1))
 		Buffer.pop_back();
-
 	if (!Buffer.empty())
 	{
 		m_FindEdit->SetString(Buffer);
