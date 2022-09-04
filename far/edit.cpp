@@ -1858,6 +1858,8 @@ bool Edit::SetSize(COORD& size2d) const
 // [experimental@Xer0X] Why using "const" modifiers?
 bool Edit::SetCoord(COORD& coord) const
 {
+	bool ret_val = false;
+	/*
 	const auto old_X = 0 + m_Where.left;
 	const auto old_Y = 0 + m_Where.top;
 	int new_X = coord.X > 0 ? coord.X : m_Where.left;
@@ -1871,7 +1873,9 @@ bool Edit::SetCoord(COORD& coord) const
 	const size_t copy_X = std::min(new_X, old_X);
 	const size_t copy_Y = std::min(new_Y, old_Y);
 	GetEditor()->SetPosition(new_where);
-	return true;
+	// */
+	ret_val = true;
+	return ret_val;
 } 
 
 // [experimental@Xer0X] the same as above, but without "const"

@@ -74,14 +74,17 @@ class window: public ScreenObjectWithShadow, public std::enable_shared_from_this
 	~window() override;
 	void Refresh() override;
 
-	virtual bool GetCanLoseFocus(bool DynamicMode = false) const { return m_CanLoseFocus; }
+	virtual bool GetCanLoseFocus(bool DynamicMode = false) const
+	{
+		return m_CanLoseFocus;
+	}
 	virtual void SetExitCode(int Code) { m_ExitCode = Code; }
 	virtual bool IsFileModified() const { return false; }
 	virtual int GetTypeAndName(string &strType, string &strName) = 0;
 	virtual int GetType() const = 0;
-	virtual void OnDestroy() {}  // вызывается перед уничтожением окна
+	virtual void OnDestroy() { }  // вызывается перед уничтожением окна
 	virtual void OnChangeFocus(bool focus); // вызывается при смене фокуса
-	virtual void InitKeyBar() {}
+	virtual void InitKeyBar() { }
 	virtual void RedrawKeyBar() { UpdateKeyBar(); }
 	virtual FARMACROAREA GetMacroArea() const { return m_MacroArea; }
 	virtual bool CanFastHide() const;
@@ -103,7 +106,8 @@ class window: public ScreenObjectWithShadow, public std::enable_shared_from_this
 	void UnPin();
 	bool IsPinned() const;
 	void SetMacroMode(FARMACROAREA Area);
-	int ID() const {return m_ID;}
+
+	int ID() const { return m_ID; }
 
 	[[nodiscard]]
 	auto GetPinner() { return make_raii_wrapper<&window::Pin, &window::UnPin>(this); }
