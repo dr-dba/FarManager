@@ -37,3 +37,16 @@ __*.cmd
 /plugins/*/*.log
 logs
 *.ipch
+*.vcproj.*.*.user
+/plugins/newarc/src/newarc.VS2008.ncb
+/plugins/newarc/src/plugins/ace/Debug
+/plugins/newarc/src/plugins/ma/Debug
+/plugins/newarc/src/plugins/ma/x64/Debug
+/plugins/newarc/src/plugins/rar/Debug
+/plugins/newarc/src/plugins/targz/Debug
+/plugins/newarc/src/plugins/wcx/Debug
+/plugins/newarc/src/plugins/zip/Debug
+/plugins/newarc/src/Debug
+/plugins/newarc/src/x64/Debug
+/plugins/newarc/src/plugins/7z.all/Debug
+/plugins/newarc/src/plugins/7z.all/x64/Debug
