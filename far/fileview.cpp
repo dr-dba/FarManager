@@ -104,11 +104,11 @@ public:
 				switch (os::fs::drive::get_type(PathRoot))
 				{
 				case DRIVE_REMOVABLE: return is_removable_usb(PathRoot)? 1s : 0s;
-				case DRIVE_FIXED:     return 1s;
-				case DRIVE_REMOTE:    return 1s;
-				case DRIVE_CDROM:     return 0s;
-				case DRIVE_RAMDISK:   return 1s;
-				default:              return 0s;
+				case DRIVE_FIXED	: return 1s;
+				case DRIVE_REMOTE	: return 1s;
+				case DRIVE_CDROM	: return 0s;
+				case DRIVE_RAMDISK	: return 1s;
+				default				: return 0s;
 				}
 			}();
 		}
