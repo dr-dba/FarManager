@@ -228,14 +228,25 @@ struct Viewer::ViewerUndoData
 void Viewer::SavePosition()
 {
 	const auto& vo = Global->Opt->ViOpt;
-	if (vo.SaveShortPos || vo.SavePos || vo.SaveCodepage || vo.SaveViewMode || vo.SaveWrapMode)
+	if (vo.SaveShortPos
+	 || vo.SavePos
+	 || vo.SaveCodepage
+	 || vo.SaveViewMode
+	 || vo.SaveWrapMode
+		)
 	{
 		ViewerPosCache poscache;
 		poscache.cur.FilePos = FilePos;
 		poscache.cur.LeftPos = LeftPos;
-		poscache.ViewModeAndWrapState =
-			(m_DisplayMode.touched() || m_Wrap.touched() || m_WordWrap.touched())
-			? m_mode_changed | static_cast<saved_modes>(m_DisplayMode.value()) | (m_Wrap ? m_mode_wrap : 0) | (m_WordWrap ? m_mode_wrap_words : 0)
+		poscache.ViewModeAndWrapState = (
+			m_DisplayMode.touched()
+			|| m_Wrap.touched()
+			|| m_WordWrap.touched()
+				)
+			? m_mode_changed
+				| static_cast<saved_modes>(m_DisplayMode.value())
+				| (m_Wrap ? m_mode_wrap : 0)
+				| (m_WordWrap ? m_mode_wrap_words : 0)
 			: m_none;
 		poscache.CodePage = m_Codepage;
 		poscache.bm = BMSavePos;
@@ -255,10 +266,15 @@ void Viewer::KeepInitParameters() const
 }
 
 // [refactor@Xer0X] moved here to be function from fileview::create(..)
-rectangle Viewer::AdjustScreenPosition(rectangle Position)
+small_rectangle Viewer::AdjustScreenPosition()
+{
+	return AdjustScreenPosition(m_Where);
+}
+
+small_rectangle Viewer::AdjustScreenPosition(small_rectangle Position)
 {
 	// BUGBUG WHY ALL THIS?
-	// @Xer0X: because you have to deal with positioning, dont you? 
+	// [note@Xer0X] because you have to deal with positioning, dont you? 
 	if (Position.left < 0)
 		Position.left = 0;
 	if (Position.right < 0
@@ -277,22 +293,24 @@ rectangle Viewer::AdjustScreenPosition(rectangle Position)
 		Position.top = 0;
 		Position.bottom = ScrY;
 	}
-	SetPosition(Position);
 	m_FullScreen = (1 == 1
-		&& !Position.left
-		&& !Position.top
-		&& Position.right
-		&& Position.bottom
+		&& Position.left	== 0
+		&& Position.top		== 0
+		&& Position.right	== ScrX
+		&& Position.bottom	== ScrY
 	);
+	m_Flags.Change(FFILEVIEW_FULLSCREEN, m_FullScreen);
+	/*
+	SetPosition(Position);
 	m_ViewKeyBar->SetPosition({
-		m_Where.left,
-		m_Where.bottom,
-		m_Where.right,
-		m_Where.bottom
+		Position.left,
+		Position.bottom,
+		Position.right,
+		Position.bottom
 	});
-	ChangeViewKeyBar();
-	return m_Where;
-}
+	ChangeViewKeyBar(); // */
+	return Position;
+} // AdjustScreenPosition
 
 bool Viewer::OpenFile(string_view const Name, bool const Warn)
 {
@@ -348,7 +366,12 @@ bool Viewer::OpenFile(string_view const Name, bool const Warn)
 	if (!os::fs::get_find_data(strFileName, ViewFindData))
 		LOGWARNING(L"get_find_data({}): {}"sv, strFileName, last_error());
 	uintptr_t CachedCodePage=0;
-	if ((vo.SavePos || vo.SaveShortPos || vo.SaveCodepage || vo.SaveViewMode || vo.SaveWrapMode) && !ReadStdin)
+	if ((vo.SavePos
+	 || vo.SaveShortPos
+	 || vo.SaveCodepage
+	 || vo.SaveViewMode
+	 || vo.SaveWrapMode
+		) && !ReadStdin)
 	{
 		const auto strCacheName = strPluginData.empty()? strFileName : strPluginData + PointToName(strFileName);
 		ViewerPosCache poscache;
@@ -3755,10 +3778,10 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 			crd_screen.X = m_Where.left;
 			crd_screen.Y = m_Where.top - HostFileViewer->IsTitleBarVisible();
 			// .. a better way to go: */
-			rectangle rect_view = HostFileViewer->GetWhere();
+			small_rectangle rect_view = HostFileViewer->GetWhere();
 			*static_cast<COORD*>(Param2) = {
-				(short)rect_view.left,
-				(short)rect_view.top };
+				rect_view.left,
+				rect_view.top };
 			Result = TRUE;
 			return Result;
 		}
@@ -3767,21 +3790,21 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 		{
 			BOOL Result = FALSE;
 			const auto new_rect = static_cast<const SMALL_RECT*>(Param2);
-			rectangle rect_view = HostFileViewer->GetWhere();
+			small_rectangle rect_view = HostFileViewer->GetWhere();
 			SHORT currX1 = rect_view.left;
 			SHORT currX2 = rect_view.right;
 			SHORT currY1 = rect_view.top;	// -HostFileViewer->IsTitleBarVisible();
 			SHORT currY2 = rect_view.bottom;// +HostFileViewer->IsKeyBarVisible();
-			rectangle NewWhere;
+			small_rectangle NewWhere;
 			if ((Param1 & 1) == 0)
 			{ // absolute
 				NewWhere = {
-					new_rect->Left	< 0 ? currX1 : new_rect->Left,
-					new_rect->Top	< 0 ? currY1 : new_rect->Top,
-					new_rect->Right	< 0 ? currX2 : new_rect->Right,
-					new_rect->Bottom< 0 ? currY2 : new_rect->Bottom };
+					new_rect->Left < 0 ? currX1 : new_rect->Left,
+					new_rect->Top < 0 ? currY1 : new_rect->Top,
+					new_rect->Right < 0 ? currX2 : new_rect->Right,
+					new_rect->Bottom < 0 ? currY2 : new_rect->Bottom };
 				if ((Param1 & 2) == 2 && new_rect->Right > 0) NewWhere.right += (NewWhere.left - 1);
-				if ((Param1 & 4) == 4 && new_rect->Bottom> 0) NewWhere.bottom+= (NewWhere.top - 1);
+				if ((Param1 & 4) == 4 && new_rect->Bottom > 0) NewWhere.bottom += (NewWhere.top - 1);
 			}
 			else
 			{ // delta
@@ -3791,19 +3814,28 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 					currX2 + new_rect->Right,
 					currY2 + new_rect->Right };
 			}
-			m_Flags.Change(FFILEVIEW_FULLSCREEN, false);
-			AdjustScreenPosition(NewWhere);
-			SetPosition(NewWhere);
-			m_ViewKeyBar->SetPosition({
-				m_Where.left,
-				m_Where.bottom,
-				m_Where.right,
-				m_Where.bottom });
+			NewWhere = HostFileViewer->AdjustScreenPosition(NewWhere);
+			if (NewWhere != rect_view
+				|| TRUE
+				)
+			{
+				HostFileViewer->SetPosition(NewWhere);
+				HostFileViewer->InitKeyBar();
+				if (HostFileViewer->IsKeyBarVisible())
+				{
+					m_ViewKeyBar->SetPosition({
+						NewWhere.left,
+						NewWhere.bottom,
+						NewWhere.right,
+						NewWhere.bottom });
+					ChangeViewKeyBar();
+				}
+			}
 			*static_cast<SMALL_RECT*>(Param2) = {
-				m_Where.left,
-				m_Where.top,
-				m_Where.right,
-				m_Where.bottom };
+				NewWhere.left,
+				NewWhere.top,
+				NewWhere.right,
+				NewWhere.bottom };
 			Result = TRUE;
 			return Result;
 		}

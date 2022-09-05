@@ -59,6 +59,26 @@ class KeyBar;
 class Dialog;
 enum SEARCHER_RESULT: int;
 
+// [feature@Xer0X] viewer flags as it done for editor
+enum FFILEVIEW_FLAGS
+{
+	FFILEVIEW_REDRAWTITLE = 17_bit, // Нужно редравить заголовок?
+	FFILEVIEW_FULLSCREEN = 18_bit, // Полноэкранный режим?
+	FFILEVIEW_DISABLEHISTORY = 19_bit, // Запретить запись в историю?
+	FFILEVIEW_ENABLEF6 = 20_bit, // Переключаться во вьювер можно?
+	FFILEVIEW_SAVETOSAVEAS = 21_bit, // $ 17.08.2001 KM  Добавлено для поиска по AltF7.
+	// При редактировании найденного файла из архива для
+	// клавиши F2 сделать вызов ShiftF2.
+	FFILEVIEW_SAVEWQUESTIONS = 22_bit, // сохранить без вопросов
+	FFILEVIEW_LOCKED = 23_bit, // заблокировать?
+	FFILEVIEW_OPENFAILED = 24_bit, // файл открыть не удалось
+	FFILEVIEW_DELETEONCLOSE = 25_bit, // удалить в деструкторе файл вместе с каталогом (если тот пуст)
+	FFILEVIEW_DELETEONLYFILEONCLOSE = 26_bit, // удалить в деструкторе только файл
+	FFILEVIEW_DISABLESAVEPOS = 27_bit, // не сохранять позицию для файла
+	FFILEVIEW_CANNEWFILE = 28_bit, // допускается новый файл?
+	FFILEVIEW_SERVICEREGION = 29_bit, // используется сервисная область
+};
+
 class Viewer:public SimpleScreenObject
 {
 public:
@@ -101,8 +121,9 @@ public:
 	int ProcessTypeWrapMode(int newMode, bool isRedraw = true);
 	int GetId() const { return ViewerID; }
 	// [refactor@Xer0X] Moved here from fileview.cpp:
-	rectangle AdjustScreenPosition(rectangle Position);
-	bool IsFullScreen() const { return m_FullScreen; }
+	small_rectangle AdjustScreenPosition(small_rectangle Position);
+	small_rectangle AdjustScreenPosition();
+	bool IsFullScreen() { return m_FullScreen; } // or use m_Flags.Check(FFILEVIEW_FULLSCREEN)
 	/* // [experimental@Xer0X]
 	rectangle GetWhereV() { return m_Where; }
 	rectangle GetWhereV_C() const { return m_Where; } // */

@@ -78,17 +78,14 @@ class FileViewer::f3_key_timer
 {
 public:
 
-	f3_key_timer():
-		m_Timer(500ms, {}, [this]{ m_Expired = true; })
+	f3_key_timer():m_Timer(500ms, { }, [this] { m_Expired = true; })
 	{
 	}
 
-	bool expired() const
-	{
-		return m_Expired;
-	}
+	bool expired() const { return m_Expired; }
 
 private:
+
 	os::concurrency::timer m_Timer;
 	std::atomic_bool m_Expired{};
 };
@@ -96,6 +93,7 @@ private:
 class FileViewer::reload_timer
 {
 public:
+
 	void start(string_view const FileName)
 	{
 		if (!m_UpdatePeriod)
@@ -123,12 +121,10 @@ public:
 		}
 	}
 
-	void stop()
-	{
-		m_ReloadTimer = {};
-	}
+	void stop() { m_ReloadTimer = { }; }
 
 private:
+
 	/* Deliberately empty.
 		It doesn't have to do anything,
 		its only purpose is waking up the main loop
@@ -180,11 +176,11 @@ fileviewer_ptr FileViewer::create(
 	uintptr_t aCodePage)
 {
 	const auto FileViewerPtr = std::make_shared<FileViewer>(private_tag(), true, Title);
+	// [refactor@Xer0X] previously code block moved to function:
+//	FileViewerPtr->AdjustScreenPosition(Position);
 	// [refactor@Xer0X] added, otherwise will not catch uo with passed coordinates:
 	FileViewerPtr->SetPosition(Position);
 	FileViewerPtr->Init(Name, EnableSwitch, DisableHistory, -1, { }, nullptr, false, aCodePage);
-	// [refactor@Xer0X] previously code block moved to function:
-	FileViewerPtr->AdjustScreenPosition(Position);
 	return FileViewerPtr;
 }
 
@@ -210,6 +206,9 @@ void FileViewer::Init(
 	m_Name = Name;
 	SetCanLoseFocus(EnableSwitch);
 	m_SaveToSaveAs = ToSaveAs;
+	SetPosition(m_View->AdjustScreenPosition(m_Where));
+	/* [note@Xer0X] Here also top++ (title/status line) 
+		and bottom-- (keybar line) shrinked */
 	InitKeyBar();
 	// Note: bottom - bottom
 	m_windowKeyBar->SetPosition({
@@ -222,7 +221,8 @@ void FileViewer::Init(
 	if (!m_View->OpenFile(m_Name, true))
 	{
 		m_DisableHistory = true;  // $ 26.03.2002 DJ - при неудаче открытия - не пишем мусор в историю
-	//	WindowManager->DeleteWindow(this); // ЗАЧЕМ? Вьювер то еще не помещен в очередь манагера!
+		/* // ЗАЧЕМ? Вьювер то еще не помещен в очередь манагера!:
+		WindowManager->DeleteWindow(this); */
 		m_ExitCode = FALSE;
 		return;
 	}
@@ -276,46 +276,27 @@ void FileViewer::InitKeyBar()
 		m_Where.bottom - (IsKeyBarVisible()?1:0)
 	});
 	m_View->SetViewKeyBar(m_windowKeyBar.get());
-}
+} // end of InitKeyBar
 
 small_rectangle RECT_ZERO { 0, 0, 0, 0 };
 
 // [refactor@Xer0X] 
 void FileViewer::Show()
 {
-	rectangle rect_keybar = { 0, ScrY, ScrX, ScrY };
-	rectangle rect_viewer = { 0, 0, ScrX, ScrY };
-/*	rectangle r1 = m_View->GetWhereV();
-	rectangle r2 = m_View->GetWhereV_C();
-	rectangle r3 = GetWhereFV();
-	rectangle r4 = GetWhereFV_C(); */
-//	rectangle rect_where = m_View->GetWhere();
-	if (IsFullScreen())
-	{
-		if (m_View->m_Where == RECT_ZERO) {
-			/* fix screen object size,
-				because without it the screen is of zero size, 
-				and thus KeyBar and Title bar just not allowed: */
-			SetPosition(rect_viewer);
-			m_View->m_Where = {
-				(short)IsTitleBarVisible()?1:0,
-				(short)0,
-				(short)ScrX,
-				(short)ScrY-(IsKeyBarVisible()?1:0) };
-		}
-	}
-	else 
+	small_rectangle rect_keybar = { 0, (short)ScrY, (short)ScrX, (short)ScrY };
+	small_rectangle rect_viewer = { 0, 0, (short)ScrX, (short)ScrY };
+	if (!IsFullScreen())
 	{
 		rect_keybar = {
-			m_View->m_Where.left,
-			m_View->m_Where.bottom + 1,
-			m_View->m_Where.right,
-			m_View->m_Where.bottom + 1 };
+			m_Where.left,
+			m_Where.bottom,
+			m_Where.right,
+			m_Where.bottom };
 		rect_viewer = {
-			m_View->m_Where.left,
-			m_View->m_Where.top - (IsTitleBarVisible()?1:0),
-			m_View->m_Where.right,
-			m_View->m_Where.bottom+(IsKeyBarVisible()?1:0) };
+			m_Where.left,
+			m_Where.top, 
+			m_Where.right,
+			m_Where.bottom };
 	}
 	if (IsKeyBarVisible())
 		m_windowKeyBar->SetPosition(rect_keybar);
@@ -397,7 +378,7 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 			return true;
 		}
 		// $ 15.07.2000 tran + CtrlB switch KeyBar
-		case KEY_CTRLB:		case KEY_RCTRLB:
+		case KEY_CTRLB:			case KEY_RCTRLB:
 			Global->Opt->ViOpt.ShowKeyBar =! Global->Opt->ViOpt.ShowKeyBar;
 			if (IsKeyBarVisible())
 				m_windowKeyBar->Show();
@@ -405,12 +386,11 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 				m_windowKeyBar->Hide();
 			Global->WindowManager->RefreshWindow();
 			return true;
-		case KEY_CTRLSHIFTB:
-		case KEY_RCTRLSHIFTB:
+		case KEY_CTRLSHIFTB:	case KEY_RCTRLSHIFTB:
 			Global->Opt->ViOpt.ShowTitleBar =! Global->Opt->ViOpt.ShowTitleBar;
 			Show();
 			return true;
-		case KEY_CTRLO:		case KEY_RCTRLO:
+		case KEY_CTRLO:			case KEY_RCTRLO:
 			if (Global->WindowManager->ShowBackground())
 			{
 				SetCursorType(false, 0);
@@ -418,8 +398,8 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 				Global->WindowManager->RefreshAll();
 			}
 			return true;
-		case KEY_F3:		case KEY_NUMPAD5:	case KEY_SHIFTNUMPAD5:
-		case KEY_ESC:		case KEY_F10:
+		case KEY_F3:			case KEY_NUMPAD5:
+		case KEY_SHIFTNUMPAD5:	case KEY_ESC:		case KEY_F10:
 			Global->WindowManager->DeleteWindow();
 			return true;
 		case KEY_F6:
@@ -647,7 +627,8 @@ void FileViewer::ShowStatus() const
 		return;
 	SetColor(COL_VIEWERSTATUS);
 	GotoXY(m_Where.left, m_Where.top);
-	auto StatusLine = format(FSTR(L"│{}│{:5.5}│{:<10}│{:.3} {:<3}│{:4}"sv),
+	auto StatusLine = format(
+		FSTR(L"│{}│{:5.5}│{:<10}│{:.3} {:<3}│{:4}"sv),
 		L"thd"[m_View->m_DisplayMode],
 		ShortReadableCodepageName(m_View->m_Codepage),
 		m_View->FileSize,
@@ -656,7 +637,8 @@ void FileViewer::ShowStatus() const
 		str(m_View->LastPage? 100 : ToPercent(m_View->FilePos, m_View->FileSize)) + L'%'
 	);
 	// Explicitly signed types - it's too easy to screw it up on small console sizes otherwise
-	const int ClockSize = Global->Opt->Clock && IsFullScreen() ? static_cast<int>(Global->CurrentTime.size()) : 0;
+	const int ClockSize = Global->Opt->Clock
+		&& IsFullScreen() ? static_cast<int>(Global->CurrentTime.size()) : 0;
 	const int AvailableSpace = std::max(0, ObjWidth() - ClockSize - (ClockSize?1:0));
 	inplace::cut_right(StatusLine, AvailableSpace);
 	const int NameWidth = std::max(0, AvailableSpace - static_cast<int>(StatusLine.size()));
