@@ -294,7 +294,9 @@ int rx_gsub(lua_State *L, int is_function, int is_wide)
 		luaL_argerror(L, 3, "string or table or function");
 	}
 	if (lua_isnoneornil(L, 4))
+	{
 		n = -1;
+	}
 	else
 	{
 		n = (int)luaL_checkinteger(L, 4);
@@ -478,9 +480,7 @@ int rx_gsub(lua_State *L, int is_function, int is_wide)
 	luaL_addlstring(&out, (const char*)(s + data.Position), (data.Length - data.Position) * sizeof(wchar_t));
 	luaL_pushresult(&out);
 	if (!is_wide)
-	{
 		push_utf8_string(L, (const wchar_t*)lua_tostring(L, -1), lua_objlen(L, -1) / sizeof(wchar_t));
-	}
 	lua_pushinteger(L, matches);
 	lua_pushinteger(L, reps);
 	return 3;

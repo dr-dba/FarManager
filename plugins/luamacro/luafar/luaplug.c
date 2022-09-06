@@ -97,7 +97,8 @@ static void InitGlobal (Global *g, HINSTANCE hDll)
 
 static void DestroyGlobal (Global *g)
 {
-	if (g->LS) lua_close(g->LS);
+	if (g->LS)
+		lua_close(g->LS);
 	free(g->StartupInfo);
 	DeleteCriticalSection(&g->CritSection);
 }
@@ -160,7 +161,9 @@ void LUAPLUG GetGlobalInfoW(struct GlobalInfo *globalInfo)
 			G.InitStage++;
 		}
 		if (LF_GetGlobalInfo(G.LS, globalInfo, G.PluginDir))
+		{
 			G.PluginId = globalInfo->Guid;
+		}
 		else
 		{
 			lua_close(G.LS);
@@ -240,8 +243,10 @@ static int RecreateLuaState (Global *g)
 				lua_setglobal(newLS, "IsLuaStateRecreated");
 				OK = LF_RunDefaultScript(newLS);
 			}
-			if (OK) g->LS = newLS;
-			else lua_close(newLS);
+			if (OK)
+				g->LS = newLS;
+			else
+				lua_close(newLS);
 		}
 		return 1;
 	}

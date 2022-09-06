@@ -730,7 +730,8 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 			taskbar::flash();
 			return TRUE;
 		}
-		case ACTL_LOG:
+		// [feature@Xer0X]: exposing far logging ability to plugins:
+		case ACTL_WRITELOG:
 			LOGINFO(L"TEST LOG APIII???"sv, L"whatever"sv, L"something"sv);
 		default:
 			break;

@@ -1110,7 +1110,8 @@ enum ADVANCED_CONTROL_COMMANDS
 	ACTL_SETCURSORPOS               = 26,
 	ACTL_PROGRESSNOTIFY             = 27,
 	ACTL_GETWINDOWTYPE              = 28,
-	ACTL_LOG						= 101,
+	// [feature@Xer0X]: exposing far logging ability to plugins:
+	ACTL_WRITELOG					= 101,
 };
 
 enum FAR_MACRO_CONTROL_COMMANDS
