@@ -573,9 +573,9 @@ static BOOL mkdir(const wchar_t* aPath)
 	int posexist=-1, posfail=-1, num_ends=0, i;
 	wchar_t *Path = _wcsdup(aPath), *pos;
 	// Replace / with \ and count "ends".
-	for(pos=Path; *pos; )
+	for(pos = Path; *pos; )
 	{
-		if (*pos==L'\\' || *pos==L'/')
+		if (*pos == L'\\' || *pos == L'/')
 		{
 			num_ends++;
 			do *pos++ = L'\\'; while (*pos==L'\\' || *pos==L'/');
@@ -589,7 +589,7 @@ static BOOL mkdir(const wchar_t* aPath)
 		num_ends++;
 	// Acquire positions of "ends".
 	Ends = (wchar_t**) malloc(num_ends*sizeof(wchar_t*));
-	for(pos=Path,i=0; *pos; )
+	for (pos = Path, i = 0; *pos; )
 	{
 		if (*pos==L'\\')
 		{
@@ -614,29 +614,41 @@ static BOOL mkdir(const wchar_t* aPath)
 		if (attr != INVALID_FILE_ATTRIBUTES)
 		{
 			if (attr & FILE_ATTRIBUTE_DIRECTORY)
-				posexist = i; break;
-			free(Ends); free(Path);
+			{
+				posexist = i;
+				break;
+			}
+			free(Ends);
+			free(Path);
 			return FALSE;
 		}
 	}
-	// Create directories one by one. Store "failed end position" when failed.
+	/* Create directories one by one.
+		Store "failed end position" when failed. */
 	for (i = posexist + 1; i < num_ends; i++)
 	{
 		BOOL result;
 		wchar_t tempchar = *Ends[i];
 		*Ends[i] = 0;
-		result = CreateDirectoryW(Path,NULL);
+		result = CreateDirectoryW(Path, NULL);
 		*Ends[i] = tempchar;
 		if (!result)
-			posfail = i; break;
+		{
+			posfail = i;
+			break;
+		}
 	}
 	// In case of failure, remove the directories we already created, don't leave garbage.
 	if (posfail >= 0)
 	{
-		for (i = posfail-1; i>posexist; i--)
-			*Ends[i] = 0; RemoveDirectoryW(Path);
+		for (i = posfail - 1; i > posexist; i--)
+		{
+			*Ends[i] = 0;
+			RemoveDirectoryW(Path);
+		}
 	}
-	free(Ends); free(Path);
+	free(Ends);
+	free(Path);
 	return posfail < 0;
 }
 
