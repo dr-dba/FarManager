@@ -47,7 +47,7 @@ if not exist $(BootstrapDir) mkdir $(BootstrapDir)</Command>
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <CustomBuild Include="api_test.c">
+    <CustomBuild Include="api_test.c" Condition="'$(DISABLE_FAR_TESTS)'!='TRUE'">
       <Command>echo testing C plugin API
 cl /nologo  /c /Fo"$(IntDir)%(Filename)_c.testobj" /TC api_test.c
 echo testing C++ plugin API

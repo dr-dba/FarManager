@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Globals">
@@ -21,9 +21,10 @@
     <OutDir>$(IntDir)</OutDir>
   </PropertyGroup>
 
-  <ItemGroup>
+  <Import Project="$(ProjectDir)..\_build\vc\config\common.targets" />
+
+  <ItemGroup Condition="'$(DISABLE_FAR_TESTS)'!='TRUE'">
     <ClCompile Include="common\**\*.hpp" />
   </ItemGroup>
 
-  <Import Project="$(ProjectDir)..\_build\vc\config\common.targets" />
 </Project>
