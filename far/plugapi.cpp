@@ -447,7 +447,7 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 	return cpp_try(
 	[&]() -> intptr_t
 	{
-		if (ACTL_SYNCHRO==Command) //must be first
+		if (ACTL_SYNCHRO == Command) //must be first
 		{
 			const auto Plugin = Global->CtrlObject->Plugins->FindPlugin(*PluginId);
 			if (!Plugin)
@@ -456,7 +456,7 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 			message_manager::instance().notify(*PluginId, Param2);
 			return 0;
 		}
-		if (ACTL_GETWINDOWTYPE==Command)
+		if (ACTL_GETWINDOWTYPE == Command)
 		{
 			const auto info = static_cast<WindowType*>(Param2);
 			if (CheckStructSize(info))
@@ -473,8 +473,8 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 				case WTYPE_COMBOBOX:
 				case WTYPE_GRABBER:
 				case WTYPE_HMENU:
-				//case WTYPE_FINDFOLDER:
-					info->Type=type;
+			//	case WTYPE_FINDFOLDER:
+					info->Type = type;
 					return TRUE;
 				default:
 					break;
@@ -535,9 +535,7 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 		*/
 		case ACTL_GETARRAYCOLOR:
 			if (Param1 && Param2)
-			{
 				Global->Opt->Palette.CopyTo({ static_cast<FarColor*>(Param2), static_cast<size_t>(Param1) });
-			}
 			return Global->Opt->Palette.size();
 		case ACTL_SETARRAYCOLOR:
 		{
@@ -732,6 +730,8 @@ intptr_t WINAPI apiAdvControl(const UUID* PluginId, ADVANCED_CONTROL_COMMANDS Co
 			taskbar::flash();
 			return TRUE;
 		}
+		case ACTL_LOG:
+			LOGINFO(L"TEST LOG APIII???"sv, L"whatever"sv, L"something"sv);
 		default:
 			break;
 		}
@@ -1795,7 +1795,7 @@ static intptr_t apiTControl(intptr_t Id, command_type Command, intptr_t Param1, 
 	if (Id == -1)
 	{
 		const auto CurrentObject = std::invoke(Getter, Global->WindowManager);
-		return CurrentObject? std::invoke(Control, CurrentObject, Command, Param1, Param2) : 0;
+		return CurrentObject ? std::invoke(Control, CurrentObject, Command, Param1, Param2) : 0;
 	}
 	else
 	{
@@ -2206,9 +2206,9 @@ BOOL WINAPI apiCopyToClipboard(enum FARCLIPBOARD_TYPE Type, const wchar_t *Data)
 static size_t apiPasteFromClipboardEx(bool Type, span<wchar_t> Data)
 {
 	string str;
-	if(Type? GetClipboardVText(str) : GetClipboardText(str))
+	if (Type? GetClipboardVText(str) : GetClipboardText(str))
 	{
-		if(!Data.empty())
+		if (!Data.empty())
 		{
 			const auto Size = std::min(Data.size(), str.size() + 1);
 			std::copy_n(str.data(), Size, Data.data());
@@ -2230,9 +2230,7 @@ size_t WINAPI apiPasteFromClipboard(enum FARCLIPBOARD_TYPE Type, wchar_t *Data, 
 		{
 			string str;
 			if (GetClipboardVText(str))
-			{
 				break;
-			}
 		}
 		[[fallthrough]];
 		case FCT_ANY:
@@ -2287,17 +2285,15 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 		if (!Global->CtrlObject)
 			return false;
 		auto& Macro = Global->CtrlObject->Macro; //??
-
 		switch (Command)
 		{
 		// Param1=0, Param2 - FarMacroLoad*
 		case MCTL_LOADALL: // из реестра в память ФАР с затиранием предыдущего
 			{
 				const auto Data = static_cast<const FarMacroLoad*>(Param2);
-				return
-					!Macro.IsRecording() &&
-					(!Data || CheckStructSize(Data)) &&
-					Macro.LoadMacros(false, !Macro.IsExecuting(), Data);
+				return !Macro.IsRecording()
+					&& (!Data || CheckStructSize(Data))
+					&& Macro.LoadMacros(false, !Macro.IsExecuting(), Data);
 			}
 		// Param1=0, Param2 - 0
 		case MCTL_SAVEALL:
@@ -2335,9 +2331,7 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 			{
 				const auto Data = static_cast<const MacroAddMacroV1*>(Param2);
 				if (CheckStructSize(Data) && Data->SequenceText)
-				{
 					return Macro.AddMacro(*PluginId, Data);
-				}
 			}
 			break;
 		case MCTL_DELMACRO:
@@ -2364,7 +2358,9 @@ intptr_t WINAPI apiMacroControl(const UUID* PluginId, FAR_MACRO_CONTROL_COMMANDS
 				return Size;
 			}
 		default: //FIXME
-			break;
+			{
+				break;
+			}
 		}
 		return false;
 	},
@@ -2403,13 +2399,13 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 						return equal_icase(i->ModuleName(), strPath);
 					});
 					if (ItemIterator != Global->CtrlObject->Plugins->cend())
-					{
 						plugin = *ItemIterator;
-					}
 					break;
 				}
 			default:
-				break;
+				{
+					break;
+				}
 			}
 			if (plugin && Global->CtrlObject->Plugins->IsPluginUnloaded(plugin))
 				plugin = nullptr;
@@ -2421,22 +2417,20 @@ intptr_t WINAPI apiPluginsControl(HANDLE Handle, FAR_PLUGINS_CONTROL_COMMANDS Co
 			{
 				const auto Info = static_cast<FarGetPluginInformation*>(Param2);
 				if (Handle && (!Info || (CheckStructSize(Info) && static_cast<size_t>(Param1) > sizeof(*Info))))
-				{
 					return Global->CtrlObject->Plugins->GetPluginInformation(static_cast<Plugin*>(Handle), Info, Param1);
-				}
 			}
 			break;
 		case PCTL_GETPLUGINS:
 			{
 				const auto PluginsCount = Global->CtrlObject->Plugins->size();
 				if (Param1 && Param2)
-				{
 					std::copy_n(Global->CtrlObject->Plugins->begin(), std::min(static_cast<size_t>(Param1), PluginsCount), static_cast<HANDLE*>(Param2));
-				}
 				return PluginsCount;
 			}
 		default:
-			break;
+			{
+				break;
+			}
 		}
 		return 0;
 	},
@@ -2463,8 +2457,7 @@ intptr_t WINAPI apiFileFilterControl(HANDLE hHandle, FAR_FILE_FILTER_CONTROL_COM
 				PANEL_ACTIVE,
 				PANEL_PASSIVE,
 				PANEL_NONE
-			))
-				return false;
+			)) return false;
 			if (none_of(
 				Param1,
 				FFT_PANEL,
@@ -2472,8 +2465,7 @@ intptr_t WINAPI apiFileFilterControl(HANDLE hHandle, FAR_FILE_FILTER_CONTROL_COM
 				FFT_COPY,
 				FFT_SELECT,
 				FFT_CUSTOM
-			))
-				return false;
+			)) return false;
 			if (!Param2)
 				return false;
 			*static_cast<multifilter**>(Param2) = std::make_unique<multifilter>(GetHostPanel(hHandle), static_cast<FAR_FILE_FILTER_TYPE>(Param1)).release();
@@ -2638,9 +2630,7 @@ size_t WINAPI apiGetCurrentDirectory(size_t Size, wchar_t* Buffer) noexcept
 	{
 		const auto strCurDir = os::fs::get_current_directory();
 		if (Buffer && Size)
-		{
 			xwcsncpy(Buffer, strCurDir.c_str(), Size);
-		}
 		return strCurDir.size() + 1;
 	},
 	[]
@@ -2669,9 +2659,7 @@ size_t WINAPI apiFormatFileSize(unsigned long long Size, intptr_t Width, FARFORM
 			return FinalFlags | ((Flags & i.first) ? i.second : 0);
 		}));
 		if (Dest && DestSize)
-		{
 			xwcsncpy(Dest,strDestStr.c_str(),DestSize);
-		}
 		return strDestStr.size()+1;
 	},
 	[]
@@ -2717,9 +2705,7 @@ size_t WINAPI apiMkTemp(wchar_t* Dest, size_t DestSize, const wchar_t *Prefix) n
 	{
 		const auto strDest = MakeTemp(NullToEmpty(Prefix));
 		if (Dest && DestSize)
-		{
 			xwcsncpy(Dest, strDest.c_str(), DestSize);
-		}
 		return strDest.size() + 1;
 	},
 	[]
@@ -2762,9 +2748,7 @@ size_t WINAPI apiProcessName(const wchar_t *param1, wchar_t *param2, size_t size
 			else
 			{
 				if(Flags&PN_SHOWERRORMESSAGE)
-				{
 					Masks.ErrorMessage();
-				}
 			}
 			return Result;
 		}
@@ -2780,7 +2764,9 @@ size_t WINAPI apiProcessName(const wchar_t *param1, wchar_t *param2, size_t size
 			return strResult.size() + 1;
 		}
 		default:
-			return false;
+		{
+				return false;
+		}
 		}
 	},
 	[]
@@ -2824,7 +2810,9 @@ size_t WINAPI apiInputRecordToKeyName(const INPUT_RECORD* Key, wchar_t *KeyText,
 			KeyText[len] = 0;
 		}
 		else if (KeyText)
+		{
 			*KeyText = 0;
+		}
 		return len + 1;
 	},
 	[]
@@ -2860,37 +2848,39 @@ BOOL WINAPI apiMkLink(const wchar_t *Target, const wchar_t *LinkName, LINK_TYPE 
 			switch (Type)
 			{
 			case LINK_HARDLINK:
-				Result = MkHardLink(Target, LinkName, (Flags&MLF_SHOWERRMSG) == 0);
+				Result = MkHardLink(Target, LinkName, (Flags & MLF_SHOWERRMSG) == 0);
 				break;
 			case LINK_JUNCTION:
 			case LINK_VOLMOUNT:
 			case LINK_SYMLINKFILE:
 			case LINK_SYMLINKDIR:
 			case LINK_SYMLINK:
-			{
-				auto LinkType = RP_JUNCTION;
-				switch (Type)
 				{
-				case LINK_VOLMOUNT:
-					LinkType = RP_VOLMOUNT;
-					break;
-				case LINK_SYMLINK:
-					LinkType = RP_SYMLINK;
-					break;
-				case LINK_SYMLINKFILE:
-					LinkType = RP_SYMLINKFILE;
-					break;
-				case LINK_SYMLINKDIR:
-					LinkType = RP_SYMLINKDIR;
-					break;
-				default:
+					auto LinkType = RP_JUNCTION;
+					switch (Type)
+					{
+					case LINK_VOLMOUNT:
+						LinkType = RP_VOLMOUNT;
+						break;
+					case LINK_SYMLINK:
+						LinkType = RP_SYMLINK;
+						break;
+					case LINK_SYMLINKFILE:
+						LinkType = RP_SYMLINKFILE;
+						break;
+					case LINK_SYMLINKDIR:
+						LinkType = RP_SYMLINKDIR;
+						break;
+					default:
+						break;
+					}
+					Result = MkSymLink(Target, LinkName, LinkType, (Flags & MLF_SHOWERRMSG) == 0, (Flags & MLF_HOLDTARGET) != 0);
 					break;
 				}
-				Result = MkSymLink(Target, LinkName, LinkType, (Flags&MLF_SHOWERRMSG) == 0, (Flags&MLF_HOLDTARGET) != 0);
-				break;
-			}
 			default:
-				break;
+				{
+					break;
+				}
 			}
 		}
 		if (Result && !(Flags&MLF_DONOTUPDATEPANEL))

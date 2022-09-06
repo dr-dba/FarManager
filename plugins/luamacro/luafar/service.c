@@ -271,7 +271,9 @@ static UINT64 check_env_flag(lua_State *L, int pos)
 			luaL_argerror(L, pos, lua_tostring(L, -1));
 		}
 		else
+		{
 			luaL_argerror(L, pos, "invalid flag");
+		}
 	}
 	return ret;
 }
@@ -291,9 +293,7 @@ UINT64 GetFlagCombination(lua_State *L, int pos, int *success)
 			{
 				UINT64 flag = get_env_flag(L, -2, success);
 				if (success == NULL || *success)
-				{
 					ret |= flag;
-				}
 				else
 				{
 					lua_pop(L, 2);
@@ -381,7 +381,9 @@ static void PushPluginHandle(lua_State *L, HANDLE Handle)
 		lua_setmetatable(L, -2);
 	}
 	else
+	{
 		lua_pushnil(L);
+	}
 }
 
 static int PluginHandle_rawhandle(lua_State *L)
@@ -4505,7 +4507,6 @@ static int far_AdvControl(lua_State *L)
 			Param1 = luaL_checkinteger(L, 2) - 1;
 			break;
 		case ACTL_WAITKEY:
-		{
 			INPUT_RECORD ir;
 			if (!lua_isnoneornil(L, 3))
 			{
@@ -4514,9 +4515,7 @@ static int far_AdvControl(lua_State *L)
 			}
 			lua_pushinteger(L, Info->AdvControl(PluginId, Command, Param1, Param2));
 			return 1;
-		}
 		case ACTL_GETCOLOR:
-		{
 			struct FarColor fc;
 			Param1 = luaL_checkinteger(L, 2);
 			if (Info->AdvControl(PluginId, Command, Param1, &fc))
@@ -4524,18 +4523,14 @@ static int far_AdvControl(lua_State *L)
 			else
 				lua_pushnil(L);
 			return 1;
-		}
 		case ACTL_SYNCHRO:
-		{
 			intptr_t p = luaL_checkinteger(L, 2);
 			Param2 = CreateSynchroData(NULL, 0, (int)p);
 			break;
-		}
 		case ACTL_SETPROGRESSSTATE:
 			Param1 = (intptr_t) check_env_flag(L, 2);
 			break;
 		case ACTL_SETPROGRESSVALUE:
-		{
 			struct ProgressValue pv;
 			luaL_checktype(L, 3, LUA_TTABLE);
 			pv.StructSize = sizeof(pv);
@@ -4543,9 +4538,7 @@ static int far_AdvControl(lua_State *L)
 			pv.Total = (UINT64)GetOptNumFromTable(L, "Total", 100.0);
 			lua_pushinteger(L, Info->AdvControl(PluginId, Command, Param1, &pv));
 			return 1;
-		}
 		case ACTL_GETARRAYCOLOR:
-		{
 			intptr_t len = Info->AdvControl(PluginId, Command, 0, NULL), i;
 			struct FarColor *arr = (struct FarColor*) lua_newuserdata(L, len*sizeof(struct FarColor));
 			Info->AdvControl(PluginId, Command, len, arr);
@@ -4556,7 +4549,6 @@ static int far_AdvControl(lua_State *L)
 				lua_rawseti(L, -2, (int)i+1);
 			}
 			return 1;
-		}
 		case ACTL_GETFARMANAGERVERSION:
 		{
 			struct VersionInfo vi;
@@ -4623,7 +4615,7 @@ static int far_AdvControl(lua_State *L)
 			size = fsc.ColorsCount * sizeof(struct FarColor);
 			fsc.Colors = (struct FarColor*) lua_newuserdata(L, size);
 			memset(fsc.Colors, 0, size);
-			for( i = 0; i < (int)fsc.ColorsCount; i++)
+			for (i = 0; i < (int)fsc.ColorsCount; i++)
 			{
 				lua_rawgeti(L, 3, i+1);
 				GetFarColor(L, -1, &fsc.Colors[i]);
@@ -4644,11 +4636,12 @@ static int far_AdvControl(lua_State *L)
 				PutIntToTable(L, "Bottom", sr.Bottom);
 			}
 			else
+			{
 				lua_pushnil(L);
+			}
 			return 1;
 		}
 		case ACTL_GETCURSORPOS:
-		{
 			COORD coord;
 			if (Info->AdvControl(PluginId, Command, 0, &coord))
 			{
@@ -4657,9 +4650,10 @@ static int far_AdvControl(lua_State *L)
 				PutIntToTable(L, "Y", coord.Y);
 			}
 			else
+			{
 				lua_pushnil(L);
+			}
 			return 1;
-		}
 		case ACTL_SETCURSORPOS:
 		{
 			COORD coord;
@@ -4687,6 +4681,8 @@ static int far_AdvControl(lua_State *L)
 			}
 			return 1;
 		}
+		case ACTL_LOG:
+			;
 	}
 	lua_pushinteger(L, Info->AdvControl(PluginId, Command, Param1, Param2));
 	return 1;
