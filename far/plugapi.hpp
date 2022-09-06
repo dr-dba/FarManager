@@ -133,7 +133,7 @@ namespace pluginapi
 	wchar_t* WINAPI apiXlat(wchar_t *Line, intptr_t StartPos, intptr_t EndPos, XLAT_FLAGS Flags) noexcept;
 	unsigned long long  WINAPI apiFarClock() noexcept;
 	int      WINAPI apiCompareStrings(const wchar_t* Str1, size_t Size1, const wchar_t* Str2, size_t Size2) noexcept;
-	// arclite
+	//arclite
 	HANDLE   WINAPI apiCreateFile(const wchar_t *Object, DWORD DesiredAccess, DWORD ShareMode, LPSECURITY_ATTRIBUTES SecurityAttributes, DWORD CreationDistribution, DWORD FlagsAndAttributes, HANDLE TemplateFile) noexcept;
 	DWORD    WINAPI apiGetFileAttributes(const wchar_t *FileName) noexcept;
 	BOOL     WINAPI apiSetFileAttributes(const wchar_t *FileName, DWORD dwFileAttributes) noexcept;
@@ -141,7 +141,7 @@ namespace pluginapi
 	BOOL     WINAPI apiDeleteFile(const wchar_t *FileName) noexcept;
 	BOOL     WINAPI apiRemoveDirectory(const wchar_t *DirName) noexcept;
 	BOOL     WINAPI apiCreateDirectory(const wchar_t *PathName, LPSECURITY_ATTRIBUTES SecurityAttributes) noexcept;
-	// luamacro
+	//luamacro
 	intptr_t WINAPI apiCallFar(intptr_t CheckCode, FarMacroCall* Data) noexcept;
 }
 

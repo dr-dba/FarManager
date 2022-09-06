@@ -73,8 +73,8 @@ enum FLAGS_CLASS_EDITLINE
 	FEDITLINE_SHOWLINEBREAK        = 18_bit,
 	FEDITLINE_READONLY             = 19_bit,
 	FEDITLINE_CURSORVISIBLE        = 20_bit,
-	/* Если ни один из FEDITLINE_PARENT_ не указан (или указаны оба),
-		то Edit явно не в диалоге юзается. */
+	// Если ни один из FEDITLINE_PARENT_ не указан (или указаны оба), то Edit
+	// явно не в диалоге юзается.
 	FEDITLINE_PARENT_SINGLELINE    = 21_bit,  // обычная строка ввода в диалоге
 	FEDITLINE_PARENT_MULTILINE     = 22_bit,  // для будущего Memo-Edit (DI_EDITOR или DIF_MULTILINE)
 };
@@ -85,16 +85,13 @@ struct ColorItem
 	// Keeping a copy of UUID in each of thousands of color items is a giant waste of memory,
 	// so UUIDs are stored in a separate set and here is only a pointer.
 	const UUID* Owner;
-
 	// Usually we have only 5-10 unique colors.
 	// Keeping a copy of FarColor in each of thousands of color items is a giant waste of memory,
 	// so FarColors are stored in a separate set and here is only a pointer.
 	const FarColor* Color;
-
 	unsigned int Priority;
 	int StartPos;
 	int EndPos;
-
 	// it's an uint64 in plugin API, but only 0x1 and 0x2 are used now, so save some memory here.
 	unsigned int Flags;
 
@@ -104,7 +101,7 @@ struct ColorItem
 	const FarColor& GetColor() const { return *Color; }
 	void SetColor(const FarColor& Value);
 
-	bool operator < (const ColorItem& rhs) const
+	bool operator <(const ColorItem& rhs) const
 	{
 		return Priority < rhs.Priority;
 	}
@@ -119,7 +116,6 @@ class Edit: public SimpleScreenObject
 		int LeftPos;
 		int CurTabPos;
 	};
-
 public:
 	NONCOPYABLE(Edit);
 	MOVE_CONSTRUCTIBLE(Edit);
@@ -131,11 +127,11 @@ public:
 	bool ProcessKey(const Manager::Key& Key) override;
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 	long long VMProcess(int OpCode, void *vParam = nullptr, long long iParam = 0) override;
-	virtual void Changed(bool DelBlock = false) { }
+	virtual void Changed(bool DelBlock = false) {}
 	// Получение максимального значения строки для потребностей Dialod API
 	virtual int GetMaxLength() const {return -1;}
 
-	void FastShow(const ShowInfo* Info = nullptr);
+	void FastShow(const ShowInfo* Info=nullptr);
 	void SetDelRemovesBlocks(bool Mode) {m_Flags.Change(FEDITLINE_DELREMOVESBLOCKS,Mode);}
 	int GetDelRemovesBlocks() const {return m_Flags.Check(FEDITLINE_DELREMOVESBLOCKS); }
 	void SetPersistentBlocks(bool Mode) {m_Flags.Change(FEDITLINE_PERSISTENTBLOCKS,Mode);}
@@ -182,11 +178,6 @@ public:
 	void InsertTab();
 	void AddColor(const ColorItem& col);
 	void DeleteColor(delete_color_condition Condition);
-	// [experimental@Xer0X] editor window "geography"
-	bool GetCoord(COORD& coord) const;
-	bool SetSize(COORD& size2d) const;
-	bool SetCoord(COORD& coord) const;
-	bool SetWindRect(rectangle new_rect, rectangle& res_rect);
 	bool GetColor(ColorItem& col, size_t Item) const;
 	void Xlat(bool All=false);
 	void SetDialogParent(DWORD Sets);
@@ -195,9 +186,6 @@ public:
 	bool GetReadOnly() const {return m_Flags.Check(FEDITLINE_READONLY);}
 	void SetReadOnly(bool NewReadOnly) {m_Flags.Change(FEDITLINE_READONLY,NewReadOnly);}
 	void SetHorizontalPosition(int X1, int X2) { SetPosition({ X1, m_Where.top, X2, m_Where.bottom }); }
-	// Moved here from private declarations: (by @Xer0X)
-	void SetWindRectCoordRight(int Value) { SetPosition({ m_Where.left, m_Where.top, Value, m_Where.bottom }); }
-	void SetWindRectPosition(rectangle rectWhere) { SetPosition(rectWhere); };
 	static bool is_clear_selection_key(unsigned Key);
 
 protected:
@@ -239,10 +227,9 @@ private:
 	int GetNextCursorPos(int Position,int Where) const;
 	static bool CharInMask(wchar_t Char, wchar_t Mask);
 	bool ProcessCtrlQ();
-	bool ProcessInsPath(unsigned int Key,int PrevSelStart = -1, int PrevSelEnd = 0);
-	void FixLeftPos(int TabCurPos = -1);	
+	bool ProcessInsPath(unsigned int Key,int PrevSelStart=-1,int PrevSelEnd=0);
+	void FixLeftPos(int TabCurPos=-1);
 	void SetRightCoord(int Value) { SetPosition({ m_Where.left, m_Where.top, Value, m_Where.bottom }); }
-//	void SetWindRect(rectangle new_where) { SetPosition(new_where); }
 	Editor* GetEditor() const;
 
 	bool is_valid_surrogate_pair_at(size_t Position) const;

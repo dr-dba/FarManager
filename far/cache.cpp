@@ -61,6 +61,7 @@ void CachedRead::AdjustAlignment()
 	if (!m_File)
 		return;
 
+
 #if 1
 	// 1) for now windows can works only with 512 and 4K BytesPerPhysicalSector
 	// 2) IOCTL_STORAGE_QUERY_PROPERTY (may) doesn't work for dynamic volumes

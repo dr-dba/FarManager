@@ -1,16 +1,19 @@
-﻿/*
+/*
 ** $Id: lauxlib.h,v 1.88.1.1 2007/12/27 13:02:25 roberto Exp $
 ** Auxiliary functions for building Lua libraries
 ** See Copyright Notice in lua.h
 */
 
+
 #ifndef lauxlib_h
 #define lauxlib_h
+
 
 #include <stddef.h>
 #include <stdio.h>
 
 #include "lua.h"
+
 
 #if defined(LUA_COMPAT_GETN)
 LUALIB_API int (luaL_getn) (lua_State *L, int t);
@@ -24,13 +27,17 @@ LUALIB_API void (luaL_setn) (lua_State *L, int t, int n);
 #define luaI_openlib	luaL_openlib
 #endif
 
+
 /* extra error code for `luaL_load' */
 #define LUA_ERRFILE     (LUA_ERRERR+1)
+
 
 typedef struct luaL_Reg {
   const char *name;
   lua_CFunction func;
 } luaL_Reg;
+
+
 
 LUALIB_API void (luaI_openlib) (lua_State *L, const char *libname,
                                 const luaL_Reg *l, int nup);
@@ -74,11 +81,14 @@ LUALIB_API int (luaL_loadstring) (lua_State *L, const char *s);
 
 LUALIB_API lua_State *(luaL_newstate) (void);
 
+
 LUALIB_API const char *(luaL_gsub) (lua_State *L, const char *s, const char *p,
                                                   const char *r);
 
 LUALIB_API const char *(luaL_findtable) (lua_State *L, int idx,
                                          const char *fname, int szhint);
+
+
 
 
 /*
@@ -114,6 +124,8 @@ LUALIB_API const char *(luaL_findtable) (lua_State *L, int idx,
 ** =======================================================
 */
 
+
+
 typedef struct luaL_Buffer {
   char *p;			/* current position in buffer */
   int lvl;  /* number of strings in the stack (level) */
@@ -137,7 +149,9 @@ LUALIB_API void (luaL_addstring) (luaL_Buffer *B, const char *s);
 LUALIB_API void (luaL_addvalue) (luaL_Buffer *B);
 LUALIB_API void (luaL_pushresult) (luaL_Buffer *B);
 
+
 /* }====================================================== */
+
 
 /* compatibility with ref system */
 
@@ -152,7 +166,9 @@ LUALIB_API void (luaL_pushresult) (luaL_Buffer *B);
 
 #define lua_getref(L,ref)       lua_rawgeti(L, LUA_REGISTRYINDEX, (ref))
 
+
 #define luaL_reg	luaL_Reg
 
 #endif
+
 

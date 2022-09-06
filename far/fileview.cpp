@@ -77,15 +77,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class FileViewer::f3_key_timer
 {
 public:
-
-	f3_key_timer():m_Timer(500ms, { }, [this] { m_Expired = true; })
+	f3_key_timer():
+		m_Timer(500ms, {}, [this]{ m_Expired = true; })
 	{
 	}
 
-	bool expired() const { return m_Expired; }
+	bool expired() const
+	{
+		return m_Expired;
+	}
 
 private:
-
 	os::concurrency::timer m_Timer;
 	std::atomic_bool m_Expired{};
 };
@@ -93,7 +95,6 @@ private:
 class FileViewer::reload_timer
 {
 public:
-
 	void start(string_view const FileName)
 	{
 		if (!m_UpdatePeriod)
@@ -101,17 +102,19 @@ public:
 			m_UpdatePeriod = [&]
 			{
 				const auto PathRoot = GetPathRoot(FileName);
+
 				switch (os::fs::drive::get_type(PathRoot))
 				{
 				case DRIVE_REMOVABLE: return is_removable_usb(PathRoot)? 1s : 0s;
-				case DRIVE_FIXED	: return 1s;
-				case DRIVE_REMOTE	: return 1s;
-				case DRIVE_CDROM	: return 0s;
-				case DRIVE_RAMDISK	: return 1s;
-				default				: return 0s;
+				case DRIVE_FIXED:     return 1s;
+				case DRIVE_REMOTE:    return 1s;
+				case DRIVE_CDROM:     return 0s;
+				case DRIVE_RAMDISK:   return 1s;
+				default:              return 0s;
 				}
 			}();
 		}
+
 		if (*m_UpdatePeriod != 0s)
 		{
 			m_ReloadTimer = os::concurrency::timer(*m_UpdatePeriod, *m_UpdatePeriod, [this]
@@ -121,15 +124,17 @@ public:
 		}
 	}
 
-	void stop() { m_ReloadTimer = { }; }
+	void stop()
+	{
+		m_ReloadTimer = {};
+	}
 
 private:
+	// Deliberately empty. It doesn't have to do anything,
+	// its only purpose is waking up the main loop
+	// and generating KEY_NONE to reload the file.
+	listener m_Listener{ []{} };
 
-	/* Deliberately empty.
-		It doesn't have to do anything,
-		its only purpose is waking up the main loop
-		and generating KEY_NONE to reload the file.*/
-	listener m_Listener{ [] { } };
 	std::optional<std::chrono::milliseconds> m_UpdatePeriod;
 	os::concurrency::timer m_ReloadTimer;
 };
@@ -158,15 +163,17 @@ fileviewer_ptr FileViewer::create(
 	const auto FileViewerPtr = std::make_shared<FileViewer>(private_tag(), DisableEdit, Title);
 	FileViewerPtr->SetPosition({ 0, 0, ScrX, ScrY });
 	FileViewerPtr->Init(Name, EnableSwitch, DisableHistory, ViewStartPos, PluginData, ViewNamesList, ToSaveAs, aCodePage, std::move(Update));
+
 	if (DeleteOnClose)
 	{
 		FileViewerPtr->m_DeleteOnClose = DeleteOnClose == 1 ? 1 : 2;
 		FileViewerPtr->SetTempViewName(Name, DeleteOnClose == 1);
 	}
+
 	return FileViewerPtr;
 }
 
-// [note@Xer0X@] Called from viewer.Viewer(..)
+
 fileviewer_ptr FileViewer::create(
 	string_view const Name,
 	bool EnableSwitch,
@@ -176,13 +183,38 @@ fileviewer_ptr FileViewer::create(
 	uintptr_t aCodePage)
 {
 	const auto FileViewerPtr = std::make_shared<FileViewer>(private_tag(), true, Title);
-	// [refactor@Xer0X] previously code block moved to function:
-//	FileViewerPtr->AdjustScreenPosition(Position);
-	// [refactor@Xer0X] added, otherwise will not catch uo with passed coordinates:
+
+	// BUGBUG WHY ALL THIS?
+	if (Position.left < 0)
+		Position.left = 0;
+
+	if (Position.right < 0 || Position.right > ScrX)
+		Position.right = ScrX;
+
+	if (Position.top < 0)
+		Position.top = 0;
+
+	if (Position.bottom < 0 || Position.bottom > ScrY)
+		Position.bottom = ScrY;
+
+	if (Position.left > Position.right)
+	{
+		Position.left = 0;
+		Position.right = ScrX;
+	}
+
+	if (Position.top > Position.bottom)
+	{
+		Position.top = 0;
+		Position.bottom = ScrY;
+	}
+
 	FileViewerPtr->SetPosition(Position);
-	FileViewerPtr->Init(Name, EnableSwitch, DisableHistory, -1, { }, nullptr, false, aCodePage);
+	FileViewerPtr->m_FullScreen = (!Position.left && !Position.top && Position.right == ScrX && Position.bottom == ScrY);
+	FileViewerPtr->Init(Name, EnableSwitch, DisableHistory, -1, {}, nullptr, false, aCodePage);
 	return FileViewerPtr;
 }
+
 
 void FileViewer::Init(
 	string_view const Name,
@@ -198,113 +230,111 @@ void FileViewer::Init(
 	m_View = std::make_unique<Viewer>(shared_from_this(), false, aCodePage);
 	m_View->SetTitle(m_StrTitle);
 	m_windowKeyBar = std::make_unique<KeyBar>(shared_from_this());
+
 	m_RedrawTitle = false;
 	SetMacroMode(MACROAREA_VIEWER);
 	m_View->SetPluginData(PluginData);
 	m_View->SetHostFileViewer(this);
-	m_DisableHistory = DisableHistory; ///
+	m_DisableHistory=DisableHistory; ///
 	m_Name = Name;
 	SetCanLoseFocus(EnableSwitch);
-	m_SaveToSaveAs = ToSaveAs;
-	SetPosition(m_View->AdjustScreenPosition(m_Where));
-	/* [note@Xer0X] Here also top++ (title/status line) 
-		and bottom-- (keybar line) shrinked */
+	m_SaveToSaveAs=ToSaveAs;
 	InitKeyBar();
 	// Note: bottom - bottom
-	m_windowKeyBar->SetPosition({
-		m_Where.left,
-		m_Where.bottom,
-		m_Where.right,
-		m_Where.bottom });
+	m_windowKeyBar->SetPosition({ m_Where.left, m_Where.bottom, m_Where.right, m_Where.bottom });
+
 	if (ViewNamesList)
 		m_View->SetNamesList(*ViewNamesList);
+
 	if (!m_View->OpenFile(m_Name, true))
 	{
 		m_DisableHistory = true;  // $ 26.03.2002 DJ - при неудаче открытия - не пишем мусор в историю
-		/* // ЗАЧЕМ? Вьювер то еще не помещен в очередь манагера!:
-		WindowManager->DeleteWindow(this); */
-		m_ExitCode = FALSE;
+		// WindowManager->DeleteWindow(this); // ЗАЧЕМ? Вьювер то еще не помещен в очередь манагера!
+		m_ExitCode=FALSE;
 		return;
 	}
+
 	if (!m_DisableHistory && m_Name != L"-"sv)
+	{
 		Global->CtrlObject->ViewHistory->AddToHistory(m_View->GetFileName(), HR_VIEWER);
+	}
+
 	if (ViewStartPos != -1)
 		m_View->SetFilePos(ViewStartPos);
-	m_ExitCode = TRUE;
+
+	m_ExitCode=TRUE;
+
 	if (IsKeyBarVisible())
-		m_windowKeyBar->Show();
-	else
-		m_windowKeyBar->Hide();
-	ShowConsoleTitle();
-	m_F3Timer = std::make_unique<f3_key_timer>();
-	m_ReloadTimer->start(m_Name);
-	if (EnableSwitch)
 	{
-		if (Update)
-			Global->WindowManager->ReplaceWindow(Update, shared_from_this());
-		else
-			Global->WindowManager->InsertWindow(shared_from_this());
+		m_windowKeyBar->Show();
 	}
 	else
 	{
-		if (Update)
-			Global->WindowManager->DeleteWindow(Update);
-		if (true)
-			Global->WindowManager->ExecuteWindow(shared_from_this());
+		m_windowKeyBar->Hide();
+	}
+
+	ShowConsoleTitle();
+
+	m_F3Timer = std::make_unique<f3_key_timer>();
+	m_ReloadTimer->start(m_Name);
+
+	if (EnableSwitch)
+	{
+		if (Update) Global->WindowManager->ReplaceWindow(Update, shared_from_this());
+		else Global->WindowManager->InsertWindow(shared_from_this());
+	}
+	else
+	{
+		if (Update) Global->WindowManager->DeleteWindow(Update);
+		Global->WindowManager->ExecuteWindow(shared_from_this());
 	}
 	ReadEvent();
 }
 
+
 void FileViewer::InitKeyBar()
 {
 	auto& Keybar = *m_windowKeyBar;
+
 	Keybar.SetLabels(lng::MViewF1);
+
 	if (Global->OnlyEditorViewerUsed)
 		Keybar[KBL_CTRL][F10].clear();
+
 	if (m_DisableEdit)
 		Keybar[KBL_MAIN][F6].clear();
+
 	if (!GetCanLoseFocus())
 	{
 		Keybar[KBL_MAIN][F12].clear();
 		Keybar[KBL_ALT][F11].clear();
 	}
+
 	Keybar.SetCustomLabels(KBA_VIEWER);
-	m_View->SetPosition({
-		m_Where.left,
-		m_Where.top	+ (IsTitleBarVisible()?1:0),
-		m_Where.right,
-		m_Where.bottom - (IsKeyBarVisible()?1:0)
-	});
+
+	m_View->SetPosition({ m_Where.left, m_Where.top + (IsTitleBarVisible()? 1 : 0), m_Where.right, m_Where.bottom - (IsKeyBarVisible()? 1 : 0) });
 	m_View->SetViewKeyBar(m_windowKeyBar.get());
-} // end of InitKeyBar
+}
 
-small_rectangle RECT_ZERO { 0, 0, 0, 0 };
-
-// [refactor@Xer0X] 
 void FileViewer::Show()
 {
-	small_rectangle rect_keybar = { 0, (short)ScrY, (short)ScrX, (short)ScrY };
-	small_rectangle rect_viewer = { 0, 0, (short)ScrX, (short)ScrY };
-	if (!IsFullScreen())
+	if (m_FullScreen)
 	{
-		rect_keybar = {
-			m_Where.left,
-			m_Where.bottom,
-			m_Where.right,
-			m_Where.bottom };
-		rect_viewer = {
-			m_Where.left,
-			m_Where.top, 
-			m_Where.right,
-			m_Where.bottom };
+		if (IsKeyBarVisible())
+		{
+			m_windowKeyBar->SetPosition({ 0, ScrY, ScrX, ScrY });
+		}
+		SetPosition({ 0, 0, ScrX, ScrY });
 	}
 	if (IsKeyBarVisible())
-		m_windowKeyBar->SetPosition(rect_keybar);
-	SetPosition(rect_viewer);
-	m_windowKeyBar->Redraw();
+	{
+		m_windowKeyBar->Redraw();
+	}
+	m_View->SetPosition({ m_Where.left, m_Where.top + (IsTitleBarVisible()? 1 : 0), m_Where.right, m_Where.bottom - (IsKeyBarVisible()? 1 : 0) });
 	ScreenObjectWithShadow::Show();
 	ShowStatus();
 }
+
 
 void FileViewer::DisplayObject()
 {
@@ -320,19 +350,23 @@ long long FileViewer::VMProcess(int OpCode,void *vParam,long long iParam)
 		{
 			case 0:
 				break;
+
 			case 1:
 				Global->Opt->ViOpt.ShowKeyBar = true;
 				m_windowKeyBar->Show();
 				Show();
 				break;
+
 			case 2:
 				Global->Opt->ViOpt.ShowKeyBar = false;
 				m_windowKeyBar->Hide();
 				Show();
 				break;
+
 			case 3:
 				ProcessKey(Manager::Key(KEY_CTRLB));
 				break;
+
 			default:
 				PrevMode=0;
 				break;
@@ -348,49 +382,66 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 	{
 		if (Key() == KEY_F3 && !m_F3Timer->expired())
 			return false;
+
 		m_F3Timer.reset();
 	}
+
 	const auto LocalKey = Key();
 	if (m_RedrawTitle && ((LocalKey & 0x00ffffff) < KEY_END_FKEY || IsInternalKeyReal(LocalKey & 0x00ffffff)))
 		ShowConsoleTitle();
+
 	switch (LocalKey)
 	{
 #if 0
-		/* $ 30.05.2003 SVS
-			Фича :-) Shift-F4 в редакторе/вьювере позволяет открывать другой редактор/вьювер
-			Пока закомментим */
+			/* $ 30.05.2003 SVS
+			   Фича :-) Shift-F4 в редакторе/вьювере позволяет открывать другой редактор/вьювер
+			   Пока закомментим
+			*/
 		case KEY_SHIFTF4:
 		{
 			if (!Global->OnlyEditorViewerUsed)
 				Global->CtrlObject->Cp()->ActivePanel()->ProcessKey(Key);
+
 			return true;
 		}
 #endif
 		/* $ 22.07.2000 tran
-			+ выход по ctrl-f10 с установкой курсора на файл */
-		case KEY_CTRLF10:	case KEY_RCTRLF10:
+		   + выход по ctrl-f10 с установкой курсора на файл */
+		case KEY_CTRLF10:
+		case KEY_RCTRLF10:
 		{
 			if (Global->WindowManager->InModal())
+			{
 				return true;
+			}
+
 			SCOPED_ACTION(SaveScreen);
 			Global->CtrlObject->Cp()->GoToFile(m_View->GetFileName());
 			m_RedrawTitle = TRUE;
 			return true;
 		}
+
 		// $ 15.07.2000 tran + CtrlB switch KeyBar
-		case KEY_CTRLB:			case KEY_RCTRLB:
-			Global->Opt->ViOpt.ShowKeyBar =! Global->Opt->ViOpt.ShowKeyBar;
+		case KEY_CTRLB:
+		case KEY_RCTRLB:
+			Global->Opt->ViOpt.ShowKeyBar=!Global->Opt->ViOpt.ShowKeyBar;
+
 			if (IsKeyBarVisible())
 				m_windowKeyBar->Show();
 			else
 				m_windowKeyBar->Hide();
+
 			Global->WindowManager->RefreshWindow();
 			return true;
-		case KEY_CTRLSHIFTB:	case KEY_RCTRLSHIFTB:
-			Global->Opt->ViOpt.ShowTitleBar =! Global->Opt->ViOpt.ShowTitleBar;
+
+		case KEY_CTRLSHIFTB:
+		case KEY_RCTRLSHIFTB:
+			Global->Opt->ViOpt.ShowTitleBar=!Global->Opt->ViOpt.ShowTitleBar;
 			Show();
 			return true;
-		case KEY_CTRLO:			case KEY_RCTRLO:
+
+		case KEY_CTRLO:
+		case KEY_RCTRLO:
 			if (Global->WindowManager->ShowBackground())
 			{
 				SetCursorType(false, 0);
@@ -398,10 +449,14 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 				Global->WindowManager->RefreshAll();
 			}
 			return true;
-		case KEY_F3:			case KEY_NUMPAD5:
-		case KEY_SHIFTNUMPAD5:	case KEY_ESC:		case KEY_F10:
+
+		case KEY_F3:
+		case KEY_NUMPAD5:  case KEY_SHIFTNUMPAD5:
+		case KEY_ESC:
+		case KEY_F10:
 			Global->WindowManager->DeleteWindow();
 			return true;
+
 		case KEY_F6:
 			if (!m_DisableEdit)
 			{
@@ -413,52 +468,56 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 						return true;
 				}
 				const auto FilePos = m_View->GetFilePos();
-				const auto flags =
-					(GetCanLoseFocus()	? FFILEEDIT_ENABLEF6	 : 0)
-					| (m_SaveToSaveAs	? FFILEEDIT_SAVETOSAVEAS : 0)
-					| (m_DisableHistory ? FFILEEDIT_DISABLEHISTORY:0);
+				const auto flags = (GetCanLoseFocus()? FFILEEDIT_ENABLEF6 : 0) | (m_SaveToSaveAs? FFILEEDIT_SAVETOSAVEAS : 0) | (m_DisableHistory? FFILEEDIT_DISABLEHISTORY : 0);
 				const auto ShellEditor = FileEditor::create(
 					strViewFileName, cp, flags, -2,
 					static_cast<int>(FilePos), // TODO: Editor StartChar should be long long
-					m_StrTitle.empty() ? nullptr : &m_StrTitle,
-					{ -1, -1, -1, -1 },
-					m_DeleteOnClose,
-					shared_from_this()
-				);
+					m_StrTitle.empty() ? nullptr: &m_StrTitle,
+					{ -1, -1, -1, -1 }, m_DeleteOnClose, shared_from_this());
+
 				const auto load = ShellEditor->GetExitCode();
-				if (!(load == XC_LOADING_INTERRUPTED
-					||load == XC_OPEN_ERROR))
+				if (!(load == XC_LOADING_INTERRUPTED || load == XC_OPEN_ERROR))
 				{
 					ShellEditor->SetEnableF6(true);
 					/* $ 07.05.2001 DJ сохраняем NamesList */
 					ShellEditor->SetNamesList(m_View->GetNamesList());
+
 					// Если переключаемся в редактор, то удалять файл уже не нужно
-					SetTempViewName({ });
+					SetTempViewName({});
 					SetExitCode(0);
 				}
 			}
 			return true;
-		case KEY_ALTSHIFTF9:	case KEY_RALTSHIFTF9:
+
+		case KEY_ALTSHIFTF9:
+		case KEY_RALTSHIFTF9:
 			// Работа с локальной копией ViewerOptions
 			Global->Opt->LocalViewerConfig(m_View->ViOpt);
+
 			if (IsKeyBarVisible())
 				m_windowKeyBar->Show();
+
 			m_View->Show();
 			return true;
-		case KEY_ALTF11:		case KEY_RALTF11:
+
+		case KEY_ALTF11:
+		case KEY_RALTF11:
 			if (GetCanLoseFocus())
 				Global->CtrlObject->CmdLine()->ShowViewEditHistory();
+
 			return true;
+
 		default:
-		/* // Этот кусок - на будущее (по аналогии с редактором :-)
-		if (Global->CtrlObject->Macro.IsExecuting()
-		|| !View.ProcessViewerInput(&ReadRec)) // */
+//      Этот кусок - на будущее (по аналогии с редактором :-)
+//      if (Global->CtrlObject->Macro.IsExecuting() || !View.ProcessViewerInput(&ReadRec))
 		{
 			/* $ 22.03.2001 SVS
-			   Это помогло от залипания :-) */
+			   Это помогло от залипания :-)
+			*/
 			if (!Global->CtrlObject->Macro.IsExecuting())
 				if (IsKeyBarVisible())
 					m_windowKeyBar->Show();
+
 			if (!m_windowKeyBar->ProcessKey(Key))
 				return m_View->ProcessKey(Key);
 		}
@@ -466,13 +525,16 @@ bool FileViewer::ProcessKey(const Manager::Key& Key)
 	}
 }
 
+
 bool FileViewer::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 {
 	if (!m_View->ProcessMouse(MouseEvent))
 		if (!m_windowKeyBar->ProcessMouse(MouseEvent))
 			return false;
+
 	return true;
 }
+
 
 int FileViewer::GetTypeAndName(string &strType, string &strName)
 {
@@ -480,6 +542,7 @@ int FileViewer::GetTypeAndName(string &strType, string &strName)
 	strName = m_View->GetFileName();
 	return windowtype_viewer;
 }
+
 
 void FileViewer::ShowConsoleTitle()
 {
@@ -490,11 +553,13 @@ void FileViewer::ShowConsoleTitle()
 	m_RedrawTitle = FALSE;
 }
 
+
 void FileViewer::SetTempViewName(string_view const Name, bool const DeleteFolder)
 {
 	m_DeleteOnClose = (DeleteFolder ? 1 : 2);
 	m_View->SetTempViewName(Name, DeleteFolder);
 }
+
 
 FileViewer::~FileViewer()
 {
@@ -513,12 +578,10 @@ bool FileViewer::CanFastHide() const
 
 int FileViewer::ViewerControl(int Command, intptr_t Param1, void *Param2) const
 {
-	if (m_View->ViewerControlLock)
-		return FALSE;
 	const auto result = m_View->ViewerControl(Command, Param1, Param2);
-	if (result && VCTL_GETINFO == Command)
+	if (result&&VCTL_GETINFO==Command)
 	{
-		const auto Info = static_cast<ViewerInfo*>(Param2);
+		const auto Info=static_cast<ViewerInfo*>(Param2);
 		if (IsTitleBarVisible())
 			Info->Options |= VOPT_SHOWTITLEBAR;
 		if (IsKeyBarVisible())
@@ -526,87 +589,8 @@ int FileViewer::ViewerControl(int Command, intptr_t Param1, void *Param2) const
 	}
 	return result;
 }
-/* // [experimental-junk@Xer0X] viewer set position and size
-intptr_t FileViewer::ViewerControl2__junk_Xer0X(int Command, intptr_t Param1, void* Param2)
-{
-	if (m_View->ViewerControlLock)
-		return FALSE;
-	if (m_bClosing
-		&& (Command != VCTL_GETINFO)
-		&& (Command != VCTL_GETCOORD) // Get the viewer screen position
-		&& (Command != VCTL_GETFILENAME)
-			)
-		return FALSE;
-	switch (Command)
-	{
-	// [feature@Xer0X] Give the viewer screen rectangle (left, top, right, bottom):
-	case VCTL_GETCOORD:
-		{
-			BOOL Result = FALSE;
-			COORD crd_screen = { -1, -1 };
-			crd_screen.X = m_Where.left;
-			crd_screen.Y = m_Where.top;
-			*static_cast<COORD*>(Param2) = crd_screen;
-			Result = TRUE;
-			return Result;
-		}
-	// [feature@Xer0X]: Set the viewer screen position and size (left, top, right, bottom):
-	case VCTL_SETCOORD:
-		{
-			BOOL Result = FALSE;
-			const auto new_rect = static_cast<const SMALL_RECT*>(Param2);
-			rectangle NewWhere;
-			if ((Param1 & 1) == 0)
-			{ // absolute
-				NewWhere = {
-					new_rect->Left	< 0 ? m_Where.left	: new_rect->Left,
-					new_rect->Top	< 0 ? m_Where.top	: new_rect->Top,
-					new_rect->Right	< 0 ? m_Where.right	: new_rect->Right,
-					new_rect->Bottom< 0 ? m_Where.bottom: new_rect->Bottom
-				};
-				if ((Param1 & 2) == 2 && new_rect->Right > 0) NewWhere.right += (NewWhere.left- 1);
-				if ((Param1 & 4) == 4 && new_rect->Bottom> 0) NewWhere.bottom+= (NewWhere.top - 1);
-			}
-			else
-			{ // delta
-				NewWhere = {
-					m_Where.left + new_rect->Left,
-					m_Where.top + new_rect->Top,
-					m_Where.right + new_rect->Right,
-					m_Where.bottom + new_rect->Bottom,
-				};
-			}
-			m_Flags.Change(FFILEVIEW_FULLSCREEN, false);
-			SetPosition(NewWhere);
-			m_windowKeyBar->SetPosition({
-				m_Where.left,
-				m_Where.bottom,
-				m_Where.right,
-				m_Where.bottom
-			});
-			*static_cast<SMALL_RECT*>(Param2) = {
-				m_Where.left,
-				m_Where.top,
-				m_Where.right,
-				m_Where.bottom,
-			};
-			Result = TRUE;
-			return Result;
-		}
-	}
-	const auto result = m_View->ViewerControl(Command, Param1, Param2);
-	if (result && VCTL_GETINFO == Command)
-	{
-		const auto Info = static_cast<ViewerInfo*>(Param2);
-		if (Global->Opt->ViOpt.ShowTitleBar)
-			Info->Options |= VOPT_SHOWTITLEBAR;
-		if (Global->Opt->ViOpt.ShowKeyBar)
-			Info->Options |= VOPT_SHOWKEYBAR;
-	}
-	return result;
-} // */
 
-string FileViewer::GetTitle() const
+ string FileViewer::GetTitle() const
 {
 	return m_View->GetTitle();
 }
@@ -625,25 +609,28 @@ void FileViewer::ShowStatus() const
 {
 	if (!IsTitleBarVisible())
 		return;
+
 	SetColor(COL_VIEWERSTATUS);
 	GotoXY(m_Where.left, m_Where.top);
-	auto StatusLine = format(
-		FSTR(L"│{}│{:5.5}│{:<10}│{:.3} {:<3}│{:4}"sv),
+
+	auto StatusLine = format(FSTR(L"│{}│{:5.5}│{:<10}│{:.3} {:<3}│{:4}"sv),
 		L"thd"[m_View->m_DisplayMode],
 		ShortReadableCodepageName(m_View->m_Codepage),
 		m_View->FileSize,
 		msg(lng::MViewerStatusCol),
 		m_View->LeftPos,
-		str(m_View->LastPage? 100 : ToPercent(m_View->FilePos, m_View->FileSize)) + L'%'
+		str(m_View->LastPage? 100 : ToPercent(m_View->FilePos,m_View->FileSize)) + L'%'
 	);
+
 	// Explicitly signed types - it's too easy to screw it up on small console sizes otherwise
-	const int ClockSize = Global->Opt->Clock
-		&& IsFullScreen() ? static_cast<int>(Global->CurrentTime.size()) : 0;
-	const int AvailableSpace = std::max(0, ObjWidth() - ClockSize - (ClockSize?1:0));
+	const int ClockSize = Global->Opt->Clock && IsFullScreen()? static_cast<int>(Global->CurrentTime.size()) : 0;
+	const int AvailableSpace = std::max(0, ObjWidth() - ClockSize - (ClockSize? 1 : 0));
 	inplace::cut_right(StatusLine, AvailableSpace);
 	const int NameWidth = std::max(0, AvailableSpace - static_cast<int>(StatusLine.size()));
+
 	Text(fit_to_left(truncate_path(GetTitle(), NameWidth), NameWidth));
 	Text(StatusLine);
+
 	if (ClockSize)
 		Text(L'│'); // Separator before the clock
 }
@@ -651,12 +638,16 @@ void FileViewer::ShowStatus() const
 void FileViewer::OnChangeFocus(bool focus)
 {
 	window::OnChangeFocus(focus);
+
 	if (focus)
 		m_ReloadTimer->start(m_Name);
 	else
 		m_ReloadTimer->stop();
+
 	if (!m_bClosing)
+	{
 		Global->CtrlObject->Plugins->ProcessViewerEvent(focus? VE_GOTFOCUS : VE_KILLFOCUS, nullptr, m_View.get());
+	}
 }
 
 void FileViewer::OnReload()
@@ -679,7 +670,7 @@ Viewer* FileViewer::GetViewer()
 
 Viewer* FileViewer::GetById(int ID)
 {
-	return ID == GetId() ? GetViewer() : nullptr;
+	return ID==GetId()?GetViewer():nullptr;
 }
 
 bool FileViewer::IsKeyBarVisible() const

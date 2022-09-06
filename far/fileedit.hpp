@@ -69,8 +69,8 @@ enum FFILEEDIT_FLAGS
 	FFILEEDIT_DISABLEHISTORY        = 19_bit,  // Запретить запись в историю?
 	FFILEEDIT_ENABLEF6              = 20_bit,  // Переключаться во вьювер можно?
 	FFILEEDIT_SAVETOSAVEAS          = 21_bit,  // $ 17.08.2001 KM  Добавлено для поиска по AltF7.
-	/* При редактировании найденного файла из архива для
-		клавиши F2 сделать вызов ShiftF2. */
+	//   При редактировании найденного файла из архива для
+	//   клавиши F2 сделать вызов ShiftF2.
 	FFILEEDIT_SAVEWQUESTIONS        = 22_bit,  // сохранить без вопросов
 	FFILEEDIT_LOCKED                = 23_bit,  // заблокировать?
 	FFILEEDIT_OPENFAILED            = 24_bit,  // файл открыть не удалось
@@ -81,7 +81,7 @@ enum FFILEEDIT_FLAGS
 	FFILEEDIT_SERVICEREGION         = 29_bit,  // используется сервисная область
 };
 
-class FileEditor final: public window, public EditorContainer
+class FileEditor final: public window,public EditorContainer
 {
 	struct private_tag { explicit private_tag() = default; };
 
@@ -116,11 +116,6 @@ public:
 	int GetId() const { return m_editor->EditorID; }
 	FileEditor* GetById(int ID) { return GetId()==ID?this:nullptr; }
 	void AutoDeleteColors() const { m_editor->AutoDeleteColors(); }
-	// [experimental@Xer0X] moved to "pubic" decl from "private" decl:
-	void SetScreenPosition() override; // @Xer0X
-	void SetScreenPosition(rectangle NewWhere) { SetPosition(NewWhere); }
-	// [experimental@Xer0X] reinventing wheels, C++ OOP strugle::
-	void SetScreenPosition_own(rectangle NewWhere);
 
 private:
 	void DisplayObject() override;
@@ -129,9 +124,7 @@ private:
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 	void ShowConsoleTitle() override;
 	void OnChangeFocus(bool focus) override;
-	// [experimental@Xer0X] moved to "public" decl from "private" decl:
-//	void SetScreenPosition() override;
-//	void SetScreenPosition(rectangle NewWhere) override;
+	void SetScreenPosition() override;
 	int GetType() const override { return windowtype_editor; }
 	void OnDestroy() override;
 	bool GetCanLoseFocus(bool DynamicMode = false) const override;

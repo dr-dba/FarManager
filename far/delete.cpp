@@ -195,10 +195,10 @@ private:
 		m_DeleteReadOnly,
 		m_SkipWipe;
 	bool m_SkipFileErrors{};
-	bool m_SkipFolderErrors { };
-	bool m_DeleteFolders { };
-	unsigned ProcessedItems { };
-	bool m_UpdateDiz { };
+	bool m_SkipFolderErrors{};
+	bool m_DeleteFolders{};
+	unsigned ProcessedItems{};
+	bool m_UpdateDiz{};
 	delete_type m_DeleteType;
 };
 

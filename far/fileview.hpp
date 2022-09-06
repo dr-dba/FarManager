@@ -47,7 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //----------------------------------------------------------------------------
 
-class FileViewer final: public window, public ViewerContainer
+class FileViewer final: public window,public ViewerContainer
 {
 	struct private_tag { explicit private_tag() = default; };
 
@@ -58,14 +58,13 @@ public:
 		bool DisableHistory = false,
 		bool DisableEdit = false,
 		long long ViewStartPos = -1,
-		string_view PluginData = { },
+		string_view PluginData = {},
 		NamesList* ViewNamesList = nullptr,
 		bool ToSaveAs = false,
 		uintptr_t aCodePage = CP_DEFAULT,
-		string_view Title = { },
+		string_view Title = {},
 		int DeleteOnClose = 0,
-		window_ptr Update = nullptr
-	);
+		window_ptr Update = nullptr);
 
 	static fileviewer_ptr create(
 		string_view Name,
@@ -73,8 +72,7 @@ public:
 		bool DisableHistory,
 		string_view Title,
 		rectangle Position,
-		uintptr_t aCodePage = CP_DEFAULT
-	);
+		uintptr_t aCodePage = CP_DEFAULT);
 
 	FileViewer(private_tag, bool DisableEdit, string_view Title);
 	~FileViewer() override;
@@ -96,36 +94,25 @@ public:
 	Viewer* GetById(int ID) override;
 
 	/* $ 14.06.2002 IS
-	   Параметр DeleteFolder - удалить не только файл,
-	   но и каталог, его содержащий (если каталог пуст).
-	   По умолчанию - TRUE (получаем поведение SetTempViewName такое же, как и раньше)
+	   Параметр DeleteFolder - удалить не только файл, но и каталог, его
+	   содержащий (если каталог пуст). По умолчанию - TRUE (получаем
+	   поведение SetTempViewName такое же, как и раньше)
 	*/
 	void SetTempViewName(string_view Name, bool DeleteFolder = true);
 	void SetEnableF6(int AEnable) { m_DisableEdit = !AEnable; InitKeyBar(); }
 	/* $ 17.08.2001 KM
-		Добавлено для поиска по AltF7.
-		При редактировании найденного файла из архива
-		для клавиши F2 сделать вызов ShiftF2.
+		Добавлено для поиска по AltF7. При редактировании найденного файла из
+		архива для клавиши F2 сделать вызов ShiftF2.
 	*/
-	void SetSaveToSaveAs(bool ToSaveAs) { m_SaveToSaveAs = ToSaveAs; InitKeyBar(); }
-	int ViewerControl(int Command, intptr_t Param1, void *Param2) const;
-	// [refactor@Xer0X] dealing with Viewer's dynamic moving+resize
-	bool IsFullScreen() const { return m_View->IsFullScreen(); };
-	/* // [experimental@Xer0X] junk
-	intptr_t ViewerControl2__junk_Xer0X(int Command, intptr_t Param1, void* Param2); // ? not const
-	rectangle GetWhereFV_C() const { return m_View->GetWhereV_C(); }
-	rectangle GetWhereFV() { return m_View->GetWhereV(); } */
+	void SetSaveToSaveAs(bool ToSaveAs) { m_SaveToSaveAs=ToSaveAs; InitKeyBar(); }
+	int  ViewerControl(int Command, intptr_t Param1, void *Param2) const;
+	bool IsFullScreen() const {return m_FullScreen;}
 	long long GetViewFileSize() const;
 	long long GetViewFilePos() const;
 	void ShowStatus() const;
 	int GetId() const { return m_View->ViewerID; }
 	void OnReload();
 	void ReadEvent();
-	rectangle AdjustScreenPosition(rectangle Position) {
-	//	rectangle rect_res = m_View->AdjustScreenPosition(Position);
-	//	m_Where = rect_res;
-		return m_View->AdjustScreenPosition(Position);;
-	};
 
 private:
 	void Show() override;
@@ -140,19 +127,17 @@ private:
 		NamesList *ViewNamesList,
 		bool ToSaveAs,
 		uintptr_t aCodePage,
-		window_ptr Update = nullptr
-	);
-	std::unique_ptr<Viewer> m_View;
+		window_ptr Update = nullptr);
 
-	bool m_RedrawTitle { };
-	bool m_bClosing { };
-	// [refactor@Xer0X] Moved to underlaying viewer.cpp:
-//	bool m_FullScreen { true };
+	std::unique_ptr<Viewer> m_View;
+	bool m_RedrawTitle{};
+	bool m_bClosing{};
+	bool m_FullScreen{true};
 	bool m_DisableEdit;
-	bool m_DisableHistory { };
+	bool m_DisableHistory{};
 	string m_Name;
-	bool m_SaveToSaveAs { };
-	int m_DeleteOnClose { };
+	bool m_SaveToSaveAs{};
+	int m_DeleteOnClose{};
 	string m_StrTitle;
 
 	class f3_key_timer;

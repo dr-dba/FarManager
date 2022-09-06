@@ -67,6 +67,7 @@ void SimpleScreenObject::SetScreenPosition()
 	m_Flags.Clear(FSCROBJ_SETPOSITIONDONE);
 }
 
+
 rectangle SimpleScreenObject::GetPosition() const
 {
 	return m_Where;
@@ -81,7 +82,9 @@ void SimpleScreenObject::Show()
 {
 	if (!m_Flags.Check(FSCROBJ_SETPOSITIONDONE))
 		return;
+
 	m_Flags.Set(FSCROBJ_VISIBLE);
+
 	DisplayObject();
 	ShowConsoleTitle();
 }
@@ -95,7 +98,9 @@ void SimpleScreenObject::Redraw()
 void SimpleScreenObject::Refresh()
 {
 	if (const auto owner = GetOwner())
+	{
 		Global->WindowManager->RefreshWindow(owner);
+	}
 }
 
 ScreenObject::ScreenObject(window_ptr Owner):
@@ -106,25 +111,30 @@ ScreenObject::ScreenObject(window_ptr Owner):
 ScreenObject::~ScreenObject()
 {
 	if (!m_Flags.Check(FSCROBJ_ENABLERESTORESCREEN))
+	{
 		if (SaveScr)
 			SaveScr->Discard();
+	}
 }
 
 void ScreenObject::Show()
 {
 	if (!m_Flags.Check(FSCROBJ_SETPOSITIONDONE))
 		return;
+
 	if (!IsVisible())
+	{
 		if (m_Flags.Check(FSCROBJ_ENABLERESTORESCREEN) && !SaveScr)
 			SaveScr = std::make_unique<SaveScreen>(m_Where);
+	}
+
 	SimpleScreenObject::Show();
 }
 
 void ScreenObject::Hide()
 {
 	SimpleScreenObject::Hide();
-	if (m_Flags.Check(FSCROBJ_ENABLERESTORESCREEN))
-		SaveScr.reset();
+	if (m_Flags.Check(FSCROBJ_ENABLERESTORESCREEN)) SaveScr.reset();
 }
 
 void ScreenObject::HideButKeepSaveScreen()
@@ -135,31 +145,37 @@ void ScreenObject::HideButKeepSaveScreen()
 void ScreenObject::SetPosition(rectangle Where)
 {
 	/* $ 13.04.2002 KM
-		- Раз меняем позицию объекта на экране,
-		то тогда перед этим восстановим изображение под ним
-		для предотвращения восстановления
-		ранее сохранённого изображения в новом месте. */
+	- Раз меняем позицию объекта на экране, то тогда
+	перед этим восстановим изображение под ним для
+	предотвращения восстановления ранее сохранённого
+	изображения в новом месте.
+	*/
 	SaveScr.reset();
+
 	SimpleScreenObject::SetPosition(Where);
 }
 
-ScreenObjectWithShadow::ScreenObjectWithShadow(window_ptr Owner)
-	: ScreenObject(std::move(Owner))
+
+ScreenObjectWithShadow::ScreenObjectWithShadow(window_ptr Owner): ScreenObject(std::move(Owner))
 {
 }
 
 ScreenObjectWithShadow::~ScreenObjectWithShadow()
 {
 	if (!m_Flags.Check(FSCROBJ_ENABLERESTORESCREEN))
+	{
 		if (ShadowSaveScr)
 			ShadowSaveScr->Discard();
+	}
 }
 
 void ScreenObjectWithShadow::Hide()
 {
 	if (!m_Flags.Check(FSCROBJ_VISIBLE))
 		return;
+
 	ShadowSaveScr.reset();
+
 	ScreenObject::Hide();
 }
 
@@ -167,7 +183,7 @@ void ScreenObjectWithShadow::Shadow(bool Full)
 {
 	if (m_Flags.Check(FSCROBJ_VISIBLE))
 	{
-		if (Full)
+		if(Full)
 		{
 			if (!ShadowSaveScr)
 			{

@@ -85,10 +85,14 @@ void KeyBar::DisplayObject()
 	AltState = IntKeyState.AltPressed();
 	CtrlState = IntKeyState.CtrlPressed();
 	ShiftState = IntKeyState.ShiftPressed();
+
 	int KeyWidth = (m_Where.width() - 2) / 12;
+
 	if (KeyWidth<8)
 		KeyWidth=8;
+
 	const auto LabelWidth = KeyWidth - 2;
+
 	static const std::array Mapping
 	{
 		std::pair{ &FarKeyboardState::NonePressed,             KBL_MAIN         },
@@ -100,17 +104,22 @@ void KeyBar::DisplayObject()
 		std::pair{ &FarKeyboardState::OnlyCtrlShiftPressed,    KBL_CTRLSHIFT    },
 		std::pair{ &FarKeyboardState::OnlyCtrlAltShiftPressed, KBL_CTRLALTSHIFT },
 	};
+
 	static_assert(std::size(Mapping) == KBL_GROUP_COUNT);
+
 	for (const auto& i: irange(KEY_COUNT))
 	{
 		if (WhereX() + LabelWidth >= m_Where.right)
 			break;
+
 		SetColor(COL_KEYBARNUM);
 		Text(str(i + 1));
 		SetColor(COL_KEYBARTEXT);
+
 		const auto State = std::find_if(ALL_CONST_RANGE(Mapping), [&](const auto& Item) { return std::invoke(Item.first, IntKeyState); });
 		// State should always be valid so check is excessive, but style is style
 		auto Label = Items[(State != std::cend(Mapping)? State : std::cbegin(Mapping))->second][i].first;
+
 		{
 			string_view Beginning, Ending;
 			auto FirstEntry = true;
@@ -122,24 +131,31 @@ void KeyBar::DisplayObject()
 					FirstEntry = false;
 					continue;
 				}
+
 				if (Beginning.size() + Part.size() > static_cast<size_t>(LabelWidth))
 					break;
+
 				if (Part.size() > Ending.size())
 					Ending = Part;
 			}
+
 			if (!Beginning.empty())
 			{
 				Label = concat(Beginning, Ending);
 			}
 		}
+
 		Text(fit_to_left(Label, LabelWidth));
+
 		if (i<KEY_COUNT-1)
 		{
 			SetColor(COL_KEYBARBACKGROUND);
 			Text(L' ');
 		}
 	}
+
 	const auto Width = m_Where.right - WhereX() + 1;
+
 	if (Width>0)
 	{
 		SetColor(COL_KEYBARTEXT);
@@ -150,6 +166,7 @@ void KeyBar::DisplayObject()
 void KeyBar::ClearKeyTitles(bool Custom)
 {
 	const auto ItemGetter = Custom? &keybar_item::second : &keybar_item::first;
+
 	for (auto& i: Items)
 	{
 		for (auto& j: i)
@@ -190,10 +207,12 @@ static int FnGroup(unsigned ControlState)
 		{ KBL_CTRLALTSHIFT,   KEY_CTRLALT | KEY_SHIFT },
 	};
 	static_assert(std::size(Area) == KBL_GROUP_COUNT);
+
 	const auto ItemIterator = std::find_if(CONST_RANGE(Area, i)
 	{
 		return i.ControlState == ControlState;
 	});
+
 	return ItemIterator == std::cend(Area)? -1 : ItemIterator->Group;
 }
 
@@ -210,18 +229,23 @@ void KeyBar::SetCustomLabels(KEYBARAREA Area)
 		L"Viewer"sv,
 		L"Help"sv,
 	};
+
 	static_assert(std::size(Names) == KBA_COUNT);
+
 	if (Area < KBA_COUNT && (!CustomLabelsReaded || !equal_icase(strLanguage, Global->Opt->strLanguage.Get()) || Area != CustomArea))
 	{
 		strLanguage = Global->Opt->strLanguage.Get();
 		CustomArea = Area;
 		ClearKeyTitles(true);
+
 		const auto LabelsKey = concat(L"KeyBarLabels."sv, strLanguage, L'.', Names[Area]);
+
 		for (const auto& [Name, Value]: ConfigProvider().GeneralCfg()->ValuesEnumerator<string>(LabelsKey))
 		{
 			const auto Key = KeyNameToKey(Name);
 			if (!Key)
 				continue;
+
 			const auto fnum = (Key & ~KEY_CTRLMASK) - KEY_F1;
 			if (fnum < KEY_COUNT)
 			{
@@ -232,6 +256,7 @@ void KeyBar::SetCustomLabels(KEYBARAREA Area)
 		}
 		CustomLabelsReaded = true;
 	}
+
 	for (auto& Group: Items)
 	{
 		for (auto& [Title, CustomTitle]: Group)
@@ -253,6 +278,7 @@ bool KeyBar::ProcessKey(const Manager::Key& Key)
 			RedrawIfChanged();
 			return true;
 	}
+
 	return false;
 }
 
@@ -260,34 +286,47 @@ bool KeyBar::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 {
 	INPUT_RECORD rec;
 	size_t Key;
+
 	if (!IsVisible())
 		return false;
+
 	if (!(MouseEvent->dwButtonState & 3) || MouseEvent->dwEventFlags)
 		return false;
+
 	if (!m_Where.contains(MouseEvent->dwMousePosition))
 		return false;
+
 	int const KeyWidth = std::max(8, (m_Where.width() - 2) / 12);
+
 	const auto X = MouseEvent->dwMousePosition.X - m_Where.left;
+
 	if (X<KeyWidth*9)
 		Key=X/KeyWidth;
 	else
 		Key=9+(X-KeyWidth*9)/(KeyWidth+1);
+
 	for (;;)
 	{
 		GetInputRecord(&rec);
+
 		if (rec.EventType==MOUSE_EVENT && !(rec.Event.MouseEvent.dwButtonState & 3))
 			break;
 	}
+
 	if (!m_Where.contains(MouseEvent->dwMousePosition))
 		return false;
+
 	const int NewX = MouseEvent->dwMousePosition.X - m_Where.left;
 	const size_t NewKey = NewX < KeyWidth * 9? NewX / KeyWidth : 9 + (NewX - KeyWidth * 9) / (KeyWidth + 1);
+
 	if (Key!=NewKey)
 		return false;
+
 	if (Key > F12)
 		Key = F12;
-	if (MouseEvent->dwControlKeyState & (RIGHT_ALT_PRESSED|LEFT_ALT_PRESSED)
-	|| (MouseEvent->dwButtonState	& RIGHTMOST_BUTTON_PRESSED))
+
+	if (MouseEvent->dwControlKeyState & (RIGHT_ALT_PRESSED|LEFT_ALT_PRESSED) ||
+	        (MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED))
 	{
 		if (MouseEvent->dwControlKeyState & SHIFT_PRESSED)
 			Key+=KEY_ALTSHIFTF1;
@@ -304,20 +343,23 @@ bool KeyBar::ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent)
 			Key+=KEY_CTRLF1;
 	}
 	else if (MouseEvent->dwControlKeyState & SHIFT_PRESSED)
-		Key += KEY_SHIFTF1;
+		Key+=KEY_SHIFTF1;
 	else
-		Key += KEY_F1;
+		Key+=KEY_F1;
+
 	Global->WindowManager->ProcessKey(Manager::Key(static_cast<int>(Key)));
 	return true;
 }
 
+
 void KeyBar::RedrawIfChanged()
 {
-	if (IntKeyState.ShiftPressed()	!= ShiftState
-	||	IntKeyState.CtrlPressed()	!= CtrlState
-	||	IntKeyState.AltPressed()	!= AltState)
+	if (
+		IntKeyState.ShiftPressed() != ShiftState ||
+		IntKeyState.CtrlPressed() != CtrlState ||
+		IntKeyState.AltPressed() != AltState)
 	{
-	//	_SVS("KeyBar::RedrawIfChanged()");
+		//_SVS("KeyBar::RedrawIfChanged()");
 		Redraw();
 	}
 }
@@ -326,25 +368,35 @@ size_t KeyBar::Change(const KeyBarTitles *Kbt)
 {
 	if (!Kbt)
 		return 0;
+
 	size_t Result = 0;
+
 	for (const auto& i: span(Kbt->Labels, Kbt->CountLabels))
 	{
 		if (i.Key.VirtualKeyCode < VK_F1 || i.Key.VirtualKeyCode >= VK_F1 + KEY_COUNT)
 			continue;
+
 		const auto Pos = i.Key.VirtualKeyCode - VK_F1;
+
 		unsigned Shift = 0;
 		const auto Flags = i.Key.ControlKeyState;
+
 		if (Flags & (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
 			Shift |= KEY_CTRL;
+
 		if (Flags & (LEFT_ALT_PRESSED|RIGHT_ALT_PRESSED))
 			Shift |= KEY_ALT;
+
 		if (Flags & SHIFT_PRESSED)
 			Shift |= KEY_SHIFT;
+
 		const auto Group = FnGroup(Shift);
 		if (Group < 0)
 			continue;
+
 		Items[Group][Pos].first = NullToEmpty(i.Text);
 		++Result;
 	}
+
 	return Result;
 }

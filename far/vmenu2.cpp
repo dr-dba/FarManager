@@ -454,13 +454,18 @@ int VMenu2::AddItem(const MenuItemEx& NewItem, int PosAdd)
 		PosAdd=0;
 	if(PosAdd>n)
 		PosAdd=n;
+
+
 	FarListInsert fli{ sizeof(fli), PosAdd, { NewItem.Flags, NewItem.Name.c_str(), NewItem.SimpleUserData } };
 	if(SendMessage(DM_LISTINSERT, 0, &fli)<0)
 		return -1;
+
 	ListBox().SetComplexUserData(NewItem.ComplexUserData, PosAdd);
+
 	auto& Item = at(PosAdd);
 	Item.AccelKey=NewItem.AccelKey;
 	Item.Annotations = NewItem.Annotations;
+
 	Resize();
 	return n;
 }
@@ -572,7 +577,9 @@ intptr_t VMenu2::RunEx(const std::function<int(int Msg, void *param)>& fn)
 	closing=false;
 	mfn=fn;
 	Resize(true);
+
 	Process();
+
 	return GetExitCode();
 }
 
@@ -580,6 +587,7 @@ intptr_t VMenu2::Run(const std::function<int(const Manager::Key& RawKey)>& fn)
 {
 	if(!fn)
 		return RunEx(nullptr);
+
 	return RunEx([&](int Msg, void *param)
 	{
 		if (Msg == DN_INPUT)

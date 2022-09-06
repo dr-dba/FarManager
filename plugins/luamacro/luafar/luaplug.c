@@ -98,17 +98,21 @@ static void InitGlobal (Global *g, HINSTANCE hDll)
 static void DestroyGlobal (Global *g)
 {
 	if (g->LS) lua_close(g->LS);
+
 	free(g->StartupInfo);
+
 	DeleteCriticalSection(&g->CritSection);
 }
 
 BOOL WINAPI DllMain(HANDLE hDll, DWORD dwReason, LPVOID lpReserved)
 {
 	(void) lpReserved;
+
 	if (DLL_PROCESS_ATTACH == dwReason && hDll)
 		InitGlobal(&G, (HINSTANCE)hDll);
 	else if (DLL_PROCESS_DETACH == dwReason)
 		DestroyGlobal(&G);
+
 	return TRUE;
 }
 
@@ -159,6 +163,7 @@ void LUAPLUG GetGlobalInfoW(struct GlobalInfo *globalInfo)
 			LF_InitLuaState1(G.LS, FUNC_OPENLIBS);
 			G.InitStage++;
 		}
+
 		if (LF_GetGlobalInfo(G.LS, globalInfo, G.PluginDir))
 			G.PluginId = globalInfo->Guid;
 		else
@@ -183,14 +188,17 @@ void LUAPLUG SetStartupInfoW(const struct PluginStartupInfo *aInfo)
 			G.StartupInfo->FSF = (struct FarStandardFunctions*) (ptr+aInfo->StructSize);
 			G.PluginData.Info = G.StartupInfo;
 			G.PluginData.FSF = G.StartupInfo->FSF;
+
 			InitLuaState2(G.LS, &G.PluginData);
 			if (LF_RunDefaultScript(G.LS))
 				G.InitStage++;
 		}
+
 		if (G.InitStage != 2)
 		{
 			lua_close(G.LS);
 			G.LS = NULL;
+
 			if (G.StartupInfo) { free(G.StartupInfo); G.StartupInfo=NULL; }
 		}
 	}

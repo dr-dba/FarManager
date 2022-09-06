@@ -50,7 +50,7 @@ enum MACRO_OP_CODE
 {
 	/* ************************************************************************* */
 	// функции
-	MCODE_F_NOFUNC = KEY_MACRO_F_BASE,
+	MCODE_F_NOFUNC=KEY_MACRO_F_BASE,
 	MCODE_F_ABS,                      // N=abs(N)
 	MCODE_F_AKEY,                     // V=akey(Mode[,Type])
 	MCODE_F_ASC,                      // N=asc(S)

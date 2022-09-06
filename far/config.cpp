@@ -445,7 +445,7 @@ void Options::InfoPanelSettings()
 		}
 		if (needRedraw)
 		{
-		//	Global->CtrlObject->Cp()->SetScreenPosition();
+			//Global->CtrlObject->Cp()->SetScreenPosition();
 			Global->CtrlObject->Cp()->Redraw();
 		}
 	}

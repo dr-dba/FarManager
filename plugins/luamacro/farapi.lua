@@ -1184,9 +1184,6 @@ enum VIEWER_CONTROL_COMMANDS
 	VCTL_SELECT                     = 5,
 	VCTL_SETMODE                    = 6,
 	VCTL_GETFILENAME                = 7,
-	// [feature@Xer0X] viewer control Get/Set screen coordinates commands
-	VCTL_GETCOORD					= 101,
-	VCTL_SETCOORD					= 102
 };
 
 typedef unsigned __int64 VIEWER_OPTIONS;
@@ -1352,9 +1349,6 @@ enum EDITOR_CONTROL_COMMANDS
 	ECTL_DELCOLOR                   = 34,
 	ECTL_SUBSCRIBECHANGEEVENT       = 36,
 	ECTL_UNSUBSCRIBECHANGEEVENT     = 37,
-	// [feature@Xer0X] editor control Get/Set screen coordinates commands
-	ECTL_GETCOORD					= 101,
-	ECTL_SETCOORD					= 102
 };
 
 enum EDITOR_SETPARAMETER_TYPES
@@ -1637,9 +1631,9 @@ enum FAR_PLUGIN_FIND_TYPE
 };
 
 typedef unsigned __int64 FAR_PLUGIN_FLAGS;
-static const /* FAR_PLUGIN_FLAGS */ uint32_t
+static const /*FAR_PLUGIN_FLAGS*/ uint32_t
 	FPF_LOADED         = 0x0000000000000001,
-//@ FPF_ANSI           = 0x1000000000000000ULL,
+	//@ FPF_ANSI           = 0x1000000000000000ULL,
 	FPF_NONE           = 0;
 
 enum FAR_FILE_FILTER_CONTROL_COMMANDS

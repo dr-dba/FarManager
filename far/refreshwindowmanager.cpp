@@ -63,6 +63,7 @@ UndoGlobalSaveScrPtr::~UndoGlobalSaveScrPtr()
 	Global->GlobalSaveScrPtr=nullptr;
 }
 
+
 RefreshWindowManager::RefreshWindowManager(int OScrX, int OScrY, bool Force):
 	OScrX(OScrX),
 	OScrY(OScrY),
