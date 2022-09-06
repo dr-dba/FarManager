@@ -54,8 +54,7 @@ echo testing C++ plugin API
 cl /nologo /c /Fo"$(IntDir)%(Filename)_c++.testobj" /TP api_test.c
 </Command>
       <AdditionalInputs>Include/plugin.hpp;Include/farcolor.hpp</AdditionalInputs>
-      <Message>
-      </Message>
+      <Message>Testing C plugin APi with CustomBuild</Message>
       <Outputs>$(IntDir)%(Filename)_c.testobj;$(IntDir)%(Filename)_c++.testobj</Outputs>
       <LinkObjects>false</LinkObjects>
     </CustomBuild>

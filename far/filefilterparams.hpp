@@ -148,7 +148,6 @@ public:
 	DWORD GetFlags(filter_area FType) const { return FFlags[static_cast<size_t>(FType)]; }
 	void RefreshMask() {if(FMask.Used) FMask.FilterMask.assign(FMask.strMask, FMF_SILENT);}
 
-
 	// Данный метод вызывается "снаружи" и служит для определения:
 	// попадает ли файл fd под условие установленного фильтра.
 	// Возвращает true  - попадает;
@@ -157,8 +156,8 @@ public:
 	bool FileInFilter(const os::fs::find_data& Object, os::chrono::time_point CurrentTime, string_view FullName = {}) const; //Used in dirinfo, copy, findfile
 	bool FileInFilter(const PluginPanelItem& Object, os::chrono::time_point CurrentTime) const;
 
-
 private:
+
 	bool FileInFilter(struct filter_file_object const& Object, os::chrono::time_point CurrentTime, function_ref<int()> HardlinkGetter) const;
 
 	string m_strTitle;

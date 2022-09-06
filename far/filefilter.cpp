@@ -114,7 +114,6 @@ namespace legacy_names
 		STR_INIT(RelativeDate),
 		STR_INIT(IncludeAttributes),
 		STR_INIT(ExcludeAttributes);
-
 }
 
 #undef STR_INIT
@@ -300,9 +299,7 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 			case KEY_SHIFTBS:
 			{
 				for (const auto& i: irange(FilterList->size()))
-				{
 					FilterList->ClearCheck(static_cast<int>(i));
-				}
 				NeedUpdate = true;
 				break;
 			}
@@ -331,7 +328,8 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 						{
 							msg(lng::MCanEditCustomFilterOnly)
 						},
-						{ lng::MOk });
+						{ lng::MOk }
+					);
 				}
 				break;
 			}
@@ -428,8 +426,10 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 				const auto SelPos = FilterList->GetSelectPos();
 				if (SelPos<0)
 					break;
-				if (static_cast<size_t>(SelPos) < FilterData().size() && !(any_of(Key, KEY_CTRLUP, KEY_RCTRLUP) && !SelPos) &&
-					!(any_of(Key, KEY_CTRLDOWN, KEY_RCTRLDOWN) && static_cast<size_t>(SelPos) == FilterData().size() - 1))
+				if (static_cast<size_t>(SelPos) < FilterData().size()
+					&& !(any_of(Key, KEY_CTRLUP, KEY_RCTRLUP) && !SelPos)
+					&& !(any_of(Key, KEY_CTRLDOWN, KEY_RCTRLDOWN)
+					&& static_cast<size_t>(SelPos) == FilterData().size() - 1))
 				{
 					const auto NewPos = SelPos + (any_of(Key, KEY_CTRLDOWN, KEY_RCTRLDOWN)? 1 : -1);
 					using std::swap;
@@ -441,7 +441,9 @@ void filters::EditFilters(filter_area const Area, Panel* const HostPanel)
 				break;
 			}
 			default:
+			{
 				KeyProcessed = 0;
+			}
 		}
 		return KeyProcessed;
 	});
@@ -759,9 +761,7 @@ static void SaveFlags(HierarchicalConfig& Cfg, HierarchicalConfig::key const Fil
 {
 	const auto FlagsKey = Cfg.CreateKey(FilterKey, names::Flags);
 	for (const auto& [Flag, Index]: enumerate(FilterFlagNames))
-	{
 		Cfg.SetValue(FlagsKey, Flag, Item.GetFlags(static_cast<filter_area>(Index)));
-	}
 }
 
 static bool LoadAreaFlags(const HierarchicalConfig& Cfg, HierarchicalConfig::key const FilterKey, FileFilterParams& Item)
