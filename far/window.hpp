@@ -74,10 +74,7 @@ class window: public ScreenObjectWithShadow, public std::enable_shared_from_this
 	~window() override;
 	void Refresh() override;
 
-	virtual bool GetCanLoseFocus(bool DynamicMode = false) const
-	{
-		return m_CanLoseFocus;
-	}
+	virtual bool GetCanLoseFocus(bool DynamicMode = false) const { return m_CanLoseFocus; }
 	virtual void SetExitCode(int Code) { m_ExitCode = Code; }
 	virtual bool IsFileModified() const { return false; }
 	virtual int GetTypeAndName(string &strType, string &strName) = 0;
@@ -89,7 +86,7 @@ class window: public ScreenObjectWithShadow, public std::enable_shared_from_this
 	virtual FARMACROAREA GetMacroArea() const { return m_MacroArea; }
 	virtual bool CanFastHide() const;
 	virtual string GetTitle() const = 0;
-	virtual bool ProcessEvents() {return true;}
+	virtual bool ProcessEvents() { return true; }
 	virtual bool IsTitleBarVisible() const { return false; }
 	virtual bool IsKeyBarVisible() const { return false; }
 	virtual void SetDeleting();

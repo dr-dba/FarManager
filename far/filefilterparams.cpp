@@ -703,11 +703,12 @@ static intptr_t FileFilterConfigDlgProc(Dialog* Dlg,intptr_t Msg,intptr_t Param1
 			{
 				const auto Context = view_as<const context*>(Dlg->SendMessage(DM_GETDLGDATA, 0, nullptr));
 				Message(MSG_WARNING,
-					msg(Context->Colors? lng::MFileHilightTitle : lng::MFileFilterTitle),
+					msg(Context->Colors ? lng::MFileHilightTitle : lng::MFileFilterTitle),
 					{
 						msg(lng::MBadFileSizeFormat)
 					},
-					{ lng::MOk });
+					{ lng::MOk }
+				);
 				return FALSE;
 			}
 		}
