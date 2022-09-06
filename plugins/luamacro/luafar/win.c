@@ -334,7 +334,7 @@ static WORD ExtractKey(INPUT_RECORD* rec)
 	if (PeekConsoleInput(hConInp,rec,1,&ReadCount), ReadCount)
 	{
 		ReadConsoleInput(hConInp,rec,1,&ReadCount);
-		if(rec->EventType==KEY_EVENT)
+		if (rec->EventType == KEY_EVENT)
 			return 1;
 	}
 	return 0;
@@ -604,7 +604,7 @@ static BOOL mkdir(const wchar_t* aPath)
 	if (pos > Path && pos[-1] != L'\\')
 		Ends[i] = pos;
 	// Find end position of the longest existing directory in the given path.
-	for (i=num_ends-1; i>=0; i--)
+	for (i = num_ends - 1; i >= 0; i--) 
 	{
 		DWORD attr;
 		wchar_t tempchar = *Ends[i];
