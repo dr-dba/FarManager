@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Globals">
@@ -38,10 +38,9 @@ if not exist $(BootstrapDir) mkdir $(BootstrapDir)</Command>
 
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='Debug_ASAN'">
     <ClCompile>
-      <PreprocessorDefinitions>ENABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(DISABLE_FAR_TESTS)'!='TRUE'">ENABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-
-    <PostBuildEvent Condition="'$(Platform)'=='Win32' or '$(Platform)'=='x64'">
+    <PostBuildEvent Condition="'$(DISABLE_FAR_TESTS)'!='TRUE' and ('$(Platform)'=='Win32' or '$(Platform)'=='x64')">
       <Command>$(OutDir)$(TargetName)$(TargetExt) /service:test</Command>
       <Message>Running unit tests</Message>
     </PostBuildEvent>
@@ -55,8 +54,7 @@ echo testing C++ plugin API
 cl /nologo /c /Fo"$(IntDir)%(Filename)_c++.testobj" /TP api_test.c
 </Command>
       <AdditionalInputs>Include/plugin.hpp;Include/farcolor.hpp</AdditionalInputs>
-      <Message>
-      </Message>
+      <Message>Testing C plugin APi with CustomBuild</Message>
       <Outputs>$(IntDir)%(Filename)_c.testobj;$(IntDir)%(Filename)_c++.testobj</Outputs>
       <LinkObjects>false</LinkObjects>
     </CustomBuild>

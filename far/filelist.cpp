@@ -3403,7 +3403,7 @@ void FileList::SetViewMode(int Mode)
 
 	if (m_PanelMode == panel_mode::PLUGIN_PANEL)
 	{
-		//SetScreenPosition();
+	//	SetScreenPosition();
 		const auto Result = SerialiseViewSettings(m_ViewSettings.PanelColumns);
 		ProcessPluginEvent(FE_CHANGEVIEWMODE, UNSAFE_CSTR(Result.first));
 	}

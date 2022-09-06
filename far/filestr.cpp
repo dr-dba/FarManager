@@ -67,13 +67,9 @@ enum_lines::enum_lines(std::istream& Stream, uintptr_t CodePage):
 	m_Buffer(BufferSize)
 {
 	if (IsUnicodeCodePage(m_CodePage))
-	{
 		m_Data.emplace<string>().reserve(default_capacity);
-	}
 	else
-	{
 		m_Data.emplace<conversion_data>().m_Bytes.reserve(default_capacity);
-	}
 }
 
 bool enum_lines::get(bool Reset, file_line& Value) const
@@ -81,13 +77,10 @@ bool enum_lines::get(bool Reset, file_line& Value) const
 	if (Reset)
 	{
 		m_BufferView = {};
-
 		if (!m_Stream.bad() && m_Stream.eof())
 			m_Stream.clear();
-
 		m_Stream.seekg(m_BeginPos);
 	}
-
 	return GetString(Value.Str, Value.Eol);
 }
 
@@ -96,9 +89,7 @@ bool enum_lines::fill() const
 	const auto Read = io::read(m_Stream, edit_bytes(m_Buffer));
 	if (!Read)
 		return false;
-
 	m_BufferView = { m_Buffer.data(), Read };
-
 	if (IsUnicodeCodePage(m_CodePage))
 	{
 		if (const auto MissingBytes = Read % sizeof(wchar_t))
@@ -113,11 +104,9 @@ bool enum_lines::fill() const
 			m_BufferView = { m_Buffer.data(), Read + MissingBytes };
 			m_Diagnostics.ErrorPosition = 0;
 		}
-
 		if (m_CodePage == CP_REVERSEBOM)
 			swap_bytes(m_Buffer.data(), m_Buffer.data(), m_BufferView.size());
 	}
-
 	return true;
 }
 
@@ -125,71 +114,58 @@ template<typename T>
 bool enum_lines::GetTString(std::basic_string<T>& To, eol& Eol, bool BigEndian) const
 {
 	To.clear();
-
 	if (m_EmitExtraCr)
 	{
 		Eol = eol::mac;
 		m_EmitExtraCr = false;
 		return true;
 	}
-
 	const auto
 		EolCr = m_Eol.cr<T>(),
 		EolLf = m_Eol.lf<T>();
-
 	for (;;)
 	{
 		const auto Char = !m_BufferView.empty() || fill()?
 			std::optional<T>{ std::basic_string_view<T>{ view_as<T const*>(m_BufferView.data()), m_BufferView.size() / sizeof(T) }.front() } :
 			std::optional<T>{};
-
 		if (Char == EolLf)
 		{
 			m_BufferView.remove_prefix(sizeof(T));
-
 			switch (m_CrSeen)
 			{
 			case 0:
 				Eol = eol::unix;
 				return true;
-
 			case 1:
 				Eol = eol::win;
 				m_CrSeen = 0;
 				return true;
-
 			case 2:
 				Eol = eol::bad_win;
 				m_CrSeen = 0;
 				return true;
-
 			default:
 				UNREACHABLE;
 			}
 		}
-
 		if (Char == EolCr)
 		{
 			m_BufferView.remove_prefix(sizeof(T));
-
 			switch (m_CrSeen)
 			{
 			case 0:
 			case 1:
 				++m_CrSeen;
 				continue;
-
 			case 2:
 				Eol = eol::mac;
 				m_EmitExtraCr = true;
 				m_CrSeen = 1;
 				return true;
-
 			default:
 				UNREACHABLE;
 			}
 		}
-
 		if (m_CrSeen)
 		{
 			Eol = eol::mac;
@@ -198,7 +174,6 @@ bool enum_lines::GetTString(std::basic_string<T>& To, eol& Eol, bool BigEndian) 
 			m_CrSeen = 0;
 			return true;
 		}
-
 		if (Char)
 		{
 			m_BufferView.remove_prefix(sizeof(T));
@@ -220,25 +195,20 @@ bool enum_lines::GetString(string_view& Str, eol& Eol) const
 		{
 			if (!GetTString(String, Eol, m_CodePage == CP_REVERSEBOM))
 				return false;
-
 			Str = String;
 			return true;
-
 		},
 		[&](const conversion_data& Data)
 		{
 			if (!GetTString(Data.m_Bytes, Eol))
 				return false;
-
 			if (Data.m_Bytes.empty())
 			{
 				Str = {};
 				return true;
 			}
-
 			if (Data.m_Bytes.size() > Data.m_wBuffer.size())
 				Data.m_wBuffer.reset(Data.m_Bytes.size());
-
 			for (;;)
 			{
 				const auto Size = encoding::get_chars(m_CodePage, Data.m_Bytes, Data.m_wBuffer, &m_Diagnostics);
@@ -248,7 +218,6 @@ bool enum_lines::GetString(string_view& Str, eol& Eol) const
 					Str = { Data.m_wBuffer.data(), Size };
 					return true;
 				}
-
 				Data.m_wBuffer.reset(Size);
 			}
 		}
@@ -262,9 +231,7 @@ static bool GetUnicodeCpUsingBOM(const os::fs::file& File, uintptr_t& Codepage)
 	size_t BytesRead = 0;
 	if (!File.Read(Buffer, std::size(Buffer), BytesRead))
 		return false;
-
 	std::string_view const Signature(Buffer, std::size(Buffer));
-
 	if (BytesRead >= 2)
 	{
 		if (Signature.substr(0, 2) == encoding::get_signature_bytes(CP_UNICODE))
@@ -273,7 +240,6 @@ static bool GetUnicodeCpUsingBOM(const os::fs::file& File, uintptr_t& Codepage)
 			File.SetPointer(2, nullptr, FILE_BEGIN);
 			return true;
 		}
-
 		if (Signature.substr(0, 2) == encoding::get_signature_bytes(CP_REVERSEBOM))
 		{
 			Codepage = CP_REVERSEBOM;
@@ -281,14 +247,12 @@ static bool GetUnicodeCpUsingBOM(const os::fs::file& File, uintptr_t& Codepage)
 			return true;
 		}
 	}
-
 	if (BytesRead >= 3 && Signature == encoding::get_signature_bytes(CP_UTF8))
 	{
 		Codepage = CP_UTF8;
 		File.SetPointer(3, nullptr, FILE_BEGIN);
 		return true;
 	}
-
 	File.SetPointer(0, nullptr, FILE_BEGIN);
 	return false;
 }
@@ -298,27 +262,21 @@ static bool GetUnicodeCpUsingWindows(const void* Data, size_t Size, uintptr_t& C
 	// MSDN documents IS_TEXT_UNICODE_BUFFER_TOO_SMALL but there is no such thing
 	if (Size < 2)
 		return false;
-
 	int Test = IS_TEXT_UNICODE_UNICODE_MASK | IS_TEXT_UNICODE_REVERSE_MASK | IS_TEXT_UNICODE_NOT_UNICODE_MASK | IS_TEXT_UNICODE_NOT_ASCII_MASK;
-
 	// return value is ignored - only some tests might pass
 	IsTextUnicode(Data, static_cast<int>(Size), &Test);
-
 	if ((Test & IS_TEXT_UNICODE_NOT_UNICODE_MASK) || !(Test & IS_TEXT_UNICODE_NOT_ASCII_MASK))
 		return false;
-
 	if (Test & IS_TEXT_UNICODE_UNICODE_MASK)
 	{
 		Codepage = CP_UNICODE;
 		return true;
 	}
-
 	if (Test & IS_TEXT_UNICODE_REVERSE_MASK)
 	{
 		Codepage = CP_REVERSEBOM;
 		return true;
 	}
-
 	return false;
 }
 
@@ -326,7 +284,6 @@ static bool GetCpUsingUniversalDetectorWithExceptions(std::string_view const Str
 {
 	if (!GetCpUsingUniversalDetector(Str, Codepage))
 		return false;
-
 	// This whole block shouldn't be here
 	if (Global->Opt->strNoAutoDetectCP.Get() == L"-1"sv)
 	{
@@ -346,7 +303,6 @@ static bool GetCpUsingUniversalDetectorWithExceptions(std::string_view const Str
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -358,32 +314,24 @@ static bool GetFileCodepage(const os::fs::file& File, uintptr_t DefaultCodepage,
 		SignatureFound = true;
 		return true;
 	}
-
 	if (!UseHeuristics)
 		return false;
-
 	// TODO: configurable
 	const size_t Size = 32768;
 	char_ptr const Buffer(Size);
 	size_t ReadSize = 0;
-
 	const auto ReadResult = File.Read(Buffer.data(), Size, ReadSize);
 	File.SetPointer(0, nullptr, FILE_BEGIN);
-
 	if (!ReadResult || !ReadSize)
 		return false;
-
 	if (GetUnicodeCpUsingWindows(Buffer.data(), ReadSize, Codepage))
 	{
 		return true;
 	}
-
 	NotUTF16 = true;
-
 	unsigned long long FileSize = 0;
 	const auto WholeFileRead = File.GetSize(FileSize) && ReadSize == FileSize;
 	bool PureAscii = false;
-
 	if (encoding::is_valid_utf8({ Buffer.data(), ReadSize }, !WholeFileRead, PureAscii))
 	{
 		if (!PureAscii)
@@ -392,12 +340,9 @@ static bool GetFileCodepage(const os::fs::file& File, uintptr_t DefaultCodepage,
 			Codepage = DefaultCodepage;
 		else
 			Codepage = encoding::codepage::ansi();
-
 		return true;
 	}
-
 	NotUTF8 = true;
-
 	return GetCpUsingUniversalDetectorWithExceptions({ Buffer.data(), ReadSize }, Codepage);
 }
 
@@ -407,18 +352,16 @@ uintptr_t GetFileCodepage(const os::fs::file& File, uintptr_t DefaultCodepage, b
 	uintptr_t Codepage;
 	bool NotUTF8 = false;
 	bool NotUTF16 = false;
-
 	if (!GetFileCodepage(File, DefaultCodepage, Codepage, SignatureFoundValue, NotUTF8, NotUTF16, UseHeuristics))
 	{
 		Codepage =
-			(NotUTF8 && DefaultCodepage == CP_UTF8) || (NotUTF16 && IsUnicodeCodePage(DefaultCodepage))?
-				encoding::codepage::ansi() :
-				DefaultCodepage;
+			(NotUTF8 && DefaultCodepage == CP_UTF8) ||
+			(NotUTF16 && IsUnicodeCodePage(DefaultCodepage))
+			? encoding::codepage::ansi()
+			: DefaultCodepage;
 	}
-
 	if (SignatureFound)
 		*SignatureFound = SignatureFoundValue;
-
 	return Codepage;
 }
 
@@ -515,7 +458,6 @@ TEST_CASE("enum_lines")
 			{ {},       eol::bad_win },
 		}},
 	};
-
 	for (const auto& i: Tests)
 	{
 		for (const auto Codepage: { CP_UNICODE, CP_REVERSEBOM, static_cast<uintptr_t>(CP_UTF8) })
@@ -523,14 +465,11 @@ TEST_CASE("enum_lines")
 			auto Str = encoding::get_bytes(Codepage, i.Str);
 			std::istringstream Stream(Str);
 			Stream.exceptions(Stream.badbit | Stream.failbit);
-
 			const auto Enumerator = enum_lines(Stream, Codepage);
-
 			// Twice to make sure that reset works as expected
 			repeat(2, [&]
 			{
 				auto Iterator = i.Result.begin();
-
 				for (const auto& Line : Enumerator)
 				{
 					REQUIRE(Iterator != i.Result.end());
@@ -538,7 +477,6 @@ TEST_CASE("enum_lines")
 					REQUIRE(Iterator->second == Line.Eol);
 					++Iterator;
 				}
-
 				REQUIRE(Stream.eof());
 				REQUIRE(Iterator == i.Result.end());
 			});

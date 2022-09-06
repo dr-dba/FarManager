@@ -7,10 +7,11 @@ void pusherrorcode(lua_State *L, int error)
 {
 	wchar_t buffer[256];
 	const int BUFSZ = ARRSIZE(buffer);
-	int num = FormatMessageW(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM,
-	                         0, error, 0, buffer, BUFSZ, 0);
-
-	if(num)
+	int num = FormatMessageW(
+		FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM,
+		0, error, 0, buffer, BUFSZ, 0
+			);
+	if (num)
 		push_utf8_string(L, buffer, num);
 	else
 		lua_pushfstring(L, "system error %d\n", error);
@@ -90,10 +91,8 @@ double GetOptNumFromTable(lua_State *L, const char* key, double dflt)
 {
 	double ret = dflt;
 	lua_getfield(L, -1, key);
-
-	if(lua_isnumber(L,-1))
+	if (lua_isnumber(L,-1))
 		ret = lua_tonumber(L, -1);
-
 	lua_pop(L, 1);
 	return ret;
 }
@@ -102,10 +101,8 @@ int GetOptIntFromTable(lua_State *L, const char* key, int dflt)
 {
 	int ret = dflt;
 	lua_getfield(L, -1, key);
-
-	if(lua_isnumber(L,-1))
+	if (lua_isnumber(L,-1))
 		ret = (int)lua_tointeger(L, -1);
-
 	lua_pop(L, 1);
 	return ret;
 }
@@ -115,10 +112,8 @@ int GetOptIntFromArray(lua_State *L, int key, int dflt)
 	int ret = dflt;
 	lua_pushinteger(L, key);
 	lua_gettable(L, -2);
-
-	if(lua_isnumber(L,-1))
+	if (lua_isnumber(L, -1))
 		ret = (int)lua_tointeger(L, -1);
-
 	lua_pop(L, 1);
 	return ret;
 }
@@ -145,24 +140,21 @@ BOOL GetOptBoolFromTable(lua_State *L, const char* key, BOOL dflt)
 // Check a multibyte string at 'pos' Lua stack position
 // and convert it in place to UTF-16.
 // Return a pointer to the converted string.
-wchar_t* convert_multibyte_string(lua_State *L, int pos, UINT codepage,
-                                  DWORD dwFlags, size_t* pTrgSize, int can_raise)
+wchar_t* convert_multibyte_string(
+	lua_State *L, int pos, UINT codepage,
+	DWORD dwFlags, size_t* pTrgSize, int can_raise)
 {
 	size_t sourceLen;
 	const char *source;
 	wchar_t *target;
 	int size;
-
-	if(pos < 0) pos += lua_gettop(L) + 1;
-
-	if(!can_raise && !lua_isstring(L, pos))
+	if (pos < 0)
+		pos += lua_gettop(L) + 1;
+	if (!can_raise && !lua_isstring(L, pos))
 		return NULL;
-
 	source = luaL_checklstring(L, pos, &sourceLen);
-
-	if(!pTrgSize)
+	if (!pTrgSize)
 		++sourceLen;
-
 	size = MultiByteToWideChar(
 	           codepage,     // code page
 	           dwFlags,      // character-type options
@@ -171,22 +163,17 @@ wchar_t* convert_multibyte_string(lua_State *L, int pos, UINT codepage,
 	           NULL,         // lpWideCharStr, address of wide-character buffer
 	           0             // size of buffer (in wide characters)
 	       );
-
-	if(size == 0 && sourceLen != 0)
+	if (size == 0 && sourceLen != 0)
 	{
-		if(can_raise)
+		if (can_raise)
 			luaL_argerror(L, pos, "invalid multibyte string");
-
 		return NULL;
 	}
-
 	target = (wchar_t*)lua_newuserdata(L, (size+1) * sizeof(wchar_t));
 	MultiByteToWideChar(codepage, dwFlags, source, (int)sourceLen, target, size);
 	target[size] = L'\0';
 	lua_replace(L, pos);
-
-	if(pTrgSize) *pTrgSize = size;
-
+	if (pTrgSize) *pTrgSize = size;
 	return target;
 }
 
@@ -210,14 +197,18 @@ wchar_t* oem_to_utf16(lua_State *L, int pos, size_t* pTrgSize)
 	return convert_multibyte_string(L, pos, CP_OEMCP, 0, pTrgSize, FALSE);
 }
 
-char* push_multibyte_string(lua_State* L, UINT CodePage, const wchar_t* str,
-                            intptr_t numchars, DWORD dwFlags)
+char* push_multibyte_string(
+	lua_State* L, UINT CodePage, const wchar_t* str,
+	intptr_t numchars, DWORD dwFlags
+		)
 {
 	int targetSize;
 	char *target;
-
-	if(str == NULL) { lua_pushnil(L); return NULL; }
-
+	if (str == NULL)
+	{
+		lua_pushnil(L);
+		return NULL;
+	}
 	targetSize = WideCharToMultiByte(
 	                 CodePage, // UINT CodePage,
 	                 dwFlags,  // DWORD dwFlags,
@@ -228,18 +219,14 @@ char* push_multibyte_string(lua_State* L, UINT CodePage, const wchar_t* str,
 	                 NULL,     // LPCSTR lpDefaultChar,
 	                 NULL      // LPBOOL lpUsedDefaultChar
 	             );
-
 	if(targetSize == 0 && numchars == -1 && str[0])
 	{
 		luaL_error(L, "invalid UTF-16 string");
 	}
-
 	target = (char*)lua_newuserdata(L, targetSize+1);
 	WideCharToMultiByte(CodePage, dwFlags, str, (int)numchars, target, targetSize, NULL, NULL);
-
 	if(numchars == -1)
 		--targetSize;
-
 	lua_pushlstring(L, target, targetSize);
 	lua_remove(L, -2);
 	return target;
@@ -263,11 +250,9 @@ int ustring_WideCharToMultiByte(lua_State *L)
 	DWORD dwFlags = 0;
 	numchars /= sizeof(wchar_t);
 	codepage = (UINT)luaL_checkinteger(L, 2);
-
 	if(lua_isstring(L, 3))
 	{
 		const char *s = lua_tostring(L, 3);
-
 		for(; *s; s++)
 		{
 			if(*s == 'c') dwFlags |= WC_COMPOSITECHECK;
@@ -276,7 +261,6 @@ int ustring_WideCharToMultiByte(lua_State *L)
 			else if(*s == 'f') dwFlags |= WC_DEFAULTCHAR;
 		}
 	}
-
 	push_multibyte_string(L, codepage, src, numchars, dwFlags);
 	return 1;
 }
@@ -289,11 +273,9 @@ int ustring_MultiByteToWideChar(lua_State *L)
 	DWORD dwFlags = 0;
 	(void) luaL_checkstring(L, 1);
 	codepage = (UINT)luaL_checkinteger(L, 2);
-
 	if(lua_isstring(L, 3))
 	{
 		const char *s = lua_tostring(L, 3);
-
 		for(; *s; s++)
 		{
 			if(*s == 'p') dwFlags |= MB_PRECOMPOSED;
@@ -302,15 +284,12 @@ int ustring_MultiByteToWideChar(lua_State *L)
 			else if(*s == 'u') dwFlags |= MB_USEGLYPHCHARS;
 		}
 	}
-
 	Trg = convert_multibyte_string(L, 1, codepage, dwFlags, &TrgSize, FALSE);
-
 	if(Trg)
 	{
 		lua_pushlstring(L, (const char*)Trg, TrgSize * sizeof(wchar_t));
 		return 1;
 	}
-
 	return SysErrorReturn(L);
 }
 
@@ -400,10 +379,8 @@ int ustring_EnumSystemCodePages(lua_State *L)
 	lua_newtable(L);
 	EnumCP.L = L;
 	EnumCP.N = 0;
-
 	if(EnumSystemCodePagesW(EnumCodePagesProc, flags))
 		return 1;
-
 	return SysErrorReturn(L);
 }
 
@@ -413,10 +390,8 @@ int ustring_GetCPInfo(lua_State *L)
 	CPINFOEXW info;
 	memset(&info, 0, sizeof(info));
 	codepage = (UINT)luaL_checkinteger(L, 1);
-
 	if(!GetCPInfoExW(codepage, 0, &info))
 		return SysErrorReturn(L);
-
 	lua_createtable(L, 0, 6);
 	PutNumToTable(L, "MaxCharSize",  info.MaxCharSize);
 	PutLStrToTable(L, "DefaultChar", (const char*)info.DefaultChar, MAX_DEFAULTCHAR);
@@ -432,27 +407,21 @@ int ustring_GetLogicalDriveStrings(lua_State *L)
 	int i;
 	wchar_t* buf;
 	DWORD len = GetLogicalDriveStringsW(0, NULL);
-
 	if(len)
 	{
 		buf = (wchar_t*)lua_newuserdata(L, (len+1)*sizeof(wchar_t));
-
 		if(GetLogicalDriveStringsW(len, buf))
 		{
 			lua_newtable(L);
-
 			for(i=1; TRUE; i++)
 			{
 				if(*buf == 0) break;
-
 				PutWStrToArray(L, i, buf, -1);
 				buf += wcslen(buf) + 1;
 			}
-
 			return 1;
 		}
 	}
-
 	return SysErrorReturn(L);
 }
 
@@ -461,7 +430,6 @@ int ustring_GetDriveType(lua_State *L)
 	const wchar_t *root = opt_utf8_string(L, 1, NULL);
 	const char* out;
 	UINT tp = GetDriveTypeW(root);
-
 	switch(tp)
 	{
 		default:
@@ -473,7 +441,6 @@ int ustring_GetDriveType(lua_State *L)
 		case DRIVE_CDROM:     out = "cdrom";             break;
 		case DRIVE_RAMDISK:   out = "ramdisk";           break;
 	}
-
 	lua_pushstring(L, out);
 	return 1;
 }
@@ -481,7 +448,6 @@ int ustring_GetDriveType(lua_State *L)
 int ustring_Uuid(lua_State* L)
 {
 	UUID uuid;
-
 	if(lua_gettop(L) == 0 || !lua_toboolean(L, 1))
 	{
 		// generate new UUID
@@ -495,12 +461,10 @@ int ustring_Uuid(lua_State* L)
 	{
 		size_t len;
 		const char* arg1 = luaL_checklstring(L, 1, &len);
-
 		if(len == sizeof(UUID))
 		{
 			// convert given UUID to string
 			unsigned char* p;
-
 			if(UuidToStringA((UUID*)arg1, &p) == RPC_S_OK)
 			{
 				lua_pushstring(L, (char*)p);
@@ -518,7 +482,6 @@ int ustring_Uuid(lua_State* L)
 			}
 		}
 	}
-
 	lua_pushnil(L);
 	return 1;
 }
@@ -538,14 +501,12 @@ int ustring_SearchPath(lua_State *L)
 	                   buf,	          // address of buffer for found filename
 	                   &lpFilePart 	  // address of pointer to file component
 	               );
-
 	if(result > 0)
 	{
 		push_utf8_string(L, buf, -1);
 		push_utf8_string(L, lpFilePart, -1);
 		return 2;
 	}
-
 	return 0;
 }
 
@@ -553,10 +514,8 @@ int ustring_GlobalMemoryStatus(lua_State *L)
 {
 	MEMORYSTATUSEX ms;
 	ms.dwLength = sizeof(ms);
-
 	if(0 == GlobalMemoryStatusEx(&ms))
 		return SysErrorReturn(L);
-
 	lua_createtable(L, 0, 8);
 	PutNumToTable(L, "MemoryLoad",           ms.dwMemoryLoad);
 	PutNumToTable(L, "TotalPhys",            CAST(double, ms.ullTotalPhys));
@@ -604,11 +563,9 @@ void PutAttrToTable(lua_State *L, int attr)
 int DecodeAttributes(const char* str)
 {
 	int attr = 0;
-
 	for(; *str; str++)
 	{
 		char c = *str;
-
 		if     (c == 'a' || c == 'A') attr |= FILE_ATTRIBUTE_ARCHIVE;
 		else if(c == 'c' || c == 'C') attr |= FILE_ATTRIBUTE_COMPRESSED;
 		else if(c == 'd' || c == 'D') attr |= FILE_ATTRIBUTE_DIRECTORY;
@@ -624,7 +581,6 @@ int DecodeAttributes(const char* str)
 		else if(c == 'u' || c == 'U') attr |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
 		else if(c == 'v' || c == 'V') attr |= FILE_ATTRIBUTE_VIRTUAL;
 	}
-
 	return attr;
 }
 
@@ -647,7 +603,6 @@ void SetAttrWords(const wchar_t* str, DWORD* incl, DWORD* excl)
 		else if (c == L't')  *incl |= FILE_ATTRIBUTE_TEMPORARY;
 		else if (c == L'u')  *incl |= FILE_ATTRIBUTE_NO_SCRUB_DATA;
 		else if (c == L'v')  *incl |= FILE_ATTRIBUTE_VIRTUAL;
-
 		else if (c == L'A')  *excl |= FILE_ATTRIBUTE_ARCHIVE;
 		else if (c == L'C')  *excl |= FILE_ATTRIBUTE_COMPRESSED;
 		else if (c == L'D')  *excl |= FILE_ATTRIBUTE_DIRECTORY;
@@ -670,7 +625,6 @@ int SetAttr(lua_State *L, const wchar_t* fname, unsigned attr)
 {
 	if(SetFileAttributesW(fname, attr))
 		return lua_pushboolean(L, 1), 1;
-
 	return SysErrorReturn(L);
 }
 
@@ -682,9 +636,7 @@ int ustring_SetFileAttr(lua_State *L)
 int ustring_GetFileAttr(lua_State *L)
 {
 	DWORD attr = GetFileAttributesW(check_utf8_string(L,1,NULL));
-
 	if(attr == 0xFFFFFFFF) return SysErrorReturn(L);
-
 	PushAttrString(L, attr);
 	return 1;
 }
@@ -700,12 +652,10 @@ int ustring_SHGetFolderPath(lua_State *L)
 	                     NULL,         // __in   HANDLE hToken,
 	                     dwFlags,      // __in   DWORD dwFlags,
 	                     pszPath);     // __out  LPTSTR pszPath);
-
 	if(result == S_OK)
 		push_utf8_string(L, pszPath, -1);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -713,7 +663,6 @@ void push_utf16_string(lua_State* L, const wchar_t* str, intptr_t numchars)
 {
 	if(numchars < 0)
 		numchars = wcslen(str);
-
 	lua_pushlstring(L, (const char*)str, numchars*sizeof(wchar_t));
 }
 
@@ -724,19 +673,13 @@ int ustring_sub(lua_State *L)
 	const char* s = luaL_checklstring(L, 1, &len);
 	len /= sizeof(wchar_t);
 	from = luaL_optinteger(L, 2, 1);
-
 	if(from < 0) from += len+1;
-
 	if(--from < 0) from = 0;
 	else if((size_t)from > len) from = len;
-
 	to = luaL_optinteger(L, 3, -1);
-
 	if(to < 0) to += len+1;
-
 	if(to < from) to = from;
 	else if((size_t)to > len) to = len;
-
 	lua_pushlstring(L, s + from*sizeof(wchar_t), (to-from)*sizeof(wchar_t));
 	return 1;
 }
@@ -753,9 +696,7 @@ const wchar_t* check_utf16_string(lua_State *L, int pos, size_t *len)
 {
 	size_t ln;
 	const wchar_t* s = (const wchar_t*)luaL_checklstring(L, pos, &ln);
-
 	if(len) *len = ln / sizeof(wchar_t);
-
 	return s;
 }
 
@@ -786,27 +727,20 @@ static int ustring_OutputDebugString(lua_State *L)
 static int ustring_system(lua_State *L)
 {
 	const wchar_t *str = opt_utf8_string(L, 1, NULL);
-
 	const HANDLE
 		InputHandle = GetStdHandle(STD_INPUT_HANDLE),
 		OutputHandle = GetStdHandle(STD_INPUT_HANDLE);
-
 	DWORD
 		InputMode = 0,
 		OutputMode = 0;
-
 	const BOOL
 		InputmodeRead = GetConsoleMode(InputHandle, &InputMode),
 		OutputModeRead = GetConsoleMode(OutputHandle, &OutputMode);
-
 	lua_pushinteger(L, _wsystem(str));
-
 	if (InputmodeRead)
 		SetConsoleMode(InputHandle, InputMode);
-
 	if (OutputModeRead)
 		SetConsoleMode(OutputHandle, OutputMode);
-
 	return 1;
 }
 
@@ -814,10 +748,12 @@ int ustring_GetCurrentDir (lua_State *L)
 {
 	wchar_t buf[256];
 	DWORD num = GetCurrentDirectoryW(ARRSIZE(buf), buf);
-	if(num) {
-		if(num < ARRSIZE(buf))
+	if (num)
+	{
+		if (num < ARRSIZE(buf))
 			push_utf8_string(L, buf, -1);
-		else {
+		else
+		{
 			wchar_t* alloc = (wchar_t*) malloc(num * sizeof(wchar_t));
 			num = GetCurrentDirectoryW(num, alloc);
 			if(num) push_utf8_string(L, alloc, -1);
@@ -875,7 +811,6 @@ const luaL_Reg ustring_funcs[] =
 	{"subW",                ustring_sub},
 	{"system",              ustring_system},
 	{"lenW",                ustring_len},
-
 	{NULL, NULL}
 };
 

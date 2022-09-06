@@ -151,16 +151,12 @@ private:
 	friend class DlgEdit;
 	friend class FileEditor;
 	friend class undo_block;
-
 	using editor_container = std::list<Edit>;
 	using iterator = editor_container::iterator;
 	using const_iterator = editor_container::const_iterator;
-
 	struct InternalEditorSessionBookMark;
 	using bookmark_list = std::list<InternalEditorSessionBookMark>;
-
 	struct InternalEditorBookmark;
-
 	template<class T, class ConstT = T>
 	class numbered_iterator_t:
 		public T,
@@ -175,21 +171,16 @@ private:
 			m_Number(Number)
 		{
 		}
-
 		// BUGBUG, migrate to uNumber, rename uNumber to Number
 		int Number() const { return static_cast<int>(m_Number); }
 		size_t uNumber() const { return m_Number; }
-
 		void IncrementNumber() { ++m_Number; }
 		void DecrementNumber() { --m_Number; }
-
 		numbered_iterator_t& operator++() { ++base(); ++m_Number; return *this; }
 		numbered_iterator_t& operator--() { --base(); --m_Number; return *this; }
-
 		T& base() { return *this; }
 		const std::conditional_t<std::is_base_of_v<ConstT, T>, ConstT, T>& base() const { return *this; }
 		std::conditional_t<std::is_base_of_v<ConstT, T>, const ConstT&, ConstT> cbase() const { return *this; }
-
 		// Intentionally not implemented, use prefix forms.
 		numbered_iterator_t operator++(int) = delete;
 		numbered_iterator_t operator--(int) = delete;
@@ -201,9 +192,7 @@ private:
 	using numbered_iterator = numbered_iterator_t<iterator, const_iterator>;
 	using numbered_const_iterator = numbered_iterator_t<const_iterator>;
 	enum class undo_type: char;
-
 	void DisplayObject() override;
-
 	void ShowEditor();
 	numbered_iterator DeleteString(numbered_iterator DelPtr, bool DeleteLast);
 	void InsertString();
@@ -289,32 +278,22 @@ private:
 	void TurnOffMarkingBlock();
 	void SwapState(Editor& swap_state);
 	bool ProcessKeyInternal(const Manager::Key& Key, bool& Refresh);
-
 	template<class F>
 	void UpdateIteratorAndKeepPos(numbered_iterator& Iter, const F& Func);
-
 	numbered_iterator EndIterator();
 	numbered_const_iterator EndIterator() const;
-
 	numbered_iterator FirstLine();
 	numbered_const_iterator FirstLine() const;
-
 	numbered_iterator LastLine();
 	numbered_const_iterator LastLine() const;
-
 	bool IsLastLine(const iterator& Line) const;
-
 	static bool InitSessionBookmarksForPlugin(EditorBookmarks *Param, size_t Count, size_t& Size);
-
 	bool IsAnySelection() const { assert(Lines.end() == m_it_AnyBlockStart || m_BlockType != BTYPE_NONE); return Lines.end() != m_it_AnyBlockStart; }
 	bool IsStreamSelection() const { return IsAnySelection() && m_BlockType == BTYPE_STREAM; }
 	bool IsVerticalSelection() const { return IsAnySelection() && m_BlockType == BTYPE_COLUMN; }
-
 	void Unselect() { m_it_AnyBlockStart = EndIterator(); m_BlockType = BTYPE_NONE; TurnOffMarkingBlock(); }
-
 	void BeginStreamMarking(const numbered_iterator& Where);
 	void BeginVBlockMarking(const numbered_iterator& Where);
-
 	// Младший байт (маска 0xFF) юзается классом ScreenObject!!!
 	enum editor_flags
 	{
@@ -333,67 +312,62 @@ private:
 	};
 	// Editor content state
 	editor_container Lines;
-	numbered_iterator m_it_TopScreen{ EndIterator() };
-	numbered_iterator m_it_CurLine{ EndIterator() };
-	numbered_iterator m_it_LastGetLine{ EndIterator() };
+	numbered_iterator m_it_TopScreen { EndIterator() };
+	numbered_iterator m_it_CurLine { EndIterator() };
+	numbered_iterator m_it_LastGetLine { EndIterator() };
 	std::list<EditorUndoData> UndoData;
-	std::list<EditorUndoData>::iterator UndoPos{ UndoData.end() };
-	std::list<EditorUndoData>::iterator UndoSavePos{ UndoData.end() };
-	int UndoSkipLevel{};
-	int LastChangeStrPos{};
+	std::list<EditorUndoData>::iterator UndoPos { UndoData.end() };
+	std::list<EditorUndoData>::iterator UndoSavePos { UndoData.end() };
+	int UndoSkipLevel { };
+	int LastChangeStrPos { };
 	eol GlobalEOL;
-	numbered_iterator m_it_MBlockStart{ EndIterator() };
-	numbered_iterator m_it_AnyBlockStart{ EndIterator() };
-	EDITOR_BLOCK_TYPES m_BlockType{ BTYPE_NONE };
+	numbered_iterator m_it_MBlockStart { EndIterator() };
+	numbered_iterator m_it_AnyBlockStart { EndIterator() };
+	EDITOR_BLOCK_TYPES m_BlockType { BTYPE_NONE };
 	// работа с блоками из макросов (MCODE_F_EDITOR_SEL)
-	int MBlockStartX{};
-	int VBlockX{};
-	int VBlockSizeX{};
-	int VBlockSizeY{};
-	int MacroSelectionStart{ -1 };
+	int MBlockStartX { };
+	int VBlockX { };
+	int VBlockSizeX { };
+	int VBlockSizeY { };
+	int MacroSelectionStart { -1 };
 	uintptr_t m_codepage; //BUGBUG
-	int m_StartLine{ -1 };
-	int StartChar{ -1 };
-	//numbered bookmarks (accessible by Ctrl-0..9)
+	int m_StartLine { -1 };
+	int StartChar { -1 };
+	// numbered bookmarks (accessible by Ctrl-0..9)
 	Bookmarks<editor_bookmark> m_SavePos;
 	bookmark_list SessionBookmarks;
-	//pointer to the current "session" bookmark (in the list of "session" bookmarks accessible through BM.Goto(n))
-	bookmark_list::iterator SessionPos{ SessionBookmarks.end() };
-	bool NewSessionPos{};
+	// pointer to the current "session" bookmark (in the list of "session" bookmarks accessible through BM.Goto(n))
+	bookmark_list::iterator SessionPos { SessionBookmarks.end() };
+	bool NewSessionPos { };
 	std::vector<char> decoded;
 	numbered_iterator m_FoundLine{ EndIterator() };
-	int m_FoundPos{};
-	int m_FoundSize{};
+	int m_FoundPos { };
+	int m_FoundSize { };
 	std::unordered_set<Edit*> m_AutoDeletedColors;
 	struct
 	{
 		std::optional<std::pair<const_iterator, int>> m_LastState;
-
 		int Position{};
 	}
 	MaxRightPosState;
-
-	bool fake_editor{};
+	bool fake_editor { };
 	// Editor content state end
 	// No iterators or anything content-related after this point
 	// Don't forget to update SwapState() when needed.
-
-
 	std::unordered_set<UUID> ChangeEventSubscribers;
 	Options::EditorOptions EdOpt;
-	int Pasting{};
-	int XX2{}; //scrollbar
+	int Pasting { };
+	int XX2 { }; //scrollbar
 	string strLastSearchStr;
 	search_case_fold LastSearchCaseFold;
-	bool LastSearchWholeWords{}, LastSearchReverse{}, LastSearchRegexp{}, LastSearchPreserveStyle{};
-
-	int EditorID{};
-	int EditorControlLock{};
+	bool LastSearchWholeWords { }, LastSearchReverse { }, LastSearchRegexp { }, LastSearchPreserveStyle { };
+	int EditorID { };
+	int EditorControlLock { };
 	FarColor Color;
 	FarColor SelColor;
-	int CursorPos{};
-	int m_InEERedraw{};
-	bool m_GotoHex{};
+	int CursorPos { };
+	int m_InEERedraw { };
+	bool m_GotoHex { };
 };
 
 class EditorContainer

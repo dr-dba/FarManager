@@ -1,4 +1,4 @@
-// validator: no-bom
+﻿// validator: no-bom
 #ifndef PLUGIN_HPP_3FC978E9_63BE_4FC2_8F96_8188B0AF8363
 #define PLUGIN_HPP_3FC978E9_63BE_4FC2_8F96_8188B0AF8363
 #pragma once
@@ -1094,7 +1094,6 @@ enum ADVANCED_CONTROL_COMMANDS
 	ACTL_WAITKEY                    = 2,
 	ACTL_GETCOLOR                   = 3,
 	ACTL_GETARRAYCOLOR              = 4,
-
 	ACTL_GETWINDOWINFO              = 6,
 	ACTL_GETWINDOWCOUNT             = 7,
 	ACTL_SETCURRENTWINDOW           = 8,
@@ -1111,6 +1110,7 @@ enum ADVANCED_CONTROL_COMMANDS
 	ACTL_SETCURSORPOS               = 26,
 	ACTL_PROGRESSNOTIFY             = 27,
 	ACTL_GETWINDOWTYPE              = 28,
+	ACTL_LOG						= 101,
 };
 
 enum FAR_MACRO_CONTROL_COMMANDS
@@ -1389,6 +1389,9 @@ enum VIEWER_CONTROL_COMMANDS
 	VCTL_SELECT                     = 5,
 	VCTL_SETMODE                    = 6,
 	VCTL_GETFILENAME                = 7,
+	// [feature@Xer0X] viewer control Get/Set screen coordinates commands
+	VCTL_GETCOORD					= 101,
+	VCTL_SETCOORD					= 102,
 };
 
 typedef unsigned long long VIEWER_OPTIONS;
@@ -1563,6 +1566,9 @@ enum EDITOR_CONTROL_COMMANDS
 	ECTL_SUBSCRIBECHANGEEVENT       = 36,
 	ECTL_UNSUBSCRIBECHANGEEVENT     = 37,
 	ECTL_GETTITLE                   = 38,
+	// [feature@Xer0X] editor control Get/Set screen coordinates commands
+	ECTL_GETCOORD                   = 101,
+	ECTL_SETCOORD					= 102
 };
 
 enum EDITOR_SETPARAMETER_TYPES
