@@ -389,7 +389,9 @@ bool Viewer::OpenFile(string_view const Name, bool const Warn)
 					CachedCodePage = 0;
 			}
 			if (vo.SaveShortPos)
+			{
 				BMSavePos = poscache.bm;
+			}
 			if (!m_DisplayMode.touched()) // keep Mode if file listed (Gray+-)
 			{
 				if (vo.SaveViewMode && (poscache.ViewModeAndWrapState & m_mode_changed) != 0)
@@ -399,7 +401,9 @@ bool Viewer::OpenFile(string_view const Name, bool const Warn)
 						m_DisplayMode = static_cast<VIEWER_MODE_TYPE>(ViewMode);
 				}
 				if (m_DisplayMode != VMT_HEX)
+				{
 					m_DumpTextMode = (m_DisplayMode == VMT_DUMP);
+				}
 				if (vo.SaveWrapMode && (poscache.ViewModeAndWrapState & m_mode_changed) != 0)
 				{
 					m_Wrap = (poscache.ViewModeAndWrapState & m_mode_wrap) != 0;
@@ -574,13 +578,9 @@ void Viewer::ShowPage(int nMode)
 			SetColor(COL_VIEWERTEXT);
 			GotoXY(m_Where.left, Y);
 			if (static_cast<long long>(i.Data.size()) > LeftPos)
-			{
 				Text(fit_to_left(i.Data.substr(LeftPos), Width));
-			}
 			else
-			{
 				Text(string(Width, L' '));
-			}
 			if (SelectSize >= 0 && i.bSelection)
 			{
 				long long SelX1;
@@ -716,9 +716,7 @@ int Viewer::txt_dump(std::string_view const Str, size_t ClientWidth, string& Out
 			wchar_t Char;
 			const auto clen = MB.GetChar(Str.substr(OutStr.size()), Char);
 			if (clen)
-			{
 				OutStr.push_back(Char);
-			}
 			else
 			{
 				OutStr.push_back(encoding::replace_char);
@@ -826,9 +824,7 @@ void Viewer::ShowHex()
 			LastPage = EndFile = veof();
 		string TextStr;
 		if (!BytesRead)
-		{
 			OutStr.clear();
-		}
 		else
 		{
 			if (SelectSize >= 0 )
@@ -969,9 +965,7 @@ void Viewer::ReadString(ViewerString *pString, int MaxSize, bool update_cache)
 		if (OutPtr >= static_cast<int>(MaxViewLineSize()))
 			break;
 		if (--nTab >= 0)
-		{
 			ch = L' ';
-		}
 		else
 		{
 			if (!MaxSize-- || !vgetc(&ch))
@@ -1066,9 +1060,7 @@ void Viewer::ReadString(ViewerString *pString, int MaxSize, bool update_cache)
 					continue;
 				assert(eol_len == 2); // CRCR...
 				if (vgetc(&ch) && ch == L'\n')
-				{
 					++eol_len;         // CRCRLF
-				}
 				else
 				{
 				//	assert(Iterator + 2 < VgetcCache.cbegin()); // ???
@@ -1096,7 +1088,9 @@ void Viewer::ReadString(ViewerString *pString, int MaxSize, bool update_cache)
 			pString->nSelEnd = OutPtr;
 		}
 		if (bSelEndFound && pString->nSelEnd > OutPtr)
+		{
 			pString->nSelEnd = OutPtr;
+		}
 		pString->bSelection = bSelStartFound && bSelEndFound;
 	}
 	if (!eol_char && veof())
@@ -1613,9 +1607,7 @@ bool Viewer::process_key(const Manager::Key& Key)
 			if (!LastPage && ViewFile)
 			{
 				if (m_DisplayMode == VMT_TEXT)
-				{
 					ShowPage(SHOW_DOWN);
-				}
 				else
 				{
 					FilePos=SecondPos;
@@ -1624,7 +1616,8 @@ bool Viewer::process_key(const Manager::Key& Key)
 			}
 			return true;
 		}
-		case KEY_PGUP: case KEY_NUMPAD9: case KEY_SHIFTNUMPAD9: case KEY_CTRLUP: case KEY_RCTRLUP:
+		case KEY_PGUP:		case KEY_NUMPAD9: case KEY_SHIFTNUMPAD9:
+		case KEY_CTRLUP:	case KEY_RCTRLUP:
 		{
 			if (ViewFile)
 			{
@@ -1683,9 +1676,7 @@ bool Viewer::process_key(const Manager::Key& Key)
 			if (ViewFile)
 			{
 				if (m_DisplayMode == VMT_TEXT)
-				{
 					LeftPos = LeftPos > 20? LeftPos - 20 : 0;
-				}
 				else
 				{
 					const auto CharSize = GetModeDependentCharSize();
@@ -1974,9 +1965,7 @@ void Viewer::CacheLine( long long start, int length, bool have_eol )
 		i = (i + 1) % lcache_lines.size();
 		lcache_lines[i] = lcache_last = start + length;
 		if (static_cast<size_t>(lcache_count) < lcache_lines.size())
-		{
 			++lcache_count;
-		}
 		else
 		{
 			lcache_base = (lcache_base + 1) % lcache_lines.size(); // ++start
@@ -1989,9 +1978,7 @@ void Viewer::CacheLine( long long start, int length, bool have_eol )
 		lcache_lines[lcache_base] = (have_eol ? -start : +start);
 		lcache_first = start;
 		if (static_cast<size_t>(lcache_count) < lcache_lines.size())
-		{
 			++lcache_count;
-		}
 		else
 		{
 			const auto i = (lcache_base + lcache_lines.size() - 1) % lcache_lines.size(); // i = start - 1
@@ -3773,7 +3760,7 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 		case VCTL_GETCOORD:
 		{
 			BOOL Result = FALSE;
-			/* // makes a mess with +/-keybar,tittlebar:
+			/* // [note@xer0x] makes a mess with +/-keybar,titlebar:
 			COORD crd_screen = { -1, -1 };
 			crd_screen.X = m_Where.left;
 			crd_screen.Y = m_Where.top - HostFileViewer->IsTitleBarVisible();
