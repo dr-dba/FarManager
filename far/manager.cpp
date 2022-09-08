@@ -130,6 +130,7 @@ static bool CASHook(const Manager::Key& key)
 	default:
 		return false;
 	}
+
 	const auto AnyPressed = [](unsigned const State)
 	{
 		return
@@ -137,14 +138,17 @@ static bool CASHook(const Manager::Key& key)
 			flags::check_any(State, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED) &&
 			flags::check_any(State, SHIFT_PRESSED);
 	};
+
 	const auto LeftPressed = [](unsigned const State)
 	{
 		return flags::check_all(State, LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED | SHIFT_PRESSED);
 	};
+
 	const auto RightPressed = [](unsigned const State)
 	{
 		return flags::check_all(State, RIGHT_CTRL_PRESSED | RIGHT_ALT_PRESSED | SHIFT_PRESSED);
 	};
+
 	const auto wait = [](auto const CasChecker)
 	{
 		for (;;)
@@ -322,11 +326,14 @@ void Manager::ExecuteNonModal(const window_ptr& NonModal)
 void Manager::ExecuteModal(const window_ptr& Executed)
 {
 	bool stop=false;
-	auto& stop_ref=m_Executed[Executed];
-	if (stop_ref) return;
-	stop_ref=&stop;
+	if (!m_Executed.emplace(Executed, &stop).second)
+		return;
 	const auto OriginalStartManager = StartManager;
 	StartManager = true;
+	SCOPE_EXIT{ StartManager = OriginalStartManager; };
+	// Under normal circumstances the window breaks the loop by calling DeleteWindow.
+	// If the loop is broken by an exception, we have to restore the status quo.
+	SCOPE_FAIL{ DeleteWindow(Executed); };
 	for (;;)
 	{
 		Commit();
@@ -334,8 +341,6 @@ void Manager::ExecuteModal(const window_ptr& Executed)
 			break;
 		ProcessMainLoop();
 	}
-	StartManager = OriginalStartManager;
-	return;// GetModalExitCode();
 }
 
 int Manager::GetModalExitCode() const
@@ -344,11 +349,13 @@ int Manager::GetModalExitCode() const
 }
 
 /* $ 11.10.2001 IS
-	Подсчитать количество окон с указанным именем. */
+   Подсчитать количество окон с указанным именем.
+*/
 int Manager::CountWindowsWithName(string_view const Name, bool IgnoreCase) const
 {
 	const auto AreEqual = IgnoreCase? equal_icase : equal;
 	string strType, strCurName;
+
 	return std::count_if(CONST_RANGE(m_windows, i)
 	{
 		i->GetTypeAndName(strType, strCurName);
@@ -356,16 +363,17 @@ int Manager::CountWindowsWithName(string_view const Name, bool IgnoreCase) const
 	});
 }
 
-/*! \return
-	Возвращает nullptr если нажат "отказ" или если нажато текущее окно.
-	Другими словами, если немодальное окно не поменялось.
-	Если же поменялось,
-	то тогда функция должна возвратить указатель на предыдущее окно. */
+/*!
+  \return Возвращает nullptr если нажат "отказ" или если нажато текущее окно.
+  Другими словами, если немодальное окно не поменялось.
+  Если же поменялось, то тогда функция должна возвратить
+  указатель на предыдущее окно.
+*/
 window_ptr Manager::WindowMenu()
 {
 	/* $ 28.04.2002 KM
-		Флаг для определения того,
-		что меню переключения экранов уже активировано.
+	    Флаг для определения того, что меню переключения
+	    экранов уже активировано.
 	*/
 	static int AlreadyShown=FALSE;
 	if (AlreadyShown)
@@ -381,15 +389,10 @@ window_ptr Manager::WindowMenu()
 				Data.emplace_back(std::move(Type), std::move(Name), i);
 			}
 		}
-		const auto TypesWidth = std::get<0>(
-			*std::max_element(
-				ALL_CONST_RANGE(Data),
-				[](const auto& a, const auto &b) {
-					return
-						std::get<0>(a).size() <
-						std::get<0>(b).size();
-				})).size();
-		const auto ModalMenu = VMenu2::create(msg(lng::MScreensTitle), { }, ScrY - 4);
+
+		const auto TypesWidth = std::get<0>(*std::max_element(ALL_CONST_RANGE(Data), [](const auto& a, const auto &b) { return std::get<0>(a).size() < std::get<0>(b).size(); })).size();
+
+		const auto ModalMenu = VMenu2::create(msg(lng::MScreensTitle), {}, ScrY - 4);
 		ModalMenu->SetHelp(L"ScrSwitch"sv);
 		ModalMenu->SetMenuFlags(VMENU_WRAPMODE);
 		ModalMenu->SetPosition({ -1, -1, 0, 0 });
@@ -443,8 +446,7 @@ window_ptr Manager::FindWindowByFile(int const ModalType, string_view const File
 	const auto ItemIterator = std::find_if(CONST_RANGE(m_windows, i)
 	{
 		// Mantis#0000469 - получать Name будем только при совпадении ModalType
-		if(!i->IsDeleting()
-		 && i->GetType() == ModalType)
+		if (!i->IsDeleting() && i->GetType() == ModalType)
 		{
 			string strType, strName;
 			i->GetTypeAndName(strType, strName);
@@ -453,7 +455,7 @@ window_ptr Manager::FindWindowByFile(int const ModalType, string_view const File
 		}
 		return false;
 	});
-	return ItemIterator == m_windows.cend() ? nullptr : *ItemIterator;
+	return ItemIterator == m_windows.cend()? nullptr : *ItemIterator;
 }
 
 bool Manager::ShowBackground() const
@@ -464,8 +466,7 @@ bool Manager::ShowBackground() const
 
 void Manager::ActivateWindow(const window_ptr& Activated)
 {
-	if (Activated)
-		CheckAndPushWindow(Activated, &Manager::ActivateCommit);
+	if (Activated) CheckAndPushWindow(Activated,&Manager::ActivateCommit);
 }
 
 void Manager::SwitchWindow(direction Direction)
@@ -474,14 +475,14 @@ void Manager::SwitchWindow(direction Direction)
 	auto pos = windows.find(GetBottomWindow());
 	const auto process = [&]()
 	{
-		if		(Direction == direction::next)
+		if (Direction == direction::next)
 		{
 			++pos;
-			if (pos == windows.end	()) pos = windows.begin();
+			if (pos==windows.end()) pos = windows.begin();
 		}
 		else if (Direction == direction::previous)
 		{
-			if (pos == windows.begin()) pos = windows.end();
+			if (pos==windows.begin()) pos=windows.end();
 			--pos;
 		}
 	};
@@ -575,7 +576,7 @@ void Manager::ProcessMainLoop()
 	}
 	if(IsPanelsActive())
 	{
-		if(!Global->PluginPanelsCount)
+		if (!Global->PluginPanelsCount)
 			Global->CtrlObject->Plugins->RefreshPluginsList();
 	}
 }
@@ -584,26 +585,22 @@ void Manager::ExitMainLoop(int Ask)
 {
 	if (Global->CloseFAR)
 		Global->CloseFARMenu = true;
-	if (!Ask
-	|| !Global->Opt->Confirm.Exit
-	|| Message(0,
+	if (!Ask || !Global->Opt->Confirm.Exit || Message(0,
 		msg(lng::MQuit),
 		{
 			msg(lng::MAskQuit)
 		},
 		{ lng::MYes, lng::MNo },
-		{ }, &FarAskQuitId
-			) == message_result::first_button)
+		{}, &FarAskQuitId) == message_result::first_button)
 	{
 		/* $ 29.12.2000 IS
-			+ Проверяем, сохранены ли все измененные файлы.
-			Если нет, то не выходим из фара. */
+		   + Проверяем, сохранены ли все измененные файлы. Если нет, то не выходим
+		     из фара.
+		*/
 		if (ExitAll() || Global->CloseFAR)
 		{
 			const auto cp = Global->CtrlObject->Cp();
-			if(!cp
-			||(!cp->LeftPanel()->ProcessPluginEvent(FE_CLOSE, nullptr)
-			&& !cp->RightPanel()->ProcessPluginEvent(FE_CLOSE, nullptr)))
+			if (!cp || (!cp->LeftPanel()->ProcessPluginEvent(FE_CLOSE, nullptr) && !cp->RightPanel()->ProcessPluginEvent(FE_CLOSE, nullptr)))
 				EndLoop=true;
 		}
 		else
@@ -640,6 +637,7 @@ bool Manager::ProcessKey(Key key)
 				ResizeAllWindows();
 				return true;
 		}
+
 		/*** А вот здесь - все остальное! ***/
 		if (!Global->IsProcessAssignMacroKey)
 		{
@@ -651,20 +649,19 @@ bool Manager::ProcessKey(Key key)
 				case KEY_RCTRLW:
 					ShowProcessList();
 					return true;
+
 				case KEY_F11:
 				{
 					const auto WindowType = Global->WindowManager->GetCurrentWindow()->GetType();
 					static int reentry=0;
-					if(!reentry
-						&&(WindowType == windowtype_dialog
-						|| WindowType == windowtype_menu)
-							)
+					if(!reentry && (WindowType == windowtype_dialog || WindowType == windowtype_menu))
 					{
 						++reentry;
 						const auto r = GetCurrentWindow()->ProcessKey(key);
 						--reentry;
 						return r;
 					}
+
 					PluginsMenu();
 					Global->WindowManager->RefreshWindow();
 					return true;
@@ -675,11 +672,12 @@ bool Manager::ProcessKey(Key key)
 					os::chrono::sleep_for(1ms);
 					SetVideoMode();
 					os::chrono::sleep_for(1ms);
-					/* В процессе исполнения Alt-F9 (в нормальном режиме)
-						в очередь консоли попадает WINDOW_BUFFER_SIZE_EVENT,
-						формируется в ChangeVideoMode().
-						В режиме исполнения макросов ЭТО не происходит
-						по вполне понятным причинам.
+
+					/* В процессе исполнения Alt-F9 (в нормальном режиме) в очередь
+					   консоли попадает WINDOW_BUFFER_SIZE_EVENT, формируется в
+					   ChangeVideoMode().
+					   В режиме исполнения макросов ЭТО не происходит по вполне понятным
+					   причинам.
 					*/
 					if (Global->CtrlObject->Macro.IsExecuting())
 					{
@@ -687,8 +685,8 @@ bool Manager::ProcessKey(Key key)
 						const auto PScrY = ScrY;
 						os::chrono::sleep_for(1ms);
 						UpdateScreenSize();
-						if (PScrX + 1 == CurSize.x
-						 && PScrY + 1 == CurSize.y)
+
+						if (PScrX + 1 == CurSize.x && PScrY + 1 == CurSize.y)
 						{
 							return true;
 						}
@@ -733,23 +731,21 @@ bool Manager::ProcessMouse(const MOUSE_EVENT_RECORD* MouseEvent) const
 	auto ret = false;
 	if (!MouseEvent->dwMousePosition.Y && MouseEvent->dwMousePosition.X == ScrX)
 	{
-		if (Global->Opt->ScreenSaver
-			&& !(MouseEvent->dwButtonState & 3)
-			&& !os::handle::is_signaled(console.GetInputHandle(), 1s)
-				)
+		if (Global->Opt->ScreenSaver && !(MouseEvent->dwButtonState & 3) && !os::handle::is_signaled(console.GetInputHandle(), 1s))
 		{
 			ScreenSaver();
 			return true;
 		}
 	}
 	if (GetCurrentWindow())
-		ret = GetCurrentWindow()->ProcessMouse(MouseEvent);
+		ret=GetCurrentWindow()->ProcessMouse(MouseEvent);
 	return ret;
 }
 
 void Manager::PluginsMenu() const
 {
 	int curType = GetCurrentWindow()->GetType();
+
 	if (curType == windowtype_panels || curType == windowtype_editor || curType == windowtype_viewer || curType == windowtype_dialog || curType == windowtype_menu)
 	{
 		/* 02.01.2002 IS
@@ -760,8 +756,8 @@ void Manager::PluginsMenu() const
 		if (curType==windowtype_panels)
 		{
 			const auto pType = Global->CtrlObject->Cp()->ActivePanel()->GetType();
-			if (pType == panel_type::QVIEW_PANEL
-			 || pType == panel_type::INFO_PANEL)
+
+			if (pType == panel_type::QVIEW_PANEL || pType == panel_type::INFO_PANEL)
 			{
 				string strType, strCurFileName;
 				Global->CtrlObject->Cp()->GetTypeAndName(strType, strCurFileName);
@@ -774,10 +770,9 @@ void Manager::PluginsMenu() const
 			}
 		}
 		// в редакторе, viewer-е или диалоге покажем свою помощь по Shift-F1
-		const wchar_t *Topic=
-			curType==windowtype_editor?L"Editor":
-			curType==windowtype_viewer?L"Viewer":
-			curType==windowtype_dialog?L"Dialog":nullptr;
+		const wchar_t *Topic=curType==windowtype_editor?L"Editor":
+		                     curType==windowtype_viewer?L"Viewer":
+		                     curType==windowtype_dialog?L"Dialog":nullptr;
 		Global->CtrlObject->Plugins->CommandsMenu(curType,0,Topic);
 	}
 }
@@ -794,9 +789,8 @@ bool Manager::IsPanelsActive() const
 
 window_ptr Manager::GetWindow(size_t Index) const
 {
-	// [prettify@Xer0X]
-	if (Index >= m_windows.size() 
-	 || m_windows.empty())
+	if (Index >= m_windows.size() || m_windows.empty())
+
 		return nullptr;
 	return m_windows[Index];
 }
@@ -846,13 +840,12 @@ void Manager::DeleteCommit(const window_ptr& Param)
 	const auto CurrentWindow = GetCurrentWindow();
 	if (CurrentWindow == Param) DeactivateCommit(Param);
 	Param->OnDestroy();
-	const auto WindowIndex=IndexOf(Param);
-	assert(-1!=WindowIndex);
-	if (-1!=WindowIndex)
+	if (const auto WindowIndex = IndexOf(Param); WindowIndex != -1)
 	{
 		m_windows.erase(m_windows.begin() + WindowIndex);
 		WindowsChanged();
-		if (static_cast<size_t>(WindowIndex) < m_NonModalSize) --m_NonModalSize;
+		if (static_cast<size_t>(WindowIndex) < m_NonModalSize) 
+			--m_NonModalSize;
 		if (m_windows.empty())
 		{
 			CurrentWindowType = -1;
@@ -875,15 +868,12 @@ void Manager::DeleteCommit(const window_ptr& Param)
 		}
 	}
 	assert(GetCurrentWindow()!=Param);
-	const auto stop = m_Executed.find(Param);
-	if (stop != m_Executed.end())
+	if (const auto stop = m_Executed.find(Param); stop != m_Executed.end())
 	{
-		*(stop->second)=true;
+		*stop->second = true;
 		m_Executed.erase(stop);
 	}
-	[[maybe_unused]]
-	const auto size = m_Added.erase(Param);
-	assert(size==1);
+	m_Added.erase(Param);
 }
 
 void Manager::ActivateCommit(const window_ptr& Param)
@@ -1008,13 +998,7 @@ void Manager::RefreshAllCommit()
 	if (!m_windows.empty())
 	{
 		const auto ItemIterator = IsSpecialWindow();
-		const auto PtrCopy = m_DesktopModalled == 0
-			? (
-				(ItemIterator == m_windows.cend())
-				? m_windows.front()
-				: *ItemIterator
-					)
-			: m_windows.back();
+		const auto PtrCopy = m_DesktopModalled == 0 ? ((ItemIterator == m_windows.cend()) ? m_windows.front() : *ItemIterator) : m_windows.back();
 		RefreshCommit(PtrCopy);
 	}
 }
@@ -1025,7 +1009,8 @@ bool Manager::AddWindow(const window_ptr& Param)
 }
 
 /*$ 26.06.2001 SKV
-	Для вызова из плагинов посредством ACTL_COMMIT */
+  Для вызова из плагинов посредством ACTL_COMMIT
+*/
 void Manager::PluginCommit()
 {
 	Commit();
@@ -1046,11 +1031,10 @@ void Manager::ImmediateHide()
 	if (InModal())
 	{
 		/* $ 28.04.2002 KM
-			Проверим, а не модальный ли редактор или вьювер
-			на вершине модального стека?
-			И если да, покажем User screen. */
-		if (m_windows.back()->GetType()==windowtype_editor
-		 || m_windows.back()->GetType()==windowtype_viewer)
+		    Проверим, а не модальный ли редактор или вьювер на вершине
+		    модального стека? И если да, покажем User screen.
+		*/
+		if (m_windows.back()->GetType()==windowtype_editor || m_windows.back()->GetType()==windowtype_viewer)
 		{
 			ShowBackground();
 		}
