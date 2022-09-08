@@ -213,6 +213,7 @@ namespace
 		void handle(message Message) override
 		{
 		}
+
 		static constexpr auto name = L"null"sv;
 	};
 
@@ -231,6 +232,7 @@ namespace
 				L'\n'
 			));
 		}
+
 		static constexpr auto name = L"debug"sv;
 	};
 
@@ -243,6 +245,7 @@ namespace
 			const auto Size = GetLargestConsoleWindowSize(m_Buffer.native_handle());
 			SetConsoleScreenBufferSize(m_Buffer.native_handle(), { Size.X, 9999 });
 		}
+
 		static void process(HANDLE Buffer, message const& Message)
 		{
 			class console_color
@@ -250,7 +253,6 @@ namespace
 				NONCOPYABLE(console_color);
 
 			public:
-
 				explicit console_color(HANDLE Buffer, WORD const Color):
 					m_Buffer(Buffer)
 				{
@@ -261,6 +263,7 @@ namespace
 						throw MAKE_FAR_EXCEPTION(L"SetConsoleTextAttributes"sv);
 					m_SavedAttributes = csbi.wAttributes;
 				}
+
 				~console_color()
 				{
 					if (m_SavedAttributes)
@@ -272,12 +275,14 @@ namespace
 				std::optional<WORD> m_SavedAttributes;
 				HANDLE m_Buffer;
 			};
+
 			const auto write_console = [Buffer](string_view Str)
 			{
 				DWORD Written;
 				if (!WriteConsole(Buffer, Str.data(), static_cast<DWORD>(Str.size()), &Written, {}))
 					throw MAKE_FAR_EXCEPTION(L"WriteConsole"sv);
 			};
+
 			const auto write = [&](string_view const Borders, WORD const Color, string_view const Str)
 			{
 				SCOPED_ACTION(console_color)(Buffer, Color);
@@ -285,6 +290,7 @@ namespace
 				write_console(Str);
 				write_console(Borders.substr(1, 1));
 			};
+
 			write(L"[]"sv, F_DARKGRAY, Message.m_Time);
 			write(L"[]"sv, F_DARKGRAY, Message.m_ThreadId);
 			const auto Color = level_to_color(Message.m_Level);
@@ -331,8 +337,8 @@ namespace
 	private:
 
 		os::handle m_Buffer;
-
 	};
+
 	class sink_file: public discardable<false>, public sink_boilerplate<sink_file>
 	{
 	public:
@@ -410,6 +416,7 @@ namespace
 		encoding::writer m_Writer;
 		string_view m_Eol{ eol::win.str() };
 	};
+
 	class sink_pipe: public discardable<true>, public sink_boilerplate<sink_pipe>
 	{
 	public:
@@ -430,7 +437,9 @@ namespace
 			os::handle(pi.hThread);
 			os::handle(pi.hProcess);
 			while (!ConnectNamedPipe(m_Pipe.native_handle(), {}) && GetLastError() != ERROR_PIPE_CONNECTED)
+			{
 				LOGWARNING(L"ConnectNamedPipe({}): {}"sv, m_PipeName, last_error());
+			}
 			m_Connected = true;
 		}
 
@@ -506,9 +515,10 @@ namespace
 		}
 
 	private:
-
 		const size_t QueueBufferSize = 8192;
+
 		virtual void out(message&& Message) = 0;
+
 		void poll(string_view const Name)
 		{
 			os::debug::set_thread_name(format(FSTR(L"Log sink ({})"sv), Name));
@@ -533,6 +543,7 @@ namespace
 					LOGERROR(L"SEH Exception {}"sv, ExceptionCode);
 				});
 		}
+
 		os::synced_queue<message> m_Messages;
 		os::event m_MessageEvent { os::event::type::automatic, os::event::state::nonsignaled };
 		os::event m_FinishEvent { os::event::type::manual, os::event::state::nonsignaled };
@@ -543,7 +554,12 @@ namespace
 	class sink_mode
 	{
 	public:
-		enum class mode	{ async, sync };
+		enum class mode
+		{
+			sync,
+			async,
+		};
+
 		virtual ~sink_mode() = default;
 		virtual mode get_mode() const = 0;
 	};
@@ -561,8 +577,8 @@ namespace
 	class async final: public sink_type, public sink_mode_boilerplate<async<sink_type>>, private async_impl
 	{
 	public:
-
 		static constexpr auto mode = sink_mode::mode::async;
+
 		explicit async(bool const IsDiscardable):
 			async_impl(IsDiscardable, sink_type::get_name())
 		{
@@ -587,6 +603,7 @@ namespace
 	public:
 
 		static constexpr auto mode = sink_mode::mode::sync;
+
 		// sink
 		void handle(message Message) override
 		{
@@ -611,8 +628,10 @@ namespace logging
 			in_progress,
 			complete,
 		};
+
 		NONCOPYABLE(engine);
 		engine() = default;
+
 		void configure(string_view const Parameters)
 		{
 			initialise();
@@ -623,7 +642,9 @@ namespace logging
 				configure_env();
 			}
 			for (const auto& i: m_Sinks)
+			{
 				i->configure(Parameters);
+			}
 		}
 
 		[[nodiscard]]
@@ -672,7 +693,6 @@ namespace logging
 		}
 
 	private:
-
 		void configure_env()
 		{
 			m_Level = parse_level(get_parameter(L"level"sv), m_Level);
@@ -780,7 +800,7 @@ namespace logging
 		return log_engine.filter(Level);
 	}
 
-	static thread_local size_t RecursionGuard { };
+	static thread_local size_t RecursionGuard{};
 
 	void log(string_view const Str, level const Level, std::string_view const Function, std::string_view const File, int const Line)
 	{
@@ -789,7 +809,7 @@ namespace logging
 		if (RecursionGuard > 1)
 			return;
 		++RecursionGuard;
-		SCOPE_EXIT { --RecursionGuard; };
+		SCOPE_EXIT{ --RecursionGuard; };
 		log_engine.log(Str, Level, Function, File, Line);
 	}
 
@@ -847,7 +867,8 @@ namespace logging
 						os::chrono::sleep_for(5s);
 					return EXIT_SUCCESS;
 				}
-				std::wcerr << format(FSTR(L"Error reading pipe {}: {}"sv), PipeName, e.format_error()) << std::endl;
+				std::wcerr << format(FSTR(L"Error reading pipe {}: {}"sv), PipeName, e) << std::endl;
+				os::chrono::sleep_for(5s);
 				return EXIT_FAILURE;
 			}
 			try
@@ -856,7 +877,7 @@ namespace logging
 			}
 			catch (far_exception const& e)
 			{
-				LOGERROR(L"{}"sv, e);
+				std::wcerr << format(FSTR(L"sink_console::process(): {}"sv), e) << std::endl;
 			}
 		}
 	}
