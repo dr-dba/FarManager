@@ -93,7 +93,7 @@ class window: public ScreenObjectWithShadow, public std::enable_shared_from_this
 
 	void SetCanLoseFocus(bool Value) { m_CanLoseFocus = Value; }
 	int GetExitCode() const { return m_ExitCode; }
-	small_rectangle GetWhere() const { return m_Where; }
+//	small_rectangle GetWhere() const { return m_Where; }
 	void UpdateKeyBar() const;
 	bool IsTopWindow() const;
 	bool HasSaveScreen() const;

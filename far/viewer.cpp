@@ -3765,7 +3765,7 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 			crd_screen.X = m_Where.left;
 			crd_screen.Y = m_Where.top - HostFileViewer->IsTitleBarVisible();
 			// .. a better way to go: */
-			small_rectangle rect_view = HostFileViewer->GetWhere();
+			small_rectangle rect_view = HostFileViewer->GetPosition();  // GetWhere();
 			*static_cast<COORD*>(Param2) = {
 				rect_view.left,
 				rect_view.top };
@@ -3777,7 +3777,7 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 		{
 			BOOL Result = FALSE;
 			const auto new_rect = static_cast<const SMALL_RECT*>(Param2);
-			small_rectangle rect_view = HostFileViewer->GetWhere();
+			small_rectangle rect_view = HostFileViewer->GetPosition(); // GetWhere();
 			SHORT currX1 = rect_view.left;
 			SHORT currX2 = rect_view.right;
 			SHORT currY1 = rect_view.top;	// -HostFileViewer->IsTitleBarVisible();
@@ -3802,9 +3802,7 @@ int Viewer::ViewerControl(int Command, intptr_t Param1, void *Param2)
 					currY2 + new_rect->Right };
 			}
 			NewWhere = HostFileViewer->AdjustScreenPosition(NewWhere);
-			if (NewWhere != rect_view
-				|| TRUE
-				)
+			if (NewWhere != rect_view)
 			{
 				HostFileViewer->SetPosition(NewWhere);
 				HostFileViewer->InitKeyBar();
