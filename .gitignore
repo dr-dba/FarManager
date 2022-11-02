@@ -51,3 +51,4 @@ __*.cmd
 #logs
 /plugins/*/*.log
 logs
+/far/Far.exe.ini

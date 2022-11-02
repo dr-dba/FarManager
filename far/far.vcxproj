@@ -1,26 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <PropertyGroup Label="Globals">
     <ProjectName>Far</ProjectName>
     <ProjectGuid>{62F794C9-5F4C-40F6-B358-5DC1A9D6D2CB}</ProjectGuid>
     <RootNamespace>Far</RootNamespace>
   </PropertyGroup>
-
   <PropertyGroup Label="UserMacros">
     <ProjectSpecificOutDirName>.</ProjectSpecificOutDirName>
     <ProjectSpecificIntDirName>$(ProjectName)</ProjectSpecificIntDirName>
   </PropertyGroup>
-
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ProjectDir)..\_build\vc\config\common.props" />
   </ImportGroup>
-
   <PropertyGroup Label="UserMacros">
     <BootstrapDir>$(IntDir)include\bootstrap\</BootstrapDir>
     <M4Cmd>tools\m4.exe -P -DFARBIT=$(PlatformArchitecture) -DBUILD_TYPE=%25FARMANAGER_BUILD_TYPE%25 -DSCM_REVISION=%25FARMANAGER_SCM_REVISION%25</M4Cmd>
   </PropertyGroup>
-
   <ItemDefinitionGroup>
     <PreBuildEvent>
       <Message>Creating mandatory folders...</Message>
@@ -35,7 +30,6 @@ if not exist $(BootstrapDir) mkdir $(BootstrapDir)</Command>
       <ForcedIncludeFiles>%(ForcedIncludeFiles);headers.hpp;memcheck.hpp</ForcedIncludeFiles>
     </ClCompile>
   </ItemDefinitionGroup>
-
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='Debug_ASAN'">
     <ClCompile>
       <PreprocessorDefinitions Condition="'$(DISABLE_FAR_TESTS)'!='TRUE'">ENABLE_TESTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -45,7 +39,6 @@ if not exist $(BootstrapDir) mkdir $(BootstrapDir)</Command>
       <Message>Running unit tests</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
   <ItemGroup>
     <CustomBuild Include="api_test.c" Condition="'$(DISABLE_FAR_TESTS)'!='TRUE'">
       <Command>echo testing C plugin API
