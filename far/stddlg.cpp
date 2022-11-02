@@ -92,26 +92,19 @@ int GetSearchReplaceString(
 	function_ref<string(bool)> const Picker)
 {
 	int Result = 0;
-
 	if (TextHistoryName.empty())
 		TextHistoryName = L"SearchText"sv;
-
 	if (ReplaceHistoryName.empty())
 		ReplaceHistoryName = L"ReplaceText"sv;
-
 	if (Title.empty())
 		Title = msg(IsReplaceMode? lng::MEditReplaceTitle : lng::MEditSearchTitle);
-
 	if (SubTitle.empty())
 		SubTitle = msg(lng::MEditSearchFor);
-
-
 	auto CaseFold = pCaseFold? *pCaseFold : search_case_fold::icase;
-	bool WholeWords=pWholeWords?*pWholeWords:false;
-	bool Reverse=pReverse?*pReverse:false;
-	bool Regexp=pRegexp?*pRegexp:false;
-	bool PreserveStyle=pPreserveStyle?*pPreserveStyle:false;
-
+	bool WholeWords = pWholeWords?*pWholeWords:false;
+	bool Reverse = pReverse?*pReverse:false;
+	bool Regexp = pRegexp?*pRegexp:false;
+	bool PreserveStyle = pPreserveStyle?*pPreserveStyle:false;
 	const auto DlgWidth = 76;
 	const auto& WordLabel = msg(lng::MEditSearchPickWord);
 	const auto& SelectionLabel = msg(lng::MEditSearchPickSelection);
@@ -121,9 +114,7 @@ int GetSearchReplaceString(
 	const auto SelectionButtonX1 = static_cast<int>(SelectionButtonX2 - SelectionButtonSize);
 	const auto WordButtonX2 = SelectionButtonX1 - 1;
 	const auto WordButtonX1 = static_cast<int>(WordButtonX2 - WordButtonSize);
-
 	const auto YFix = IsReplaceMode? 0 : 2;
-
 	enum item_id
 	{
 		dlg_border,
@@ -143,31 +134,28 @@ int GetSearchReplaceString(
 		dlg_button_action,
 		dlg_button_all,
 		dlg_button_cancel,
-
 		dlg_count
 	};
-
 	auto ReplaceDlg = MakeDialogItems<dlg_count>(
-	{
-		{ DI_DOUBLEBOX, {{3,                 1      }, {DlgWidth-4,        12-YFix}}, DIF_NONE, Title },
-		{ DI_BUTTON,    {{WordButtonX1,      2      }, {WordButtonX2,      2      }}, DIF_BTNNOCLOSE, WordLabel },
-		{ DI_BUTTON,    {{SelectionButtonX1, 2      }, {SelectionButtonX2, 2      }}, DIF_BTNNOCLOSE, SelectionLabel },
-		{ DI_TEXT,      {{5,                 2      }, {0,                 2      }}, DIF_NONE, SubTitle },
-		{ DI_EDIT,      {{5,                 3      }, {70,                3      }}, DIF_FOCUS | DIF_USELASTHISTORY | DIF_HISTORY, SearchStr, },
-		{ DI_TEXT,      {{5,                 4      }, {0,                 4      }}, DIF_NONE, msg(lng::MEditReplaceWith), },
-		{ DI_EDIT,      {{5,                 5      }, {70,                5      }}, DIF_USELASTHISTORY | DIF_HISTORY, ReplaceStr, },
-		{ DI_TEXT,      {{-1,                6-YFix }, {0,                 6-YFix }}, DIF_SEPARATOR, },
-		{ DI_CHECKBOX,  {{5,                 7-YFix }, {0,                 7-YFix }}, DIF_3STATE, msg(lng::MEditSearchCase), },
-		{ DI_CHECKBOX,  {{5,                 8-YFix }, {0,                 8-YFix }}, DIF_NONE, msg(lng::MEditSearchWholeWords), },
-		{ DI_CHECKBOX,  {{5,                 9-YFix }, {0,                 9-YFix }}, DIF_NONE, msg(lng::MEditSearchReverse), },
-		{ DI_CHECKBOX,  {{40,                7-YFix }, {0,                 7-YFix }}, DIF_NONE, msg(lng::MEditSearchRegexp), },
-		{ DI_CHECKBOX,  {{40,                8-YFix }, {0,                 8-YFix }}, DIF_NONE, msg(lng::MEditSearchPreserveStyle), },
-		{ DI_TEXT,      {{-1,                10-YFix}, {0,                 10-YFix}}, DIF_SEPARATOR, },
-		{ DI_BUTTON,    {{0,                 11-YFix}, {0,                 11-YFix}}, DIF_CENTERGROUP | DIF_DEFAULTBUTTON, msg(IsReplaceMode? lng::MEditReplaceReplace : lng::MEditSearchSearch), },
-		{ DI_BUTTON,    {{0,                 11-YFix}, {0,                 11-YFix}}, DIF_CENTERGROUP, msg(lng::MEditSearchAll), },
-		{ DI_BUTTON,    {{0,                 11-YFix}, {0,                 11-YFix}}, DIF_CENTERGROUP, msg(lng::MEditSearchCancel), },
-	});
-
+		{
+		{ DI_DOUBLEBOX, { { 3, 1 }, { DlgWidth - 4, 12 - YFix } }, DIF_NONE, Title },
+		{ DI_BUTTON, { { WordButtonX1, 2 }, { WordButtonX2, 2 } }, DIF_BTNNOCLOSE, WordLabel },
+		{ DI_BUTTON, { { SelectionButtonX1, 2 }, { SelectionButtonX2, 2 } }, DIF_BTNNOCLOSE, SelectionLabel },
+		{ DI_TEXT, { { 5, 2 }, { 0, 2 } }, DIF_NONE, SubTitle },
+		{ DI_EDIT, { { 5, 3 }, { 70, 3 } }, DIF_FOCUS | DIF_USELASTHISTORY | DIF_HISTORY, SearchStr, },
+		{ DI_TEXT, { { 5, 4 }, { 0, 4 } }, DIF_NONE, msg(lng::MEditReplaceWith), },
+		{ DI_EDIT, { { 5, 5 }, { 70, 5 } }, DIF_USELASTHISTORY | DIF_HISTORY, ReplaceStr, },
+		{ DI_TEXT, { { -1, 6 - YFix }, { 0, 6 - YFix } }, DIF_SEPARATOR, },
+		{ DI_CHECKBOX, { { 5, 7 - YFix }, { 0, 7 - YFix } }, DIF_3STATE, msg(lng::MEditSearchCase), },
+		{ DI_CHECKBOX, { { 5, 8 - YFix }, { 0, 8 - YFix } }, DIF_NONE, msg(lng::MEditSearchWholeWords), },
+		{ DI_CHECKBOX, { { 5, 9 - YFix }, { 0, 9 - YFix } }, DIF_NONE, msg(lng::MEditSearchReverse), },
+		{ DI_CHECKBOX, { { 40, 7 - YFix }, { 0, 7 - YFix } }, DIF_NONE, msg(lng::MEditSearchRegexp), },
+		{ DI_CHECKBOX, { { 40, 8 - YFix }, { 0, 8 - YFix } }, DIF_NONE, msg(lng::MEditSearchPreserveStyle), },
+		{ DI_TEXT, { { -1, 10 - YFix }, { 0, 10 - YFix } }, DIF_SEPARATOR, },
+		{ DI_BUTTON, { { 0, 11 - YFix }, { 0, 11 - YFix } }, DIF_CENTERGROUP | DIF_DEFAULTBUTTON, msg(IsReplaceMode? lng::MEditReplaceReplace : lng::MEditSearchSearch), },
+		{ DI_BUTTON, { { 0, 11 - YFix }, { 0, 11 - YFix } }, DIF_CENTERGROUP, msg(lng::MEditSearchAll), },
+		{ DI_BUTTON, { { 0, 11 - YFix }, { 0, 11 - YFix } }, DIF_CENTERGROUP, msg(lng::MEditSearchCancel), },
+		});
 	ReplaceDlg[dlg_edit_search].strHistory = TextHistoryName;
 	ReplaceDlg[dlg_edit_replace].strHistory = ReplaceHistoryName;
 	ReplaceDlg[dlg_checkbox_case].Selected =
@@ -178,26 +166,19 @@ int GetSearchReplaceString(
 	ReplaceDlg[dlg_checkbox_reverse].Selected = Reverse;
 	ReplaceDlg[dlg_checkbox_regex].Selected = Regexp;
 	ReplaceDlg[dlg_checkbox_style].Selected = PreserveStyle;
-
-
 	if (IsReplaceMode || HideAll)
-	{
 		ReplaceDlg[dlg_button_all].Flags |= DIF_HIDDEN;
-	}
-
 	if (!IsReplaceMode)
 	{
 		ReplaceDlg[dlg_label_replace].Flags |= DIF_HIDDEN;
 		ReplaceDlg[dlg_edit_replace].Flags |= DIF_HIDDEN;
 		ReplaceDlg[dlg_checkbox_style].Flags |= DIF_HIDDEN;
 	}
-
 	if (!Picker)
 	{
 		ReplaceDlg[dlg_button_word].Flags |= DIF_HIDDEN;
 		ReplaceDlg[dlg_button_selection].Flags |= DIF_HIDDEN;
 	}
-
 	if (!pCaseFold)
 		ReplaceDlg[dlg_checkbox_case].Flags |= DIF_DISABLE; // DIF_HIDDEN ??
 	if (!pWholeWords)
@@ -208,7 +189,6 @@ int GetSearchReplaceString(
 		ReplaceDlg[dlg_checkbox_regex].Flags |= DIF_DISABLE; // DIF_HIDDEN ??
 	if (!pPreserveStyle)
 		ReplaceDlg[dlg_checkbox_style].Flags |= DIF_DISABLE; // DIF_HIDDEN ??
-
 	const auto Handler = [&](Dialog* Dlg, intptr_t Msg, intptr_t Param1, void* Param2) -> intptr_t
 	{
 		if (Msg == DN_BTNCLICK && Picker && (Param1 == dlg_button_word || Param1 == dlg_button_selection))
@@ -220,20 +200,15 @@ int GetSearchReplaceString(
 		}
 		return Dlg->DefProc(Msg, Param1, Param2);
 	};
-
 	const auto Dlg = Dialog::create(ReplaceDlg, Handler);
 	Dlg->SetPosition({ -1, -1, DlgWidth, 14 - YFix });
-
 	if (!HelpTopic.empty())
 		Dlg->SetHelp(HelpTopic);
-
-	if(Id)
+	if (Id)
 		Dlg->SetId(*Id);
-
 	Dlg->Process();
-
 	const auto ExitCode = Dlg->GetExitCode();
-	if(ExitCode == dlg_button_action || ExitCode == dlg_button_all)
+	if (ExitCode == dlg_button_action || ExitCode == dlg_button_all)
 	{
 		Result = ExitCode == dlg_button_action ? 1 : 2;
 		SearchStr = ReplaceDlg[dlg_edit_search].strData;
@@ -242,23 +217,21 @@ int GetSearchReplaceString(
 			ReplaceDlg[dlg_checkbox_case].Selected == BSTATE_CHECKED? search_case_fold::exact :
 			ReplaceDlg[dlg_checkbox_case].Selected == BSTATE_UNCHECKED? search_case_fold::icase :
 			search_case_fold::fuzzy;
-		WholeWords=ReplaceDlg[dlg_checkbox_words].Selected == BSTATE_CHECKED;
-		Reverse=ReplaceDlg[dlg_checkbox_reverse].Selected == BSTATE_CHECKED;
-		Regexp=ReplaceDlg[dlg_checkbox_regex].Selected == BSTATE_CHECKED;
-		PreserveStyle=ReplaceDlg[dlg_checkbox_style].Selected == BSTATE_CHECKED;
+		WholeWords = ReplaceDlg[dlg_checkbox_words].Selected == BSTATE_CHECKED;
+		Reverse = ReplaceDlg[dlg_checkbox_reverse].Selected == BSTATE_CHECKED;
+		Regexp = ReplaceDlg[dlg_checkbox_regex].Selected == BSTATE_CHECKED;
+		PreserveStyle = ReplaceDlg[dlg_checkbox_style].Selected == BSTATE_CHECKED;
 	}
-
 	if (pCaseFold)
 		*pCaseFold = CaseFold;
 	if (pWholeWords)
-		*pWholeWords=WholeWords;
+		*pWholeWords = WholeWords;
 	if (pReverse)
-		*pReverse=Reverse;
+		*pReverse = Reverse;
 	if (pRegexp)
-		*pRegexp=Regexp;
+		*pRegexp = Regexp;
 	if (pPreserveStyle)
-		*pPreserveStyle=PreserveStyle;
-
+		*pPreserveStyle = PreserveStyle;
 	return Result;
 }
 

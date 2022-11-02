@@ -2018,7 +2018,7 @@ enum FAR_REGEXP_CONTROL_COMMANDS
 
 struct RegExpMatch
 {
-	intptr_t start,end;
+	intptr_t start, end;
 };
 
 struct RegExpSearch

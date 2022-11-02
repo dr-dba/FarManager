@@ -141,13 +141,11 @@ static void fold(string_view const From, string& To, DWORD const Flags)
 			To.resize(Result);
 			return;
 		}
-
 		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
 		{
 			resize_exp_noshrink(To);
 			continue;
 		}
-
 		To = From;
 		return;
 	}
@@ -214,7 +212,6 @@ size_t find_icase(string_view const Str, string_view const What, size_t Pos)
 {
 	if (Pos >= Str.size())
 		return Str.npos;
-
 	const auto It = std::search(Str.cbegin() + Pos, Str.cend(), ALL_CONST_RANGE(What), string_comparer_icase{});
 	return It == Str.cend()? Str.npos : It - Str.cbegin();
 }
@@ -223,7 +220,6 @@ size_t find_icase(string_view const Str, wchar_t const What, size_t Pos)
 {
 	if (Pos >= Str.size())
 		return Str.npos;
-
 	const auto It = std::find_if(Str.cbegin() + Pos, Str.cend(), [&](wchar_t const Char) { return string_comparer_icase{}(What, Char); });
 	return It == Str.cend() ? Str.npos : It - Str.cbegin();
 }
@@ -255,15 +251,15 @@ std::optional<std::pair<size_t, size_t>> exact_searcher::find_in(string_view con
 		const auto Offset = Haystack.crend() - ReverseIterator;
 		if (!Offset)
 			return {};
-
 		return { { Offset - m_Needle.size(), m_Needle.size() } };
 	}
-
-	const auto Iterator = std::search(ALL_CONST_RANGE(Haystack), m_Searcher);
-	if (Iterator == Haystack.cend())
-		return {};
-
-	return { { Iterator - Haystack.cbegin(), m_Needle.size() } };
+	// is direct:
+	{
+		const auto Iterator = std::search(ALL_CONST_RANGE(Haystack), m_Searcher);
+		if (Iterator == Haystack.cend())
+			return { };
+		return { { Iterator - Haystack.cbegin(), m_Needle.size() } };
+	}
 }
 
 icase_searcher::icase_searcher(string_view const Needle, bool const CanReverse):
@@ -276,7 +272,7 @@ std::optional<std::pair<size_t, size_t>> icase_searcher::find_in(string_view con
 	// Reuse capacity
 	m_HayStack = Haystack;
 	inplace::upper(m_HayStack);
-	return m_Searcher.find_in(m_HayStack, Reverse);
+ 	return m_Searcher.find_in(m_HayStack, Reverse);
 }
 
 static void normalize_for_search(string_view const Str, string& Result, string& Intermediate, std::vector<WORD>& Types)
@@ -286,28 +282,21 @@ static void normalize_for_search(string_view const Str, string& Result, string& 
 		Result.clear();
 		return;
 	}
-
 	// This retarded function can't do both in one go :(
 	resize_exp_noshrink(Intermediate, Str.size());
 	fold(Str, Intermediate, MAP_EXPAND_LIGATURES);
-
 	resize_exp_noshrink(Result, Intermediate.size());
-
 	// For some insane reason trailing diacritics are not decomposed in old OS
 	Intermediate.push_back(0);
-
 	fold(Intermediate, Result, MAP_COMPOSITE | MAP_FOLDCZONE | MAP_FOLDDIGITS);
-
 	if (!Result.back())
 		Result.pop_back();
-
 	resize_exp_noshrink(Types, Result.size());
 	if (!GetStringTypeW(CT_CTYPE3, Result.data(), static_cast<int>(Result.size()), Types.data()))
 	{
 		Result = Str;
 		return;
 	}
-
 	zip const Zip(Result, Types);
 	const auto End = std::remove_if(ALL_RANGE(Zip), [](const auto& i)
 	{
@@ -315,7 +304,6 @@ static void normalize_for_search(string_view const Str, string& Result, string& 
 			!flags::check_any(std::get<1>(i), C3_ALPHA | C3_LEXICAL) &&
 			flags::check_any(std::get<1>(i), C3_NONSPACING | C3_DIACRITIC | C3_VOWELMARK);
 	});
-
 	Result.resize(End - Zip.begin());
 }
 
@@ -335,24 +323,19 @@ std::optional<std::pair<size_t, size_t>> fuzzy_searcher::find_in(string_view con
 {
 	const auto Result = find_in_uncorrected(Haystack, Reverse);
 	if (!Result)
-		return {};
-
+		return { };
 	// We have the position in the transformed haystack, but this is not what we want.
 	size_t TransformedSize{};
 	std::optional<size_t> CorrectedOffset;
-
 	for (const auto& i: irange(Haystack.size()))
 	{
 		normalize_for_search(Haystack.substr(i, 1), m_HayStack, m_Intermediate, m_Types);
 		TransformedSize += m_HayStack.size();
-
 		if (!CorrectedOffset && TransformedSize > Result->first)
 			CorrectedOffset = i;
-
 		if (CorrectedOffset && TransformedSize >= Result->first + Result->second)
 			return { { *CorrectedOffset, i - *CorrectedOffset + 1 } };
 	}
-
 	return Result;
 }
 
@@ -362,7 +345,6 @@ std::optional<std::pair<size_t, size_t>> fuzzy_searcher::find_in_uncorrected(str
 	return m_Searcher.find_in(m_HayStack, Reverse);
 }
 
-
 #ifdef ENABLE_TESTS
 
 #include "testing.hpp"
@@ -370,33 +352,25 @@ std::optional<std::pair<size_t, size_t>> fuzzy_searcher::find_in_uncorrected(str
 TEST_CASE("string.spaces")
 {
 	for (const auto& i: GetSpaces())
-	{
 		REQUIRE(std::iswblank(i));
-	}
 }
 
 TEST_CASE("string.eols")
 {
 	for (const auto& i: GetEols())
-	{
 		REQUIRE(IsEol(i));
-	}
 }
 
 TEST_CASE("string.traits")
 {
 	REQUIRE(is_alpha(L'A'));
 	REQUIRE(!is_alpha(L'1'));
-
 	REQUIRE(is_alphanumeric(L'0'));
 	REQUIRE(!is_alphanumeric(L'?'));
-
 	REQUIRE(is_upper(L'A'));
 	REQUIRE(!is_upper(L'a'));
-
 	REQUIRE(is_lower(L'a'));
 	REQUIRE(!is_lower(L'A'));
-
 	REQUIRE(!is_upper(L'1'));
 	REQUIRE(!is_lower(L'1'));
 }
@@ -405,13 +379,10 @@ TEST_CASE("string.case")
 {
 	REQUIRE(upper(L'a') == L'A');
 	REQUIRE(upper(L'A') == L'A');
-
 	REQUIRE(upper(L"foo"sv) == L"FOO"sv);
 	REQUIRE(upper(L"FOO"sv) == L"FOO"sv);
-
 	REQUIRE(lower(L'A') == L'a');
 	REQUIRE(lower(L'a') == L'a');
-
 	REQUIRE(lower(L"FOO"sv) == L"foo"sv);
 	REQUIRE(lower(L"foo"sv) == L"foo"sv);
 }
@@ -419,14 +390,9 @@ TEST_CASE("string.case")
 TEST_CASE("string.utils")
 {
 	for (const auto& i: GetSpaces())
-	{
 		REQUIRE(std::isblank(i));
-	}
-
 	for (const auto& i: GetEols())
-	{
 		REQUIRE(IsEol(i));
-	}
 }
 
 TEST_CASE("string.utils.hash_icase")
@@ -439,13 +405,13 @@ TEST_CASE("string.utils.hash_icase")
 }
 
 #ifdef __cpp_lib_generic_unordered_lookup
+
 TEST_CASE("string_utils.generic_lookup_icase")
 {
 	const unordered_string_map_icase<int> Map
 	{
 		{ L"ABC"s, 123 },
 	};
-
 	REQUIRE(Map.find(L"AbC"sv) != Map.cend());
 	REQUIRE(Map.find(L"aBc") != Map.cend());
 }
@@ -460,6 +426,7 @@ TEST_CASE("string.utils.icase")
 		string_view Str, Token;
 		size_t Pos;
 	}
+
 	Tests[]
 	{
 		{ {},                    {},                npos, },
@@ -472,7 +439,6 @@ TEST_CASE("string.utils.icase")
 		{ L"foobar"sv,           L"OoB"sv,          1,    },
 		{ L"foobar"sv,           L"BaR"sv,          3,    },
 	};
-
 	for (const auto& i: Tests)
 	{
 		REQUIRE(find_icase(i.Str, i.Token) == i.Pos);
@@ -495,13 +461,11 @@ TEMPLATE_TEST_CASE("exact_searcher", "", exact_searcher, fuzzy_searcher)
 		{ L"la"sv,      L"lalala"sv,       L"kekeke"sv, {{ 0, 2 }},  {{ 4, 2 }}, },
 		{ L"ll"sv,      L"Hullaballoo"sv,  L"lol"sv,    {{ 2, 2 }},  {{ 7, 2 }}, },
 	};
-
 	for (const auto& i: Tests)
 	{
 		exact_searcher const Searcher(i.Needle);
 		REQUIRE(Searcher.find_in(i.GoodHaystack, false) == i.FirstPos);
 		REQUIRE(Searcher.find_in(i.GoodHaystack, true) == i.LastPos);
-
 		REQUIRE(!Searcher.find_in(i.BadHaystack, false));
 		REQUIRE(!Searcher.find_in(i.BadHaystack, true));
 	}
@@ -526,10 +490,8 @@ TEST_CASE("normalize_for_search")
 		{ L"ßß"sv,           L"ssss"sv,        },
 		{ L"ざじず"sv,       L"さしす"sv,      },
 	};
-
 	string Normalized, Intermediate;
 	std::vector<WORD> Types;
-
 	for (const auto& i: Tests)
 	{
 		normalize_for_search(i.Src, Normalized, Intermediate, Types);

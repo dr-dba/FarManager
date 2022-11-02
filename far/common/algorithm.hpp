@@ -105,13 +105,11 @@ template<typename container, typename element, REQUIRES(is_range_v<container>)>
 constexpr bool contains(const container& Container, const element& Element)
 {
 	if constexpr (detail::has_find<container>)
-	{
-		// associative containers
+	{	// associative containers
 		return Container.find(Element) != Container.cend();
 	}
 	else
-	{
-		// everything else
+	{	// everything else
 		const auto End = std::cend(Container);
 		return std::find(std::cbegin(Container), End, Element) != End;
 	}
@@ -127,7 +125,6 @@ template<typename arg, typename... args>
 constexpr bool any_of(arg const& Arg, args const... Args)
 {
 	static_assert(sizeof...(Args) > 0);
-
 	return (... || (Arg == Args));
 }
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Catch v2.13.7
  *  Generated: 2021-07-28 20:29:27.753164
  *  ----------------------------------------------------------
@@ -603,49 +603,56 @@ namespace Catch {
     /// it may not be null terminated.
     class StringRef {
     public:
-        using size_type = std::size_t;
+
+		using size_type = std::size_t;
         using const_iterator = const char*;
 
     private:
-        static constexpr char const* const s_empty = "";
+
+		static constexpr char const* const s_empty = "";
 
         char const* m_start = s_empty;
         size_type m_size = 0;
 
     public: // construction
-        constexpr StringRef() noexcept = default;
 
-        StringRef( char const* rawChars ) noexcept;
+		constexpr StringRef() noexcept = default;
 
-        constexpr StringRef( char const* rawChars, size_type size ) noexcept
-        :   m_start( rawChars ),
-            m_size( size )
-        {}
+        StringRef(char const* rawChars) noexcept;
 
-        StringRef( std::string const& stdString ) noexcept
-        :   m_start( stdString.c_str() ),
-            m_size( stdString.size() )
-        {}
+		constexpr StringRef(char const* rawChars, size_type size) noexcept
+			: m_start(rawChars)
+			, m_size(size)
+		{}
+
+		StringRef(std::string const& stdString) noexcept
+			: m_start(stdString.c_str())
+			, m_size(stdString.size())
+		{};
 
         explicit operator std::string() const {
             return std::string(m_start, m_size);
         }
 
     public: // operators
-        auto operator == ( StringRef const& other ) const noexcept -> bool;
-        auto operator != (StringRef const& other) const noexcept -> bool {
-            return !(*this == other);
+
+		auto operator == ( StringRef const& other ) const noexcept -> bool;
+
+		auto operator != (StringRef const& other) const noexcept -> bool {
+			return !(*this == other);
         }
 
         auto operator[] ( size_type index ) const noexcept -> char {
-            assert(index < m_size);
-            return m_start[index];
+			assert(index < m_size);
+			return m_start[index];
         }
 
     public: // named queries
+
         constexpr auto empty() const noexcept -> bool {
             return m_size == 0;
         }
+
         constexpr auto size() const noexcept -> size_type {
             return m_size;
         }

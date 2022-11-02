@@ -85,29 +85,20 @@ struct ColorItem
 	// Keeping a copy of UUID in each of thousands of color items is a giant waste of memory,
 	// so UUIDs are stored in a separate set and here is only a pointer.
 	const UUID* Owner;
-
 	// Usually we have only 5-10 unique colors.
 	// Keeping a copy of FarColor in each of thousands of color items is a giant waste of memory,
 	// so FarColors are stored in a separate set and here is only a pointer.
 	const FarColor* Color;
-
 	unsigned int Priority;
 	int StartPos;
 	int EndPos;
-
 	// it's an uint64 in plugin API, but only 0x1 and 0x2 are used now, so save some memory here.
 	unsigned int Flags;
-
 	const UUID& GetOwner() const { return *Owner; }
 	void SetOwner(const UUID& Value);
-
 	const FarColor& GetColor() const { return *Color; }
 	void SetColor(const FarColor& Value);
-
-	bool operator < (const ColorItem& rhs) const
-	{
-		return Priority < rhs.Priority;
-	}
+	bool operator < (const ColorItem& rhs) const { return Priority < rhs.Priority; }
 };
 
 class Editor;
@@ -121,50 +112,41 @@ class Edit: public SimpleScreenObject
 	};
 
 public:
+
 	NONCOPYABLE(Edit);
 	MOVE_CONSTRUCTIBLE(Edit);
-
 	using delete_color_condition = function_ref<bool(const ColorItem&)>;
-
 	explicit Edit(window_ptr Owner);
-
 	bool ProcessKey(const Manager::Key& Key) override;
 	bool ProcessMouse(const MOUSE_EVENT_RECORD *MouseEvent) override;
 	long long VMProcess(int OpCode, void *vParam = nullptr, long long iParam = 0) override;
 	virtual void Changed(bool DelBlock = false) { }
 	// Получение максимального значения строки для потребностей Dialod API
-	virtual int GetMaxLength() const {return -1;}
-
+	virtual int GetMaxLength() const { return -1; }
 	void FastShow(const ShowInfo* Info = nullptr);
 	void SetDelRemovesBlocks(bool Mode) {m_Flags.Change(FEDITLINE_DELREMOVESBLOCKS,Mode);}
 	int GetDelRemovesBlocks() const {return m_Flags.Check(FEDITLINE_DELREMOVESBLOCKS); }
 	void SetPersistentBlocks(bool Mode) {m_Flags.Change(FEDITLINE_PERSISTENTBLOCKS,Mode);}
 	int GetPersistentBlocks() const {return m_Flags.Check(FEDITLINE_PERSISTENTBLOCKS); }
-	void SetShowWhiteSpace(int Mode) {m_Flags.Change(FEDITLINE_SHOWWHITESPACE, Mode!=0); m_Flags.Change(FEDITLINE_SHOWLINEBREAK, Mode == 1);}
-
+	void SetShowWhiteSpace(int Mode) { m_Flags.Change(FEDITLINE_SHOWWHITESPACE, Mode != 0); m_Flags.Change(FEDITLINE_SHOWLINEBREAK, Mode == 1); }
 	const string& GetString() const { return m_Str; }
-
 	void SetHiString(string_view Str);
-
 	void SetEOL(eol Eol);
 	eol GetEOL() const;
-
 	string GetSelString() const;
 	int GetLength() const;
-
 	void SetString(string_view Str, bool KeepSelection = false);
 	void InsertString(string_view Str);
 	void AppendString(string_view Str);
 	void ClearString() { SetString({}); }
-
-	void SetCurPos(int NewPos) {m_CurPos=NewPos; SetPrevCurPos(NewPos);}
+	void SetCurPos(int NewPos) { m_CurPos = NewPos; SetPrevCurPos(NewPos); }
 	void AdjustMarkBlock();
 	void AdjustPersistentMark();
 	int GetCurPos() const { return m_CurPos; }
 	int GetTabCurPos() const;
 	void SetTabCurPos(int NewPos);
 	int GetLeftPos() const {return LeftPos;}
-	void SetLeftPos(int NewPos) {LeftPos=NewPos;}
+	void SetLeftPos(int NewPos) { LeftPos = NewPos; }
 	void SetPasswordMode(bool Mode) {m_Flags.Change(FEDITLINE_PASSWORDMODE,Mode);}
 	void SetOvertypeMode(bool Mode) {m_Flags.Change(FEDITLINE_OVERTYPE, Mode);}
 	bool GetOvertypeMode() const {return m_Flags.Check(FEDITLINE_OVERTYPE);}
@@ -174,7 +156,7 @@ public:
 	void RemoveSelection();
 	void AddSelect(int Start,int End);
 	void GetSelection(intptr_t &Start,intptr_t &End) const;
-	bool IsSelection() const {return !(m_SelStart==-1 && !m_SelEnd); }
+	bool IsSelection() const { return !(m_SelStart == -1 && !m_SelEnd); }
 	void GetRealSelection(intptr_t &Start,intptr_t &End) const;
 	void SetEditBeyondEnd(bool Mode) {m_Flags.Change(FEDITLINE_EDITBEYONDEND, Mode);}
 	void SetEditorMode(bool Mode) {m_Flags.Change(FEDITLINE_EDITORMODE, Mode);}
@@ -201,13 +183,10 @@ public:
 	static bool is_clear_selection_key(unsigned Key);
 
 protected:
-	virtual void RefreshStrByMask(int InitMode=FALSE) {}
-
+	virtual void RefreshStrByMask(int InitMode = FALSE) {}
 	[[nodiscard]]
 	auto CallbackSuppressor() { return make_raii_wrapper<&Edit::SuppressCallback, &Edit::RevertCallback>(this); }
-
 	void DeleteBlock();
-
 	static int CheckCharMask(wchar_t Chr);
 	static int MaskDefaultChar(wchar_t Mask);
 
@@ -232,7 +211,6 @@ private:
 	virtual void SetMacroSelectionStart(int Value);
 	virtual int GetLineCursorPos() const;
 	virtual void SetLineCursorPos(int Value);
-
 	bool InsertKey(wchar_t Key);
 	bool RecurseProcessKey(int Key);
 	void ApplyColor(int XPos, int FocusedLeftPos, positions_cache& RealToVisual);
@@ -242,9 +220,7 @@ private:
 	bool ProcessInsPath(unsigned int Key,int PrevSelStart = -1, int PrevSelEnd = 0);
 	void FixLeftPos(int TabCurPos = -1);	
 	void SetRightCoord(int Value) { SetPosition({ m_Where.left, m_Where.top, Value, m_Where.bottom }); }
-//	void SetWindRect(rectangle new_where) { SetPosition(new_where); }
 	Editor* GetEditor() const;
-
 	bool is_valid_surrogate_pair_at(size_t Position) const;
 
 protected:

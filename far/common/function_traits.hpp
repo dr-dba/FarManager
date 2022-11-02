@@ -42,9 +42,7 @@ namespace detail
 	struct function_traits_impl
 	{
 		using result_type = result;
-
 		static constexpr auto arity = sizeof...(args);
-
 		template<size_t i>
 		using arg = std::tuple_element_t<i, std::tuple<args...>>;
 	};
@@ -64,7 +62,6 @@ struct function_traits<result(object::*)(args...)>: ::detail::function_traits_im
 
 template<typename result, typename object, typename... args>
 struct function_traits<result(object::*)(args...) const>: ::detail::function_traits_impl<result, object, args...> {};
-
 
 #define FN_RETURN_TYPE(...) std::decay_t<function_traits<decltype(&__VA_ARGS__)>::result_type>
 

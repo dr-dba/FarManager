@@ -590,11 +590,8 @@ bool Edit::ProcessKey(const Manager::Key& Key)
 	}
 	int PrevSelStart=-1,PrevSelEnd = 0;
 	if (!m_Flags.Check(FEDITLINE_DROPDOWNBOX) && any_of(LocalKey, KEY_CTRLL, KEY_RCTRLL))
-	{
 		m_Flags.Invert(FEDITLINE_READONLY);
-	}
-	if (
-		((m_Flags.Check(FEDITLINE_DELREMOVESBLOCKS) && any_of(LocalKey, KEY_BS, KEY_DEL, KEY_NUMDEL)) || any_of(LocalKey, KEY_CTRLD, KEY_RCTRLD)) &&
+	if(((m_Flags.Check(FEDITLINE_DELREMOVESBLOCKS) && any_of(LocalKey, KEY_BS, KEY_DEL, KEY_NUMDEL)) || any_of(LocalKey, KEY_CTRLD, KEY_RCTRLD)) &&
 		!m_Flags.Check(FEDITLINE_EDITORMODE) && m_SelStart != -1 && m_SelStart < m_SelEnd
 	)
 	{
@@ -671,230 +668,227 @@ bool Edit::ProcessKey(const Manager::Key& Key)
 			}
 			break;
 		case KEY_SHIFTLEFT: case KEY_SHIFTNUMPAD4:
-		{
-			if (m_CurPos>0)
+			{
+				if (m_CurPos > 0)
+				{
+					AdjustPersistentMark();
+					const auto SavedCurPos = m_CurPos;
+					RecurseProcessKey(KEY_LEFT);
+					if (!m_Flags.Check(FEDITLINE_MARKINGBLOCK))
+					{
+						RemoveSelection();
+						m_Flags.Set(FEDITLINE_MARKINGBLOCK);
+					}
+					if (m_SelStart != -1
+						&& m_SelStart <= m_CurPos)
+					{
+						Select(m_SelStart, m_CurPos);
+					}
+					else
+					{
+						int EndPos = SavedCurPos;
+						int NewStartPos = m_CurPos;
+						if (EndPos > m_Str.size())
+							EndPos = m_Str.size();
+						if (NewStartPos > m_Str.size())
+							NewStartPos = m_Str.size();
+						AddSelect(NewStartPos, EndPos);
+					}
+					Show();
+				}
+				return true;
+			};
+		case KEY_SHIFTRIGHT: case KEY_SHIFTNUMPAD6:
 			{
 				AdjustPersistentMark();
 				const auto SavedCurPos = m_CurPos;
-				RecurseProcessKey(KEY_LEFT);
+				RecurseProcessKey(KEY_RIGHT);
 				if (!m_Flags.Check(FEDITLINE_MARKINGBLOCK))
 				{
 					RemoveSelection();
 					m_Flags.Set(FEDITLINE_MARKINGBLOCK);
 				}
-				if(m_SelStart != -1
-				&& m_SelStart <= m_CurPos)
+				if ((m_SelStart != -1 && m_SelEnd == -1)
+					|| (SavedCurPos != m_CurPos && m_SelEnd > SavedCurPos))
 				{
-					Select(m_SelStart, m_CurPos);
+					if (m_CurPos == m_SelEnd)
+						RemoveSelection();
+					else
+						Select(m_CurPos, m_SelEnd);
 				}
 				else
 				{
-					int EndPos = SavedCurPos;
-					int NewStartPos = m_CurPos;
-					if (EndPos > m_Str.size())
-						EndPos = m_Str.size();
-					if (NewStartPos>m_Str.size())
-						NewStartPos = m_Str.size();
-					AddSelect(NewStartPos, EndPos);
+					AddSelect(SavedCurPos, m_CurPos == SavedCurPos && m_CurPos < m_Str.size()? m_Str.size() : m_CurPos);
 				}
 				Show();
-			}
-			return true;
-		}
-		case KEY_SHIFTRIGHT: case KEY_SHIFTNUMPAD6:
-		{
-			AdjustPersistentMark();
-			const auto SavedCurPos = m_CurPos;
-			RecurseProcessKey(KEY_RIGHT);
-			if (!m_Flags.Check(FEDITLINE_MARKINGBLOCK))
-			{
-				RemoveSelection();
-				m_Flags.Set(FEDITLINE_MARKINGBLOCK);
-			}
-			if ((m_SelStart != -1 && m_SelEnd == -1)
-			|| (SavedCurPos != m_CurPos && m_SelEnd > SavedCurPos))
-			{
-				if (m_CurPos == m_SelEnd)
-					RemoveSelection();
-				else
-					Select(m_CurPos, m_SelEnd);
-			}
-			else
-			{
-				AddSelect(SavedCurPos, m_CurPos == SavedCurPos && m_CurPos < m_Str.size()? m_Str.size() : m_CurPos);
-			}
-			Show();
-			return true;
-		}
+				return true;
+			};
 		case KEY_CTRLSHIFTLEFT:  case KEY_CTRLSHIFTNUMPAD4:
 		case KEY_RCTRLSHIFTLEFT: case KEY_RCTRLSHIFTNUMPAD4:
-		{
-			if (m_CurPos>m_Str.size())
 			{
-				SetPrevCurPos(m_CurPos);
-				m_CurPos = m_Str.size();
-			}
-			if (m_CurPos>0)
-				RecurseProcessKey(KEY_SHIFTLEFT);
-			while (m_CurPos > 0
-				&& !(!IsWordDiv(WordDiv(), m_Str[m_CurPos])
-				&&	IsWordDiv(	WordDiv(), m_Str[m_CurPos-1])
-				&& !std::iswblank(m_Str[m_CurPos])))
-			{
-				if (!std::iswblank(m_Str[m_CurPos])
-				&& (std::iswblank(m_Str[m_CurPos-1])
-				|| IsWordDiv(WordDiv(), m_Str[m_CurPos-1])))
-					break;
-				RecurseProcessKey(KEY_SHIFTLEFT);
-			}
-			Show();
-			return true;
-		}
+				if (m_CurPos > m_Str.size())
+				{
+					SetPrevCurPos(m_CurPos);
+					m_CurPos = m_Str.size();
+				}
+				if (m_CurPos > 0)
+					RecurseProcessKey(KEY_SHIFTLEFT);
+				while (m_CurPos > 0
+					&& !(!IsWordDiv(WordDiv(), m_Str[m_CurPos])
+					&& IsWordDiv(WordDiv(), m_Str[m_CurPos - 1])
+					&& !std::iswblank(m_Str[m_CurPos])))
+				{
+					if (!std::iswblank(m_Str[m_CurPos])
+						&& (std::iswblank(m_Str[m_CurPos - 1])
+						|| IsWordDiv(WordDiv(), m_Str[m_CurPos - 1])))
+						break;
+					RecurseProcessKey(KEY_SHIFTLEFT);
+				}
+				Show();
+				return true;
+			};
 		case KEY_CTRLSHIFTRIGHT:  case KEY_CTRLSHIFTNUMPAD6:
 		case KEY_RCTRLSHIFTRIGHT: case KEY_RCTRLSHIFTNUMPAD6:
-		{
-			if (m_CurPos >= m_Str.size())
-				return false;
-			RecurseProcessKey(KEY_SHIFTRIGHT);
-			while (m_CurPos < m_Str.size()
-				&& !(IsWordDiv(WordDiv(), m_Str[m_CurPos])
-				&& !IsWordDiv(WordDiv(), m_Str[m_CurPos-1])))
 			{
-				if (!std::iswblank(m_Str[m_CurPos]) && (std::iswblank(m_Str[m_CurPos-1]) || IsWordDiv(WordDiv(), m_Str[m_CurPos-1])))
-					break;
+				if (m_CurPos >= m_Str.size())
+					return false;
 				RecurseProcessKey(KEY_SHIFTRIGHT);
-				if (GetMaxLength()!=-1 && m_CurPos == GetMaxLength()-1)
-					break;
-			}
-			Show();
-			return true;
-		}
-		case KEY_SHIFTHOME:  case KEY_SHIFTNUMPAD7:
-		{
-			while (m_CurPos>0)
-				RecurseProcessKey(KEY_SHIFTLEFT);
-			Show();
-			return true;
-		}
-		case KEY_SHIFTEND:  case KEY_SHIFTNUMPAD1:
-		{
-			int Len;
-			if (!Mask.empty())
-				Len = static_cast<int>(trim_right(string_view(m_Str)).size());
-			else
-				Len = m_Str.size();
-			int LastCurPos = m_CurPos;
-			while (m_CurPos < Len /* StrSize */)
-			{
-				RecurseProcessKey(KEY_SHIFTRIGHT);
-				if (LastCurPos == m_CurPos)
-					break;
-				LastCurPos = m_CurPos;
-			}
-			Show();
-			return true;
-		}
-		case KEY_BS:
-		{
-			if (m_CurPos<=0)
-				return false;
-			SetPrevCurPos(m_CurPos);
-			do
-			{
-				const auto Decrement = m_CurPos > 1 && m_Str.size() >= m_CurPos && is_valid_surrogate_pair(string_view(m_Str).substr(m_CurPos - 2))? 2 : 1;
-				m_CurPos -= Decrement;
-			}
-			while (!Mask.empty() && m_CurPos > 0 && !CheckCharMask(Mask[m_CurPos]));
-			if (m_CurPos<=LeftPos)
-			{
-				LeftPos-=15;
-				if (LeftPos<0)
-					LeftPos = 0;
-			}
-			if (!RecurseProcessKey(KEY_DEL))
+				while (m_CurPos < m_Str.size()
+					&& !(IsWordDiv(WordDiv(), m_Str[m_CurPos])
+					&& !IsWordDiv(WordDiv(), m_Str[m_CurPos - 1])))
+				{
+					if (!std::iswblank(m_Str[m_CurPos]) && (std::iswblank(m_Str[m_CurPos - 1]) || IsWordDiv(WordDiv(), m_Str[m_CurPos - 1])))
+						break;
+					RecurseProcessKey(KEY_SHIFTRIGHT);
+					if (GetMaxLength() != -1 && m_CurPos == GetMaxLength() - 1)
+						break;
+				}
 				Show();
-			return true;
-		}
+				return true;
+			};
+		case KEY_SHIFTHOME:  case KEY_SHIFTNUMPAD7:
+			{
+				while (m_CurPos > 0)
+					RecurseProcessKey(KEY_SHIFTLEFT);
+				Show();
+				return true;
+			};
+		case KEY_SHIFTEND:  case KEY_SHIFTNUMPAD1:
+			{
+				int Len;
+				if (!Mask.empty())
+					Len = static_cast<int>(trim_right(string_view(m_Str)).size());
+				else
+					Len = m_Str.size();
+				int LastCurPos = m_CurPos;
+				while (m_CurPos < Len /* StrSize */)
+				{
+					RecurseProcessKey(KEY_SHIFTRIGHT);
+					if (LastCurPos == m_CurPos)
+						break;
+					LastCurPos = m_CurPos;
+				}
+				Show();
+				return true;
+			};
+		case KEY_BS:
+			{
+				if (m_CurPos <= 0)
+					return false;
+				SetPrevCurPos(m_CurPos);
+				do
+				{
+					const auto Decrement = m_CurPos > 1 && m_Str.size() >= m_CurPos && is_valid_surrogate_pair(string_view(m_Str).substr(m_CurPos - 2))? 2 : 1;
+					m_CurPos -= Decrement;
+				}
+				while (!Mask.empty() && m_CurPos > 0 && !CheckCharMask(Mask[m_CurPos]));
+				if (m_CurPos <= LeftPos)
+				{
+					LeftPos -= 15;
+					if (LeftPos < 0)
+						LeftPos = 0;
+				}
+				if (!RecurseProcessKey(KEY_DEL))
+					Show();
+				return true;
+			};
 		case KEY_CTRLSHIFTBS:
 		case KEY_RCTRLSHIFTBS:
-		{
 			{
-				SCOPED_ACTION(auto)(CallbackSuppressor());
-				// BUGBUG
-				for (int i = m_CurPos; i >= 0; i--)
 				{
-					RecurseProcessKey(KEY_BS);
+					SCOPED_ACTION(auto)(CallbackSuppressor());
+					// BUGBUG
+					for (int i = m_CurPos; i >= 0; i--)
+						RecurseProcessKey(KEY_BS);
 				}
-			}
-			Changed(true);
-			Show();
-			return true;
-		}
+				Changed(true);
+				Show();
+				return true;
+			};
 		case KEY_CTRLBS:
 		case KEY_RCTRLBS:
-		{
-			if (m_CurPos > m_Str.size())
 			{
-				SetPrevCurPos(m_CurPos);
-				m_CurPos = m_Str.size();
-			}
-			{
-				SCOPED_ACTION(auto)(CallbackSuppressor());
-				// BUGBUG
-				for (;;)
+				if (m_CurPos > m_Str.size())
 				{
-					int StopDelete = FALSE;
-					if (m_CurPos > 1 && std::iswblank(m_Str[m_CurPos - 1]) != std::iswblank(m_Str[m_CurPos - 2]))
-						StopDelete = TRUE;
-					RecurseProcessKey(KEY_BS);
-					if (!m_CurPos || StopDelete)
-						break;
-					if (IsWordDiv(WordDiv(), m_Str[m_CurPos - 1]))
-						break;
+					SetPrevCurPos(m_CurPos);
+					m_CurPos = m_Str.size();
 				}
-			}
-			Changed(true);
-			Show();
-			return true;
-		}
+				{
+					SCOPED_ACTION(auto)(CallbackSuppressor());
+					// BUGBUG
+					for (;;)
+					{
+						int StopDelete = FALSE;
+						if (m_CurPos > 1 && std::iswblank(m_Str[m_CurPos - 1]) != std::iswblank(m_Str[m_CurPos - 2]))
+							StopDelete = TRUE;
+						RecurseProcessKey(KEY_BS);
+						if (!m_CurPos || StopDelete)
+							break;
+						if (IsWordDiv(WordDiv(), m_Str[m_CurPos - 1]))
+							break;
+					}
+				}
+				Changed(true);
+				Show();
+				return true;
+			};
 		case KEY_CTRLQ:
 		case KEY_RCTRLQ:
-		{
-			if (!m_Flags.Check(FEDITLINE_PERSISTENTBLOCKS)
-			&& (m_SelStart != -1 || m_Flags.Check(FEDITLINE_CLEARFLAG)))
-				RecurseProcessKey(KEY_DEL);
-			ProcessCtrlQ();
-			Show();
-			return true;
-		}
-		case KEY_OP_SELWORD:
-		{
-			const auto OldCurPos = m_CurPos;
-			PrevSelStart = m_SelStart;
-			PrevSelEnd = m_SelEnd;
-#if defined(MOUSEKEY)
-
-			if (m_CurPos >= m_SelStart && m_CurPos <= m_SelEnd)
-			{ // выделяем ВСЮ строку при повторном двойном клике
-				Select(0,m_StrSize);
-			}
-			else
-#endif
 			{
-				size_t SBegin, SEnd;
-				if (FindWordInString(m_Str, m_CurPos, SBegin, SEnd, WordDiv()))
-					Select(static_cast<int>(SBegin), static_cast<int>(SEnd));
-			}
-			m_CurPos = OldCurPos; // возвращаем обратно
-			Show();
-			return true;
-		}
+				if (!m_Flags.Check(FEDITLINE_PERSISTENTBLOCKS)
+					&& (m_SelStart != -1 || m_Flags.Check(FEDITLINE_CLEARFLAG)))
+					RecurseProcessKey(KEY_DEL);
+				ProcessCtrlQ();
+				Show();
+				return true;
+			};
+		case KEY_OP_SELWORD:
+			{
+				const auto OldCurPos = m_CurPos;
+				PrevSelStart = m_SelStart;
+				PrevSelEnd = m_SelEnd;
+#if defined(MOUSEKEY)
+				if (m_CurPos >= m_SelStart && m_CurPos <= m_SelEnd)
+				{ // выделяем ВСЮ строку при повторном двойном клике
+					Select(0, m_StrSize);
+				}
+				else
+#endif
+				{
+					size_t SBegin, SEnd;
+					if (FindWordInString(m_Str, m_CurPos, SBegin, SEnd, WordDiv()))
+						Select(static_cast<int>(SBegin), static_cast<int>(SEnd));
+				}
+				m_CurPos = OldCurPos; // возвращаем обратно
+				Show();
+				return true;
+			};
 		case KEY_OP_PLAINTEXT:
-		{
-			InsertString(Global->CtrlObject->Macro.GetStringToPrint());
-			Show();
-			return true;
-		}
+			{
+				InsertString(Global->CtrlObject->Macro.GetStringToPrint());
+				Show();
+				return true;
+			};
 		case KEY_CTRLT:
 		case KEY_CTRLDEL:
 		case KEY_CTRLNUMDEL:
@@ -903,328 +897,327 @@ bool Edit::ProcessKey(const Manager::Key& Key)
 		case KEY_RCTRLDEL:
 		case KEY_RCTRLNUMDEL:
 		case KEY_RCTRLDECIMAL:
-		{
-			if (m_CurPos >= m_Str.size())
-				return false;
 			{
-				SCOPED_ACTION(auto)(CallbackSuppressor());
-				if (!Mask.empty())
+				if (m_CurPos >= m_Str.size())
+					return false;
 				{
-					const auto MaskLen = static_cast<int>(Mask.size());
-					int ptr = m_CurPos;
-					while (ptr < MaskLen)
+					SCOPED_ACTION(auto)(CallbackSuppressor());
+					if (!Mask.empty())
 					{
-						ptr++;
-						if (!CheckCharMask(Mask[ptr])
-						|| (std::iswblank(m_Str[ptr])
-						&& !std::iswblank(m_Str[ptr + 1]))
-						|| (IsWordDiv(WordDiv(), m_Str[ptr])))
-							break;
+						const auto MaskLen = static_cast<int>(Mask.size());
+						int ptr = m_CurPos;
+						while (ptr < MaskLen)
+						{
+							ptr++;
+							if (!CheckCharMask(Mask[ptr])
+								|| (std::iswblank(m_Str[ptr])
+								&& !std::iswblank(m_Str[ptr + 1]))
+								|| (IsWordDiv(WordDiv(), m_Str[ptr])))
+								break;
+						}
+						// BUGBUG
+						repeat(ptr - m_CurPos, [&] { RecurseProcessKey(KEY_DEL); });
 					}
-					// BUGBUG
-					repeat(ptr - m_CurPos, [&]{ RecurseProcessKey(KEY_DEL); });
-				}
-				else
-				{
-					for (;;)
+					else
 					{
-						int StopDelete = FALSE;
-						if (m_CurPos < m_Str.size() - 1
-						&& std::iswblank(m_Str[m_CurPos])
-						&& !std::iswblank(m_Str[m_CurPos + 1]))
-							StopDelete = TRUE;
-						RecurseProcessKey(KEY_DEL);
-						if (m_CurPos >= m_Str.size() || StopDelete)
-							break;
-						if (IsWordDiv(WordDiv(), m_Str[m_CurPos]))
-							break;
+						for (;;)
+						{
+							int StopDelete = FALSE;
+							if (m_CurPos < m_Str.size() - 1
+								&& std::iswblank(m_Str[m_CurPos])
+								&& !std::iswblank(m_Str[m_CurPos + 1]))
+								StopDelete = TRUE;
+							RecurseProcessKey(KEY_DEL);
+							if (m_CurPos >= m_Str.size() || StopDelete)
+								break;
+							if (IsWordDiv(WordDiv(), m_Str[m_CurPos]))
+								break;
+						}
 					}
 				}
-			}
-			Changed(true);
-			Show();
-			return true;
-		}
+				Changed(true);
+				Show();
+				return true;
+			};
 		case KEY_CTRLY:
 		case KEY_RCTRLY:
-		{
-			if (m_Flags.Check(FEDITLINE_READONLY|FEDITLINE_DROPDOWNBOX))
+			{
+				if (m_Flags.Check(FEDITLINE_READONLY | FEDITLINE_DROPDOWNBOX))
+					return true;
+				SetPrevCurPos(m_CurPos);
+				LeftPos = m_CurPos = 0;
+				clear_and_shrink(m_Str);
+				RemoveSelection();
+				Changed();
+				Show();
 				return true;
-			SetPrevCurPos(m_CurPos);
-			LeftPos = m_CurPos = 0;
-			clear_and_shrink(m_Str);
-			RemoveSelection();
-			Changed();
-			Show();
-			return true;
-		}
+			};
 		case KEY_CTRLK:
 		case KEY_RCTRLK:
-		{
-			if (m_Flags.Check(FEDITLINE_READONLY|FEDITLINE_DROPDOWNBOX))
-				return true;
-			if (m_CurPos >= m_Str.size())
-				return false;
-			if (!m_Flags.Check(FEDITLINE_EDITBEYONDEND))
 			{
-				if (m_CurPos<m_SelEnd)
-					m_SelEnd = m_CurPos;
-				if (m_SelEnd<m_SelStart && m_SelEnd!=-1)
+				if (m_Flags.Check(FEDITLINE_READONLY | FEDITLINE_DROPDOWNBOX))
+					return true;
+				if (m_CurPos >= m_Str.size())
+					return false;
+				if (!m_Flags.Check(FEDITLINE_EDITBEYONDEND))
 				{
-					m_SelEnd = 0;
-					m_SelStart=-1;
+					if (m_CurPos < m_SelEnd)
+						m_SelEnd = m_CurPos;
+					if (m_SelEnd < m_SelStart && m_SelEnd != -1)
+					{
+						m_SelEnd = 0;
+						m_SelStart = -1;
+					}
 				}
-			}
-			m_Str.resize(m_CurPos);
-			Changed();
-			Show();
-			return true;
-		}
+				m_Str.resize(m_CurPos);
+				Changed();
+				Show();
+				return true;
+			};
 		case KEY_HOME:        case KEY_NUMPAD7:
 		case KEY_CTRLHOME:    case KEY_CTRLNUMPAD7:
 		case KEY_RCTRLHOME:   case KEY_RCTRLNUMPAD7:
-		{
-			SetPrevCurPos(m_CurPos);
-			m_CurPos = 0;
-			Show();
-			return true;
-		}
+			{
+				SetPrevCurPos(m_CurPos);
+				m_CurPos = 0;
+				Show();
+				return true;
+			};
 		case KEY_END:           case KEY_NUMPAD1:
 		case KEY_CTRLEND:       case KEY_CTRLNUMPAD1:
 		case KEY_RCTRLEND:      case KEY_RCTRLNUMPAD1:
 		case KEY_CTRLSHIFTEND:  case KEY_CTRLSHIFTNUMPAD1:
 		case KEY_RCTRLSHIFTEND: case KEY_RCTRLSHIFTNUMPAD1:
-		{
-			SetPrevCurPos(m_CurPos);
-			if (!Mask.empty())
-				m_CurPos = static_cast<int>(trim_right(string_view(m_Str)).size());
-			else
-				m_CurPos = m_Str.size();
-			Show();
-			return true;
-		}
-		case KEY_LEFT:        case KEY_NUMPAD4:        case KEY_MSWHEEL_LEFT:
-		case KEY_CTRLS:       case KEY_RCTRLS:
-		{
-			if (m_CurPos>0)
 			{
 				SetPrevCurPos(m_CurPos);
-				m_CurPos--;
-				if (m_CurPos && is_valid_surrogate_pair_at(m_CurPos - 1))
-					--m_CurPos;
+				if (!Mask.empty())
+					m_CurPos = static_cast<int>(trim_right(string_view(m_Str)).size());
+				else
+					m_CurPos = m_Str.size();
 				Show();
-			}
-			return true;
-		}
+				return true;
+			};
+		case KEY_LEFT:        case KEY_NUMPAD4:        case KEY_MSWHEEL_LEFT:
+		case KEY_CTRLS:       case KEY_RCTRLS:
+			{
+				if (m_CurPos > 0)
+				{
+					SetPrevCurPos(m_CurPos);
+					m_CurPos--;
+					if (m_CurPos && is_valid_surrogate_pair_at(m_CurPos - 1))
+						--m_CurPos;
+					Show();
+				}
+				return true;
+			};
 		case KEY_RIGHT:       case KEY_NUMPAD6:        case KEY_MSWHEEL_RIGHT:
 		case KEY_CTRLD:       case KEY_RCTRLD:
-		{
-			SetPrevCurPos(m_CurPos);
-			if (!Mask.empty())
 			{
-				const auto Len = static_cast<int>(trim_right(string_view(m_Str)).size());
-				if (Len>m_CurPos)
+				SetPrevCurPos(m_CurPos);
+				if (!Mask.empty())
+				{
+					const auto Len = static_cast<int>(trim_right(string_view(m_Str)).size());
+					if (Len > m_CurPos)
+						m_CurPos++;
+				}
+				else
 					m_CurPos++;
-			}
-			else
-				m_CurPos++;
-			if (m_CurPos && is_valid_surrogate_pair_at(m_CurPos - 1))
-				++m_CurPos;
-			Show();
-			return true;
-		}
+				if (m_CurPos && is_valid_surrogate_pair_at(m_CurPos - 1))
+					++m_CurPos;
+				Show();
+				return true;
+			};
 		case KEY_INS:
 		case KEY_NUMPAD0:
-		{
-			m_Flags.Invert(FEDITLINE_OVERTYPE);
-			Show();
-			return true;
-		}
+			{
+				m_Flags.Invert(FEDITLINE_OVERTYPE);
+				Show();
+				return true;
+			};
 		case KEY_NUMDEL:
 		case KEY_DEL:
-		{
-			if (m_Flags.Check(FEDITLINE_READONLY|FEDITLINE_DROPDOWNBOX))
-				return true;
-			if (m_CurPos >= m_Str.size())
-				return false;
-			if (m_SelStart!=-1)
 			{
-				if (m_SelEnd!=-1 && m_CurPos<m_SelEnd)
-					m_SelEnd--;
-				if (m_CurPos<m_SelStart)
-					m_SelStart--;
-				if (m_SelEnd!=-1 && m_SelEnd<=m_SelStart)
+				if (m_Flags.Check(FEDITLINE_READONLY | FEDITLINE_DROPDOWNBOX))
+					return true;
+				if (m_CurPos >= m_Str.size())
+					return false;
+				if (m_SelStart != -1)
 				{
-					m_SelStart=-1;
-					m_SelEnd = 0;
+					if (m_SelEnd != -1 && m_CurPos < m_SelEnd)
+						m_SelEnd--;
+					if (m_CurPos < m_SelStart)
+						m_SelStart--;
+					if (m_SelEnd != -1 && m_SelEnd <= m_SelStart)
+					{
+						m_SelStart = -1;
+						m_SelEnd = 0;
+					}
 				}
-			}
-			if (!Mask.empty())
-			{
-				if (Mask[m_CurPos] == EDMASK_BIN)
+				if (!Mask.empty())
 				{
-					m_Str[m_CurPos] = L'0';
+					if (Mask[m_CurPos] == EDMASK_BIN)
+					{
+						m_Str[m_CurPos] = L'0';
+					}
+					else
+					{
+						const auto MaskLen = Mask.size();
+						size_t j = m_CurPos;
+						for (const auto& i : irange(m_CurPos, MaskLen))
+						{
+							if (i + 1 < MaskLen && CheckCharMask(Mask[i + 1]))
+							{
+								while (j < MaskLen && !CheckCharMask(Mask[j]))
+									j++;
+								if (!CharInMask(m_Str[i + 1], Mask[j]))
+									break;
+								m_Str[j] = m_Str[i + 1];
+								j++;
+							}
+						}
+						m_Str[j] = L' ';
+					}
 				}
 				else
 				{
-					const auto MaskLen = Mask.size();
-					size_t j = m_CurPos;
-					for (const auto& i: irange(m_CurPos, MaskLen))
-					{
-						if (i + 1 < MaskLen && CheckCharMask(Mask[i + 1]))
-						{
-							while (j < MaskLen && !CheckCharMask(Mask[j]))
-								j++;
-							if (!CharInMask(m_Str[i + 1], Mask[j]))
-								break;
-							m_Str[j] = m_Str[i + 1];
-							j++;
-						}
-					}
-					m_Str[j] = L' ';
+					m_Str.erase(m_CurPos, is_valid_surrogate_pair(string_view(m_Str).substr(m_CurPos))? 2 : 1);
 				}
-			}
-			else
-			{
-				m_Str.erase(m_CurPos, is_valid_surrogate_pair(string_view(m_Str).substr(m_CurPos))? 2 : 1);
-			}
-			Changed(true);
-			Show();
-			return true;
-		}
+				Changed(true);
+				Show();
+				return true;
+			};
 		case KEY_CTRLLEFT:  case KEY_CTRLNUMPAD4:
 		case KEY_RCTRLLEFT: case KEY_RCTRLNUMPAD4:
-		{
-			SetPrevCurPos(m_CurPos);
-			if (m_CurPos > m_Str.size())
-				m_CurPos = m_Str.size();
-			if (m_CurPos>0)
-				m_CurPos--;
-			while (m_CurPos>0
-				&& !(!IsWordDiv(WordDiv(), m_Str[m_CurPos])
-				&& IsWordDiv(WordDiv(), m_Str[m_CurPos-1])
-				&& !std::iswblank(m_Str[m_CurPos])))
 			{
-				if (!std::iswblank(m_Str[m_CurPos]) && std::iswblank(m_Str[m_CurPos-1]))
-					break;
-				m_CurPos--;
-			}
-			Show();
-			return true;
-		}
+				SetPrevCurPos(m_CurPos);
+				if (m_CurPos > m_Str.size())
+					m_CurPos = m_Str.size();
+				if (m_CurPos > 0)
+					m_CurPos--;
+				while (m_CurPos > 0
+					&& !(!IsWordDiv(WordDiv(), m_Str[m_CurPos])
+					&& IsWordDiv(WordDiv(), m_Str[m_CurPos - 1])
+					&& !std::iswblank(m_Str[m_CurPos])))
+				{
+					if (!std::iswblank(m_Str[m_CurPos]) && std::iswblank(m_Str[m_CurPos - 1]))
+						break;
+					m_CurPos--;
+				}
+				Show();
+				return true;
+			};
 		case KEY_CTRLRIGHT:   case KEY_CTRLNUMPAD6:
 		case KEY_RCTRLRIGHT:  case KEY_RCTRLNUMPAD6:
-		{
-			if (m_CurPos >= m_Str.size())
-				return false;
-			SetPrevCurPos(m_CurPos);
-			int Len;
-			if (!Mask.empty())
 			{
-				Len = static_cast<int>(trim_right(string_view(m_Str)).size());
-				if (Len>m_CurPos)
+				if (m_CurPos >= m_Str.size())
+					return false;
+				SetPrevCurPos(m_CurPos);
+				int Len;
+				if (!Mask.empty())
+				{
+					Len = static_cast<int>(trim_right(string_view(m_Str)).size());
+					if (Len > m_CurPos)
+						m_CurPos++;
+				}
+				else
+				{
+					Len = m_Str.size();
 					m_CurPos++;
-			}
-			else
-			{
-				Len = m_Str.size();
-				m_CurPos++;
-			}
-			while (m_CurPos < Len /* StrSize */
-				&& !(IsWordDiv(WordDiv(), m_Str[m_CurPos])
-				&& !IsWordDiv(WordDiv(), m_Str[m_CurPos-1])))
-			{
-				if (!std::iswblank(m_Str[m_CurPos])
-				&& std::iswblank(m_Str[m_CurPos-1]))
-					break;
-				m_CurPos++;
-			}
-			Show();
-			return true;
-		}
+				}
+				while (m_CurPos < Len /* StrSize */
+					&& !(IsWordDiv(WordDiv(), m_Str[m_CurPos])
+					&& !IsWordDiv(WordDiv(), m_Str[m_CurPos - 1])))
+				{
+					if (!std::iswblank(m_Str[m_CurPos])
+						&& std::iswblank(m_Str[m_CurPos - 1]))
+						break;
+					m_CurPos++;
+				}
+				Show();
+				return true;
+			};
 		case KEY_SHIFTNUMDEL:
 		case KEY_SHIFTDECIMAL:
 		case KEY_SHIFTDEL:
-		{
-			if (m_SelStart==-1 || m_SelStart>=m_SelEnd)
-				return false;
-			RecurseProcessKey(KEY_CTRLINS);
-			DeleteBlock();
-			Show();
-			return true;
-		}
+			{
+				if (m_SelStart == -1 || m_SelStart >= m_SelEnd)
+					return false;
+				RecurseProcessKey(KEY_CTRLINS);
+				DeleteBlock();
+				Show();
+				return true;
+			};
 		case KEY_CTRLINS:     case KEY_CTRLNUMPAD0:
 		case KEY_RCTRLINS:    case KEY_RCTRLNUMPAD0:
-		{
-			if (!m_Flags.Check(FEDITLINE_PASSWORDMODE))
 			{
-				if (m_SelStart==-1 || m_SelStart>=m_SelEnd)
+				if (!m_Flags.Check(FEDITLINE_PASSWORDMODE))
 				{
-					if (!Mask.empty())
-						SetClipboardText(trim_right(string_view(m_Str)));
+					if (m_SelStart == -1 || m_SelStart >= m_SelEnd)
+					{
+						if (!Mask.empty())
+							SetClipboardText(trim_right(string_view(m_Str)));
+						else
+							SetClipboardText(m_Str);
+					}
 					else
-						SetClipboardText(m_Str);
-				} else
-				if (m_SelEnd <= m_Str.size()) // TODO: если в начало условия добавить "StrSize &&", то пропадет баг "Ctrl-Ins в пустой строке очищает клипборд"
-				{
-					SetClipboardText(string_view(m_Str).substr(m_SelStart, m_SelEnd - m_SelStart));
+					{
+						if (m_SelEnd <= m_Str.size()) // TODO: если в начало условия добавить "StrSize &&", то пропадет баг "Ctrl-Ins в пустой строке очищает клипборд"
+							SetClipboardText(string_view(m_Str).substr(m_SelStart, m_SelEnd - m_SelStart));
+					}
 				}
-			}
-			return true;
-		}
-		case KEY_SHIFTINS:    case KEY_SHIFTNUMPAD0:
-		{
-			string ClipText;
-			if (!GetClipboardText(ClipText))
 				return true;
-			const auto MaxLength = GetMaxLength();
-			if (MaxLength != -1 && ClipText.size() > static_cast<size_t>(MaxLength))
-				ClipText.resize(MaxLength);
-			flatten_string(ClipText);
-			InsertString(ClipText);
-			Show();
-			return true;
-		}
+			};
+		case KEY_SHIFTINS:    case KEY_SHIFTNUMPAD0:
+			{
+				string ClipText;
+				if (!GetClipboardText(ClipText))
+					return true;
+				const auto MaxLength = GetMaxLength();
+				if (MaxLength != -1 && ClipText.size() > static_cast<size_t>(MaxLength))
+					ClipText.resize(MaxLength);
+				flatten_string(ClipText);
+				InsertString(ClipText);
+				Show();
+				return true;
+			};
 		case KEY_SHIFTTAB:
-		{
-			SetPrevCurPos(m_CurPos);
-			const auto Pos = GetLineCursorPos();
-			SetLineCursorPos(Pos-((Pos-1) % GetTabSize()+1));
-			if (GetLineCursorPos()<0)
-				SetLineCursorPos(0); // CursorPos = 0, TabSize = 1 case
-			SetTabCurPos(GetLineCursorPos());
-			Show();
-			return true;
-		}
+			{
+				SetPrevCurPos(m_CurPos);
+				const auto Pos = GetLineCursorPos();
+				SetLineCursorPos(Pos - ((Pos - 1) % GetTabSize() + 1));
+				if (GetLineCursorPos() < 0)
+					SetLineCursorPos(0); // CursorPos = 0, TabSize = 1 case
+				SetTabCurPos(GetLineCursorPos());
+				Show();
+				return true;
+			};
 		case KEY_SHIFTSPACE:
 			LocalKey = KEY_SPACE;
 			[[fallthrough]];
 		default:
-		{
-			if (any_of(LocalKey, KEY_NONE, KEY_ENTER, KEY_NUMENTER) || LocalKey >= 65536)
-				break;
-			if (!m_Flags.Check(FEDITLINE_PERSISTENTBLOCKS))
 			{
-				if (PrevSelStart!=-1)
+				if (any_of(LocalKey, KEY_NONE, KEY_ENTER, KEY_NUMENTER) || LocalKey >= 65536)
+					break;
+				if (!m_Flags.Check(FEDITLINE_PERSISTENTBLOCKS))
 				{
-					m_SelStart = PrevSelStart;
-					m_SelEnd = PrevSelEnd;
+					if (PrevSelStart != -1)
+					{
+						m_SelStart = PrevSelStart;
+						m_SelEnd = PrevSelEnd;
+					}
+					SCOPED_ACTION(auto)(CallbackSuppressor());
+					DeleteBlock();
 				}
-				SCOPED_ACTION(auto)(CallbackSuppressor());
-				DeleteBlock();
-			}
-			if (InsertKey(static_cast<wchar_t>(LocalKey)))
-			{
-				const auto CurWindowType = Global->WindowManager->GetCurrentWindow()->GetType();
-				if (CurWindowType == windowtype_dialog
-				||	CurWindowType == windowtype_panels)
+				if (InsertKey(static_cast<wchar_t>(LocalKey)))
 				{
-					Show();
+					const auto CurWindowType = Global->WindowManager->GetCurrentWindow()->GetType();
+					if (CurWindowType == windowtype_dialog
+					|| CurWindowType == windowtype_panels)
+						Show();
 				}
-			}
-			return true;
-		}
-	}
+				return true;
+			};
+	};
 	return false;
 }
 
@@ -1811,6 +1804,7 @@ bool Edit::GetColor(ColorItem& col, size_t Item) const
 	return true;
 }
 
+/*
 // [experimental@Xer0X] added GetCoord:
 bool Edit::GetCoord(COORD& coord) const
 {
@@ -1855,7 +1849,7 @@ bool Edit::SetSize(COORD& size2d) const
 	return true;
 }
 
-/* // [experimental@Xer0X] Why using "const" modifiers?
+// [experimental@Xer0X] Why using "const" modifiers?
 bool Edit::SetCoord(COORD& coord) const
 {
 	bool ret_val = false;
@@ -1989,7 +1983,7 @@ void Edit::Xlat(bool All)
 	::Xlat({ m_Str.data() + StartPos, m_Str.data() + EndPos }, Global->Opt->XLat.Flags);
 	Changed();
 	Show();
-}
+};
 
 bool Edit::CharInMask(wchar_t const Char, wchar_t const Mask)
 {

@@ -114,21 +114,24 @@ public:
 	void HideButKeepSaveScreen();
 
 protected:
+
 	explicit ScreenObject(window_ptr Owner);
 	~ScreenObject() override;
 
 public: // BUGBUG
+
 	std::unique_ptr<SaveScreen> SaveScr;
 };
-
 
 class ScreenObjectWithShadow:public ScreenObject
 {
 public:
+
 	NONCOPYABLE(ScreenObjectWithShadow);
 	void Hide() override;
 
 protected:
+
 	explicit ScreenObjectWithShadow(window_ptr Owner);
 	~ScreenObjectWithShadow() override;
 
