@@ -24,6 +24,13 @@
   <Import Project="$(ProjectDir)..\_build\vc\config\common.targets" />
 
   <ItemGroup Condition="'$(DISABLE_FAR_TESTS)'!='TRUE'">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
     <ClCompile Include="common\**\*.hpp" />
   </ItemGroup>
 
