@@ -85,8 +85,10 @@ void consoleicons::update_icon()
 {
 	if (!Global->Opt->SetIcon)
 		return restore_icon();
+
 	if (Global->Opt->IconIndex < 0 || static_cast<size_t>(Global->Opt->IconIndex) >= size())
 		return;
+
 	const int IconId = (Global->Opt->SetAdminIcon && os::security::is_admin())? FAR_ICON_RED : FAR_ICON + Global->Opt->IconIndex;
 	set_icon(IconId);
 }
@@ -96,15 +98,21 @@ void consoleicons::set_icon(int const IconId)
 	const auto hWnd = console.GetWindow();
 	if (!hWnd)
 		return;
+
 	const auto Set = [&](icon& Icon)
 	{
 		const auto RawIcon = load_icon(IconId, Icon.IsBig);
 		if (!RawIcon)
 			return;
+
 		const auto PreviousIcon = ::set_icon(hWnd, Icon.IsBig, RawIcon);
+
 		if (!Icon.InitialIcon)
+		{
 			Icon.InitialIcon = PreviousIcon;
+		}
 	};
+
 	Set(m_Large);
 	Set(m_Small);
 }
@@ -114,13 +122,16 @@ void consoleicons::restore_icon()
 	const auto hWnd = console.GetWindow();
 	if (!hWnd)
 		return;
+
 	const auto Restore = [hWnd](icon& Icon)
 	{
 		if (!Icon.InitialIcon)
 			return;
+
 		::set_icon(hWnd, Icon.IsBig, *Icon.InitialIcon);
 		Icon.InitialIcon.reset();
 	};
+
 	Restore(m_Large);
 	Restore(m_Small);
 }
@@ -130,15 +141,19 @@ size_t consoleicons::size() const
 	return FAR_ICON_COUNT;
 }
 
-static int CurX, CurY;
+static int CurX,CurY;
 static FarColor CurColor;
+
 static CONSOLE_CURSOR_INFO InitialCursorInfo;
+
 static rectangle windowholder_rect;
+
 wchar_t BoxSymbols[BS_COUNT];
-point InitSize { };
-point CurSize { };
-int ScrX = 0, ScrY = 0;
-int PrevScrX = -1, PrevScrY = -1;
+
+point InitSize{};
+point CurSize{};
+int ScrX=0, ScrY=0;
+int PrevScrX=-1, PrevScrY=-1;
 std::optional<console_mode> InitialConsoleMode;
 static rectangle InitWindowRect;
 static point InitialSize;
@@ -152,8 +167,10 @@ static os::event& CancelIoInProgress()
 static void CancelSynchronousIoWrapper(void* Thread)
 {
 	os::debug::set_thread_name(L"CancelSynchronousIo caller");
+
 	if (!imports.CancelSynchronousIo)
 		return;
+
 	// TODO: SEH guard, try/catch, exception_ptr
 	imports.CancelSynchronousIo(Thread);
 	CancelIoInProgress().reset();
@@ -165,13 +182,15 @@ static BOOL WINAPI CtrlHandler(DWORD CtrlType)
 	{
 	case CTRL_C_EVENT:
 		return TRUE;
+
 	case CTRL_BREAK_EVENT:
-		if (!CancelIoInProgress().is_signaled())
+		if(!CancelIoInProgress().is_signaled())
 		{
 			CancelIoInProgress().set();
 			os::thread(os::thread::mode::detach, &CancelSynchronousIoWrapper, Global->MainThreadHandle());
 		}
 		WriteInput(KEY_BREAK);
+
 		if (Global->CtrlObject && Global->CtrlObject->Cp())
 		{
 			const auto ProcessEvent = [&](Panel const* const p)
@@ -179,15 +198,19 @@ static BOOL WINAPI CtrlHandler(DWORD CtrlType)
 				if (p && p->GetMode() == panel_mode::PLUGIN_PANEL)
 					Global->CtrlObject->Plugins->ProcessEvent(p->GetPluginHandle(), FE_BREAK, ToPtr(CtrlType));
 			};
+
 			ProcessEvent(Global->CtrlObject->Cp()->LeftPanel().get());
 			ProcessEvent(Global->CtrlObject->Cp()->RightPanel().get());
 		}
 		return TRUE;
+
 	case CTRL_CLOSE_EVENT:
 		Global->CloseFAR = true;
 		Global->AllowCancelExit = false;
 		main_loop_process_messages();
+
 		LOGNOTICE(L"CTRL_CLOSE_EVENT: exiting the thread"sv);
+
 		// trick to let wmain() finish correctly
 		ExitThread(1);
 		//return TRUE;
@@ -212,6 +235,7 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 		case KEY_RCTRLRALTNUMPAD8:
 			console.ScrollWindow(-1);
 			return true;
+
 		case KEY_CTRLALTDOWN:
 		case KEY_RCTRLRALTDOWN:
 		case KEY_CTRLRALTDOWN:
@@ -222,6 +246,7 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 		case KEY_RCTRLRALTNUMPAD2:
 			console.ScrollWindow(1);
 			return true;
+
 		case KEY_CTRLALTPGUP:
 		case KEY_RCTRLRALTPGUP:
 		case KEY_CTRLRALTPGUP:
@@ -232,6 +257,7 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 		case KEY_RCTRLRALTNUMPAD9:
 			console.ScrollWindow(-ScrY);
 			return true;
+
 		case KEY_CTRLALTHOME:
 		case KEY_RCTRLRALTHOME:
 		case KEY_CTRLRALTHOME:
@@ -242,6 +268,7 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 		case KEY_RCTRLRALTNUMPAD7:
 			console.ScrollWindowToBegin();
 			return true;
+
 		case KEY_CTRLALTPGDN:
 		case KEY_RCTRLRALTPGDN:
 		case KEY_CTRLRALTPGDN:
@@ -252,6 +279,7 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 		case KEY_RCTRLRALTNUMPAD3:
 			console.ScrollWindow(ScrY);
 			return true;
+
 		case KEY_CTRLALTEND:
 		case KEY_RCTRLRALTEND:
 		case KEY_CTRLRALTEND:
@@ -264,6 +292,7 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 			return true;
 		}
 	}
+
 	switch (key())
 	{
 	case KEY_CTRLSHIFTL:
@@ -271,45 +300,55 @@ static bool ConsoleGlobalKeysHook(const Manager::Key& key)
 		logging::show();
 		return true;
 	}
+
 	return false;
 }
 
 void InitConsole()
 {
 	static bool FirstInit = true;
+
 	if (FirstInit)
 	{
 		CancelIoInProgress() = os::event(os::event::type::manual, os::event::state::nonsignaled);
+
 		DWORD Mode;
-		if (!console.GetMode(console.GetInputHandle(), Mode))
+		if(!console.GetMode(console.GetInputHandle(), Mode))
 		{
 			static const auto ConIn = os::OpenConsoleInputBuffer();
 			SetStdHandle(STD_INPUT_HANDLE, ConIn.native_handle());
 		}
-		if (!console.GetMode(console.GetOutputHandle(), Mode))
+
+		if(!console.GetMode(console.GetOutputHandle(), Mode))
 		{
 			static const auto ConOut = os::OpenConsoleActiveScreenBuffer();
 			SetStdHandle(STD_OUTPUT_HANDLE, ConOut.native_handle());
 			SetStdHandle(STD_ERROR_HANDLE, ConOut.native_handle());
 		}
+
 		Global->WindowManager->AddGlobalKeyHandler(ConsoleGlobalKeysHook);
 	}
+
 	console.SetControlHandler(CtrlHandler, true);
+
 	console_mode Mode;
 	console.GetMode(console.GetInputHandle(), Mode.Input);
 	console.GetMode(console.GetOutputHandle(), Mode.Output);
 	console.GetMode(console.GetErrorHandle(), Mode.Error);
 	InitialConsoleMode = Mode;
+
 	Global->strInitTitle = console.GetPhysicalTitle();
 	console.GetWindowRect(InitWindowRect);
 	console.GetSize(InitialSize);
 	console.GetCursorInfo(InitialCursorInfo);
+
 	if (FirstInit)
 	{
 		rectangle WindowRect;
 		console.GetWindowRect(WindowRect);
 		console.GetSize(InitSize);
-		if (Global->Opt->WindowMode)
+
+		if(Global->Opt->WindowMode)
 		{
 			AdjustConsoleScreenBufferSize();
 			console.ResetViewportPosition();
@@ -330,13 +369,20 @@ void InitConsole()
 		{
 			point CurrentSize;
 			if (console.GetSize(CurrentSize))
+			{
 				SaveNonMaximisedBufferSize(CurrentSize);
+			}
 		}
 	}
+
+
 	SetFarConsoleMode();
+
 	UpdateScreenSize();
 	Global->ScrBuf->FillBuf();
+
 	consoleicons::instance().update_icon();
+
 	FirstInit = false;
 }
 
@@ -345,24 +391,32 @@ void CloseConsole()
 	Global->ScrBuf->Flush();
 	MoveRealCursor(0, ScrY);
 	console.SetCursorInfo(InitialCursorInfo);
+
 	if (InitialConsoleMode)
 	{
 		ChangeConsoleMode(console.GetInputHandle(), InitialConsoleMode->Input);
 		ChangeConsoleMode(console.GetOutputHandle(), InitialConsoleMode->Output);
 		ChangeConsoleMode(console.GetErrorHandle(), InitialConsoleMode->Error);
 	}
+
 	console.SetTitle(Global->strInitTitle);
 	console.SetSize(InitialSize);
+
 	point CursorPos{};
 	console.GetCursorPosition(CursorPos);
+
 	const auto Height = InitWindowRect.bottom - InitWindowRect.top;
 	const auto Width = InitWindowRect.right - InitWindowRect.left;
+
 	if (!in_closed_range(InitWindowRect.top, CursorPos.y, InitWindowRect.bottom))
 		InitWindowRect.top = std::max(0, CursorPos.y - Height);
+
 	if (!in_closed_range(InitWindowRect.left, CursorPos.x, InitWindowRect.right))
 		InitWindowRect.left = std::max(0, CursorPos.x - Width);
+
 	InitWindowRect.bottom = InitWindowRect.top + Height;
 	InitWindowRect.right = InitWindowRect.left + Width;
+
 	rectangle CurrentRect{};
 	console.GetWindowRect(CurrentRect);
 	if (CurrentRect != InitWindowRect)
@@ -370,10 +424,12 @@ void CloseConsole()
 		console.SetWindowRect(InitWindowRect);
 		console.SetSize(InitialSize);
 	}
+
 	ClearKeyQueue();
 	consoleicons::instance().restore_icon();
 	CancelIoInProgress().close();
 }
+
 
 void SetFarConsoleMode(bool SetsActiveBuffer)
 {
@@ -382,15 +438,20 @@ void SetFarConsoleMode(bool SetsActiveBuffer)
 	std::optional<DWORD> CurrentInputMode = 0;
 	if (!console.GetMode(console.GetInputHandle(), *CurrentInputMode))
 		CurrentInputMode.reset();
+
 	auto InputMode = CurrentInputMode? *CurrentInputMode : InitialConsoleMode->Input;
+
 	// We need this one unconditionally
 	InputMode |= ENABLE_WINDOW_INPUT;
+
 	// We don't need these guys unconditionally
 	InputMode &= ~(ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT);
+
 	// And this one depends on interface settings
 	if (Global->Opt->Mouse)
 	{
 		InputMode |= ENABLE_MOUSE_INPUT;
+
 		// Setting ENABLE_MOUSE_INPUT is not enough, we must also clear the ENABLE_QUICK_EDIT_MODE
 		InputMode |= ENABLE_EXTENDED_FLAGS;
 		InputMode &= ~ENABLE_QUICK_EDIT_MODE;
@@ -399,6 +460,7 @@ void SetFarConsoleMode(bool SetsActiveBuffer)
 	{
 		InputMode &= ~ENABLE_MOUSE_INPUT;
 	}
+
 	// Feature: if window rect is in unusual position (shifted up or right), of if an alternative buffer is active - enable mouse selection
 	{
 		CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -413,16 +475,20 @@ void SetFarConsoleMode(bool SetsActiveBuffer)
 			InputMode |= ENABLE_EXTENDED_FLAGS | ENABLE_QUICK_EDIT_MODE;
 		}
 	}
+
 	if (InputMode != CurrentInputMode)
 		console.SetMode(console.GetInputHandle(), InputMode);
+
 	if (SetsActiveBuffer)
 		console.SetActiveScreenBuffer(console.GetOutputHandle());
+
 	const auto OutputMode =
 		InitialConsoleMode->Output |
 		ENABLE_PROCESSED_OUTPUT |
 		ENABLE_WRAP_AT_EOL_OUTPUT |
 		(::console.IsVtSupported()? ENABLE_LVB_GRID_WORLDWIDE : 0) |
 		(::console.IsVtSupported() && Global->Opt->VirtualTerminalRendering? ENABLE_VIRTUAL_TERMINAL_PROCESSING : 0);
+
 	ChangeConsoleMode(console.GetOutputHandle(), OutputMode);
 	ChangeConsoleMode(console.GetErrorHandle(), OutputMode);
 }
@@ -432,6 +498,7 @@ bool ChangeConsoleMode(HANDLE ConsoleHandle, DWORD Mode)
 	DWORD CurrentConsoleMode;
 	if (console.GetMode(ConsoleHandle, CurrentConsoleMode) && CurrentConsoleMode == Mode)
 		return true;
+
 	return console.SetMode(ConsoleHandle, Mode);
 }
 
@@ -444,9 +511,10 @@ void RestoreConsoleWindowRect()
 {
 	rectangle WindowRect;
 	console.GetWindowRect(WindowRect);
-	if(WindowRect.width() < windowholder_rect.width()
-	|| WindowRect.height()< windowholder_rect.height())
+	if (WindowRect.width() < windowholder_rect.width() || WindowRect.height() < windowholder_rect.height())
+	{
 		console.SetWindowRect(windowholder_rect);
+	}
 }
 
 void FlushInputBuffer()
@@ -463,6 +531,7 @@ void SetVideoMode()
 		DWORD dmode = 0;
 		if (IsWindows10OrGreater() && console.GetDisplayMode(dmode) && (dmode & CONSOLE_FULLSCREEN) != 0)
 			return; // ignore Alt-F9 in Win10 full-screen mode
+
 		ChangeVideoMode(!IsZoomed(console.GetWindow()));
 	}
 	else
@@ -474,6 +543,7 @@ void SetVideoMode()
 void ChangeVideoMode(bool Maximize)
 {
 	point coordScreen;
+
 	if (Maximize)
 	{
 		SendMessage(console.GetWindow(),WM_SYSCOMMAND,SC_MAXIMIZE,0);
@@ -492,19 +562,24 @@ void ChangeVideoMode(bool Maximize)
 		}
 		coordScreen = LastSize;
 	}
+
 	ChangeVideoMode(coordScreen.y,coordScreen.x);
 }
 
 void ChangeVideoMode(int NumLines,int NumColumns)
 {
 	const short xSize = NumColumns, ySize = NumLines;
+
 	point Size;
 	console.GetSize(Size);
+
 	rectangle srWindowRect;
 	srWindowRect.right = xSize - 1;
 	srWindowRect.bottom = ySize - 1;
 	srWindowRect.left = srWindowRect.top = 0;
+
 	point const coordScreen{ xSize, ySize };
+
 	if (xSize > Size.x || ySize > Size.y)
 	{
 		if (Size.x < xSize - 1)
@@ -513,14 +588,17 @@ void ChangeVideoMode(int NumLines,int NumColumns)
 			console.SetWindowRect(srWindowRect);
 			srWindowRect.right = xSize - 1;
 		}
+
 		if (Size.y < ySize - 1)
 		{
 			srWindowRect.bottom = Size.y - 1;
 			console.SetWindowRect(srWindowRect);
 			srWindowRect.bottom = ySize - 1;
 		}
+
 		console.SetSize(coordScreen);
 	}
+
 	if (!console.SetWindowRect(srWindowRect))
 	{
 		console.SetSize(coordScreen);
@@ -530,6 +608,7 @@ void ChangeVideoMode(int NumLines,int NumColumns)
 	{
 		console.SetSize(coordScreen);
 	}
+
 	UpdateScreenSize();
 	GenerateWINDOW_BUFFER_SIZE_EVENT();
 }
@@ -554,15 +633,20 @@ void UpdateScreenSize()
 	point NewSize;
 	if (!console.GetSize(NewSize))
 		return;
+
 	//чтоб решить баг винды приводящий к появлению скролов и т.п. после потери фокуса
 	SaveConsoleWindowRect();
+
 	CurSize = NewSize;
 	ScrX = NewSize.x - 1;
 	ScrY = NewSize.y - 1;
+
 	if (PrevScrX == -1)
 		PrevScrX = ScrX;
+
 	if (PrevScrY == -1)
 		PrevScrY = ScrY;
+
 	Global->ScrBuf->AllocBuf(NewSize.y, NewSize.x);
 }
 
@@ -570,7 +654,9 @@ void ShowTime()
 {
 	if (!Global->Opt->Clock || Global->SuppressClock)
 		return;
+
 	Global->CurrentTime.update();
+
 	if (const auto CurrentWindow = Global->WindowManager->GetCurrentWindow())
 	{
 		// TODO: This is rubbish, consider moving the clock drawing to the ScrBuf
@@ -589,16 +675,30 @@ void ShowTime()
 	}
 }
 
-void GotoXY(int X, int Y) { CurX = X; CurY = Y; }
+void GotoXY(int X,int Y)
+{
+	CurX=X;
+	CurY=Y;
+}
 
-int WhereX() { return CurX; }
 
-int WhereY() { return CurY; }
+int WhereX()
+{
+	return CurX;
+}
+
+
+int WhereY()
+{
+	return CurY;
+}
+
 
 void MoveCursor(point const Point)
 {
 	Global->ScrBuf->MoveCursor(Point);
 }
+
 
 point GetCursorPos()
 {
@@ -620,10 +720,12 @@ void SetInitialCursorType()
 	Global->ScrBuf->SetCursorType(InitialCursorInfo.bVisible!=FALSE,InitialCursorInfo.dwSize);
 }
 
+
 void GetCursorType(bool& Visible, size_t& Size)
 {
 	Global->ScrBuf->GetCursorType(Visible,Size);
 }
+
 
 void MoveRealCursor(int X,int Y)
 {
@@ -648,7 +750,9 @@ static void string_to_buffer_full_width_aware(string_view Str, std::vector<FAR_C
 	while(!Str.empty() && Buffer.size() != MaxSize)
 	{
 		wchar_t Char[]{ Str[0], 0 };
+
 		const auto Codepoint = encoding::utf16::extract_codepoint(Str);
+
 		if (Codepoint > std::numeric_limits<char16_t>::max())
 		{
 			Char[1] = Str[1];
@@ -658,7 +762,9 @@ static void string_to_buffer_full_width_aware(string_view Str, std::vector<FAR_C
 		{
 			Str.remove_prefix(1);
 		}
+
 		Buffer.push_back({ Char[0], CurColor });
+
 		if (char_width::is_wide(Codepoint))
 		{
 			if (Buffer.size() == MaxSize)
@@ -667,6 +773,7 @@ static void string_to_buffer_full_width_aware(string_view Str, std::vector<FAR_C
 				Buffer.back().Char = char_width::is_wide(L'…')? L' ' : L'…';
 				break;
 			}
+
 			if (Char[1])
 			{
 				// It's wide and it already occupies two cells - awesome
@@ -711,11 +818,15 @@ size_t Text(string_view Str, size_t const MaxWidth)
 {
 	if (Str.empty())
 		return 0;
+
 	std::vector<FAR_CHAR_INFO> Buffer;
 	Buffer.reserve(Str.size());
+
 	(char_width::is_enabled()?string_to_buffer_full_width_aware : string_to_buffer_simple)(Str, Buffer, MaxWidth);
+
 	Global->ScrBuf->Write(CurX, CurY, Buffer);
 	CurX += static_cast<int>(Buffer.size());
+
 	return Buffer.size();
 }
 
@@ -749,8 +860,11 @@ size_t VText(string_view const Str, size_t const MaxWidth)
 {
 	if (Str.empty())
 		return 0;
+
 	size_t OccupiedWidth = 0;
+
 	const auto StartCurX = CurX;
+
 	for (const auto i: Str)
 	{
 		GotoXY(CurX, CurY);
@@ -758,6 +872,7 @@ size_t VText(string_view const Str, size_t const MaxWidth)
 		++CurY;
 		CurX = StartCurX;
 	}
+
 	return OccupiedWidth;
 }
 
@@ -777,6 +892,7 @@ static void HiTextBase(string_view const Str, function_ref<void(string_view, boo
 			TextHandler(Str, Offset != 0);
 			return;
 		}
+
 		/*
 		&&      = '&'
 		&&&     = '&'
@@ -792,29 +908,38 @@ static void HiTextBase(string_view const Str, function_ref<void(string_view, boo
 		auto AmpEnd = Str.find_first_not_of(L'&', AmpBegin);
 		if (AmpEnd == string::npos)
 			AmpEnd = Str.size();
+
 		if (!((AmpEnd - AmpBegin) & 1))
 		{
 			Offset = AmpEnd;
 			Unescape = true;
 			continue;
 		}
+
 		if (AmpBegin)
 			TextHandler(Str.substr(0, AmpBegin), Unescape);
+
 		if (AmpBegin + 1 == Str.size())
 			return;
+
 		HilightHandler(Str[AmpBegin + 1]);
+
 		if (AmpBegin + 2 == Str.size())
 			return;
+
 		const auto HiAmpCollapse = Str[AmpBegin + 1] == L'&' && Str[AmpBegin + 2] == L'&';
 		const auto Tail = Str.substr(AmpBegin + (HiAmpCollapse ? 3 : 2));
 		TextHandler(Tail, Tail.find(L'&') != Tail.npos);
+
 		return;
 	}
 }
 
+
 static size_t unescape(string_view const Str, function_ref<bool(wchar_t)> const PutChar)
 {
 	bool LastAmpersand = false;
+
 	for (const auto& i: Str)
 	{
 		if (i == L'&')
@@ -827,6 +952,7 @@ static size_t unescape(string_view const Str, function_ref<bool(wchar_t)> const 
 			{
 				if (!PutChar(i))
 					return &i - Str.data();
+
 				LastAmpersand = false;
 			}
 		}
@@ -834,9 +960,11 @@ static size_t unescape(string_view const Str, function_ref<bool(wchar_t)> const 
 		{
 			if (!PutChar(i))
 				return &i - Str.data();
+
 			LastAmpersand = false;
 		}
 	}
+
 	return Str.size();
 }
 
@@ -849,10 +977,12 @@ public:
 		m_Commit(Commit)
 	{
 	}
+
 	void operator()(string_view const Str, bool const Unescape) const
 	{
 		if (!Unescape)
 			return m_PutString(Str);
+
 		unescape(Str, m_PutChar);
 		m_Commit();
 	}
@@ -868,11 +998,14 @@ static size_t HiTextImpl(string_view const Str, const FarColor& HiColor, bool co
 	using text_func = size_t(*)(string_view, size_t);
 	const text_func fText = Text, fVText = VText; //BUGBUG
 	const auto TextFunc  = Vertical? fVText : fText;
+
 	string Buffer;
 	size_t OccupiedWidth = 0;
+
 	const auto PutString = [&](string_view const StrPart){ OccupiedWidth += TextFunc(StrPart, MaxWidth - OccupiedWidth); };
 	const auto PutChar = [&](wchar_t const Ch){ Buffer.push_back(Ch); return true; };
 	const auto Commit = [&]{ OccupiedWidth += TextFunc(Buffer, MaxWidth - OccupiedWidth); Buffer.clear(); };
+
 	HiTextBase(Str, text_unescape(PutString, PutChar, Commit), [&](wchar_t c)
 	{
 		const auto SaveColor = CurColor;
@@ -880,6 +1013,7 @@ static size_t HiTextImpl(string_view const Str, const FarColor& HiColor, bool co
 		OccupiedWidth += TextFunc({ &c, 1 }, MaxWidth - OccupiedWidth);
 		SetColor(SaveColor);
 	});
+
 	return OccupiedWidth;
 }
 
@@ -906,25 +1040,32 @@ size_t HiVText(string_view const Str, const FarColor& Color)
 string HiText2Str(string_view const Str, size_t* HotkeyVisualPos)
 {
 	string Result;
+
 	if (HotkeyVisualPos)
 		*HotkeyVisualPos = string::npos;
+
 	const auto PutString = [&](string_view const s){ Result += s; };
 	const auto PutChar = [&](wchar_t const Ch){ Result.push_back(Ch); return true; };
+
 	HiTextBase(Str, text_unescape(PutString, PutChar, []{}), [&](wchar_t const Ch)
 	{
 		if (HotkeyVisualPos)
 			*HotkeyVisualPos = Result.size();
 		(void)PutChar(Ch);
 	});
+
 	return Result;
 }
 
 bool HiTextHotkey(string_view Str, wchar_t& Hotkey, size_t* HotkeyVisualPos)
 {
 	bool Result = false;
+
 	size_t Size{};
+
 	const auto PutString = [&](string_view const s) { Size += s.size(); };
 	const auto PutChar = [&](wchar_t const Ch) { ++Size; return true; };
+
 	HiTextBase(Str, text_unescape(PutString, PutChar, []{}), [&](wchar_t const Ch)
 	{
 		Hotkey = Ch;
@@ -932,6 +1073,7 @@ bool HiTextHotkey(string_view Str, wchar_t& Hotkey, size_t* HotkeyVisualPos)
 			*HotkeyVisualPos = Size;
 		Result = true;
 	});
+
 	return Result;
 }
 
@@ -1009,8 +1151,10 @@ void SetRealColor(const FarColor& Color)
 void ClearScreen(const FarColor& Color)
 {
 	Global->ScrBuf->FillRect({ 0, 0, ScrX, ScrY }, { L' ', Color });
-	if (Global->Opt->WindowMode)
+	if(Global->Opt->WindowMode)
+	{
 		console.ClearExtraRegions(Color, CR_BOTH);
+	}
 	Global->ScrBuf->Flush();
 	console.SetTextAttributes(Color);
 }
@@ -1019,6 +1163,7 @@ const FarColor& GetColor()
 {
 	return CurColor;
 }
+
 
 void ScrollScreen(int Count)
 {
@@ -1039,10 +1184,13 @@ bool DoWeReallyHaveToScroll(short Rows)
 
 	This function reads the specified number of the last lines from the screen buffer and checks if there's anything else in them but spaces.
 	*/
+
 	rectangle const Region{ 0, ScrY - Rows + 1, ScrX, ScrY };
+
 	// TODO: matrix_view to avoid copying
 	matrix<FAR_CHAR_INFO> BufferBlock(Rows, ScrX + 1);
 	Global->ScrBuf->Read(Region, BufferBlock);
+
 	return !std::all_of(ALL_CONST_RANGE(BufferBlock.vector()), [](const FAR_CHAR_INFO& i) { return i.Char == L' '; });
 }
 
@@ -1050,18 +1198,26 @@ size_t string_pos_to_visual_pos(string_view Str, size_t const StringPos, size_t 
 {
 	if (!StringPos || Str.empty())
 		return StringPos;
+
 	const auto CharWidthEnabled = char_width::is_enabled();
+
 	position_parser_state State;
+
 	if (SavedState && StringPos > SavedState->StringIndex)
 		State = *SavedState;
-	const auto nop_signal = [](size_t, size_t){};
+
+	// Lambda capture is essential here, without it the lambda will happily convert itself
+	// to a temporary function pointer and function_ref will refer to that temporary.
+	const auto nop_signal = [&](size_t, size_t){};
 	const auto signal = State.signal? State.signal : nop_signal;
+
 	const auto End = std::min(Str.size(), StringPos);
 	while (State.StringIndex < End)
 	{
 		size_t
 			CharStringIncrement,
 			CharVisualIncrement;
+
 		if (Str[State.StringIndex] == L'\t')
 		{
 			CharStringIncrement = 1;
@@ -1078,14 +1234,20 @@ size_t string_pos_to_visual_pos(string_view Str, size_t const StringPos, size_t 
 			CharStringIncrement = 1;
 			CharVisualIncrement = 1;
 		}
+
 		signal(State.StringIndex + CharStringIncrement, State.VisualIndex + CharVisualIncrement);
+
 		State.StringIndex += CharStringIncrement;
+
 		if (State.StringIndex > End)
 			break;
+
 		State.VisualIndex += CharVisualIncrement;
 	}
+
 	if (SavedState)
 		*SavedState = State;
+
 	return State.VisualIndex + (StringPos > Str.size()? StringPos - Str.size() : 0);
 }
 
@@ -1093,18 +1255,27 @@ size_t visual_pos_to_string_pos(string_view Str, size_t const VisualPos, size_t 
 {
 	if (!VisualPos || Str.empty())
 		return VisualPos;
+
 	const auto CharWidthEnabled = char_width::is_enabled();
+
 	position_parser_state State;
+
 	if (SavedState && VisualPos > SavedState->VisualIndex)
 		State = *SavedState;
-	const auto nop_signal = [](size_t, size_t){};
+
+	// Lambda capture is essential here, without it the lambda will happily convert itself
+	// to a temporary function pointer and function_ref will refer to that temporary.
+	const auto nop_signal = [&](size_t, size_t){};
 	const auto signal = State.signal? State.signal : nop_signal;
+
 	const auto End = Str.size();
+
 	while (State.VisualIndex < VisualPos && State.StringIndex != End)
 	{
 		size_t
 			CharVisualIncrement,
 			CharStringIncrement;
+
 		if (Str[State.StringIndex] == L'\t')
 		{
 			CharVisualIncrement = TabSize - State.VisualIndex % TabSize;
@@ -1121,14 +1292,20 @@ size_t visual_pos_to_string_pos(string_view Str, size_t const VisualPos, size_t 
 			CharVisualIncrement = 1;
 			CharStringIncrement = 1;
 		}
+
 		signal(State.StringIndex + CharStringIncrement, State.VisualIndex + CharVisualIncrement);
+
 		State.VisualIndex += CharVisualIncrement;
+
 		if (State.VisualIndex > VisualPos)
 			break;
+
 		State.StringIndex += CharStringIncrement;
 	}
+
 	if (SavedState)
 		*SavedState = State;
+
 	return State.StringIndex + (State.VisualIndex < VisualPos? VisualPos - State.VisualIndex : 0);
 }
 
@@ -1144,6 +1321,7 @@ bool is_valid_surrogate_pair(string_view const Str)
 {
 	if (Str.size() < 2)
 		return false;
+
 	return encoding::utf16::is_valid_surrogate_pair(Str[0], Str[1]);
 }
 
@@ -1169,30 +1347,40 @@ void PutText(rectangle Where, const FAR_CHAR_INFO *Src)
 */
 void Box(rectangle Where, const FarColor& Color, int Type)
 {
-	if(Where.left>= Where.right
-	|| Where.top >= Where.bottom)
+	if (Where.left >= Where.right || Where.top >= Where.bottom)
 		return;
+
 	enum line { LineV, LineH, LineLT, LineRT, LineLB, LineRB, LineCount };
+
 	static const BOX_DEF_SYMBOLS BoxInit[][LineCount] =
 	{
 		{ BS_V1, BS_H1, BS_LT_H1V1, BS_RT_H1V1, BS_LB_H1V1, BS_RB_H1V1, },
 		{ BS_V2, BS_H2, BS_LT_H2V2, BS_RT_H2V2, BS_LB_H2V2, BS_RB_H2V2, },
 	};
+
 	const auto Box = BoxInit[(Type == DOUBLE_BOX || Type == SHORT_DOUBLE_BOX)? 1 : 0];
 	const auto Symbol = [Box](line Line) { return BoxSymbols[Box[Line]]; };
+
 	SetColor(Color);
+
 	string Buffer(Where.height() - 2, Symbol(LineV));
+
 	GotoXY(Where.left, Where.top + 1);
 	VText(Buffer);
+
 	GotoXY(Where.right, Where.top + 1);
 	VText(Buffer);
+
 	Buffer.assign(Where.width(), Symbol(LineH));
 	Buffer.front() = Symbol(LineLT);
 	Buffer.back() = Symbol(LineRT);
+
 	GotoXY(Where.left, Where.top);
 	Text(Buffer);
+
 	Buffer.front() = Symbol(LineLB);
 	Buffer.back() = Symbol(LineRB);
+
 	GotoXY(Where.left, Where.bottom);
 	Text(Buffer);
 }
@@ -1211,17 +1399,23 @@ bool ScrollBarEx(size_t X1, size_t Y1, size_t Length, unsigned long long Start, 
 {
 	if ( Length < 2)
 		return false;
+
 	string Buffer(Length, BoxSymbols[BS_X_B0]);
 	Buffer.front() = L'▲';
 	Buffer.back() = L'▼';
+
 	const auto FieldBegin = Buffer.begin() + 1;
 	const auto FieldEnd = Buffer.end() - 1;
 	const size_t FieldSize = FieldEnd - FieldBegin;
+
 	End = std::min(End, Size);
+
 	auto SliderBegin = FieldBegin, SliderEnd = SliderBegin;
+
 	if (Size && Start < End)
 	{
 		const auto SliderSize = std::max(1ull, (End - Start) * FieldSize / Size);
+
 		if (SliderSize >= FieldSize)
 		{
 			SliderBegin = FieldBegin;
@@ -1238,9 +1432,12 @@ bool ScrollBarEx(size_t X1, size_t Y1, size_t Length, unsigned long long Start, 
 			SliderEnd = std::min(SliderBegin + SliderSize, FieldEnd);
 		}
 	}
+
 	std::fill(SliderBegin, SliderEnd, BoxSymbols[BS_X_DB]);
+
 	GotoXY(static_cast<int>(X1), static_cast<int>(Y1));
 	VText(Buffer);
+
 	return true;
 }
 
@@ -1248,6 +1445,7 @@ string MakeLine(int const Length, line_type const Type, string_view const UserLi
 {
 	if (Length < 2)
 		return {};
+
 	// left-center-right or top-center-bottom
 	static const size_t Predefined[][3]
 	{
@@ -1271,8 +1469,11 @@ string MakeLine(int const Length, line_type const Type, string_view const UserLi
 		{BS_T_H2V2,  BS_V2,  BS_B_H2V2}, // "╦║╩"  v2_to_h2
 		{BS_T_H2V1,  BS_V1,  BS_B_H2V1}, // "╤│╧"  v_user, v1_to_h2 by default
 	};
+
 	static_assert(std::size(Predefined) == static_cast<size_t>(line_type::count));
+
 	wchar_t Buffer[3];
+
 	if ((Type == line_type::h_user || Type == line_type::v_user) && !UserLine.empty())
 	{
 		const auto Size = std::min(UserLine.size(), std::size(Buffer));
@@ -1283,9 +1484,11 @@ string MakeLine(int const Length, line_type const Type, string_view const UserLi
 	{
 		std::transform(ALL_CONST_RANGE(Predefined[static_cast<size_t>(Type)]), Buffer, [](size_t i){ return BoxSymbols[i]; });
 	}
+
 	string Result(Length, Buffer[1]);
 	Result.front() = Buffer[0];
 	Result.back() = Buffer[2];
+
 	return Result;
 }
 
@@ -1293,14 +1496,18 @@ void DrawLine(int const Length, line_type const Type, string_view const UserLine
 {
 	if (Length < 2)
 		return;
+
 	const auto Line = MakeLine(Length, Type, UserLine);
-	Type == line_type::v1_to_none
-		|| Type == line_type::v1_to_h2
-		|| Type == line_type::v1_to_h1
-		|| Type == line_type::v2_to_h2
-		|| Type == line_type::v1
-		|| Type == line_type::v2
-		|| Type == line_type::v_user ? VText(Line) : Text(Line);
+
+	Type == line_type::v1_to_none ||
+		Type == line_type::v1_to_h2 ||
+		Type == line_type::v1_to_h1 ||
+		Type == line_type::v2_to_h2 ||
+		Type == line_type::v1 ||
+		Type == line_type::v2 ||
+		Type == line_type::v_user ?
+		VText(Line) :
+		Text(Line);
 }
 
 string make_progressbar(size_t Size, size_t Percent, bool ShowPercent, bool PropagateToTasbkar)
@@ -1315,9 +1522,13 @@ string make_progressbar(size_t Size, size_t Percent, bool ShowPercent, bool Prop
 	const auto Pos = std::min(Percent, size_t{ 100 })* Size / 100;
 	std::fill_n(Str.begin(), Pos, BoxSymbols[BS_X_DB]);
 	if (ShowPercent)
+	{
 		Str += StrPercent;
+	}
 	if (PropagateToTasbkar)
+	{
 		taskbar::set_value(Percent, 100);
+	}
 	return Str;
 }
 
@@ -1325,6 +1536,7 @@ size_t HiStrlen(string_view const Str)
 {
 	size_t Result = 0;
 	std::optional<wchar_t> First;
+
 	unescape(Str, [&](wchar_t const Char)
 	{
 		if (encoding::utf16::is_high_surrogate(Char))
@@ -1332,15 +1544,22 @@ size_t HiStrlen(string_view const Str)
 			First = Char;
 			return true;
 		}
+
 		const auto IsLow = encoding::utf16::is_low_surrogate(Char);
 		if (!IsLow)
 			First.reset();
+
 		const auto Codepoint = First && IsLow? encoding::utf16::extract_codepoint(*First, Char) : Char;
+
 		Result += char_width::is_wide(Codepoint)? 2 : 1;
 		return true;
 	});
+
 	if (First)
+	{
 		++Result;
+	}
+
 	return Result;
 }
 
@@ -1351,6 +1570,7 @@ size_t HiFindRealPos(string_view const Str, size_t const Pos)
 	{
 		if (Unescaped == Pos)
 			return false;
+
 		++Unescaped;
 		return true;
 	});
@@ -1361,6 +1581,7 @@ bool IsConsoleFullscreen()
 	static const auto Supported = console.IsFullscreenSupported();
 	if (!Supported)
 		return false;
+
 	DWORD ModeFlags=0;
 	return console.GetDisplayMode(ModeFlags) && ModeFlags & CONSOLE_FULLSCREEN_HARDWARE;
 }
@@ -1377,9 +1598,11 @@ void AdjustConsoleScreenBufferSize()
 {
 	if (!Global->Opt->WindowMode)
 		return;
+
 	point Size;
 	if (!console.GetSize(Size))
 		return;
+
 	if (!Global->Opt->WindowModeStickyX || !Global->Opt->WindowModeStickyY)
 	{
 		// TODO: Do not use console functions directly
@@ -1388,11 +1611,16 @@ void AdjustConsoleScreenBufferSize()
 		if (get_console_screen_buffer_info(console.GetOutputHandle(), &csbi))
 		{
 			if (!Global->Opt->WindowModeStickyX)
+			{
 				Size.x = csbi.dwSize.X;
+			}
 			if (!Global->Opt->WindowModeStickyY)
+			{
 				Size.y = csbi.dwSize.Y;
+			}
 		}
 	}
+
 	console.SetScreenBufferSize(Size);
 }
 
@@ -1425,20 +1653,26 @@ size_t ConsoleChoice(string_view const Message, string_view const Choices, size_
 		if (!console.GetMode(console.GetOutputHandle(), Mode))
 			return Default;
 	}
+
 	if (InitialConsoleMode)
 	{
 		ChangeConsoleMode(console.GetInputHandle(), InitialConsoleMode->Input);
 		ChangeConsoleMode(console.GetOutputHandle(), InitialConsoleMode->Output);
 		ChangeConsoleMode(console.GetErrorHandle(), InitialConsoleMode->Error);
 	}
+
 	console.SetCursorInfo(InitialCursorInfo);
+
 	MessagePrinter();
+
 	for (;;)
 	{
 		std::wcout << format(FSTR(L"\n{} ({})? "sv), Message, join(L"/"sv, Choices)) << std::flush;
+
 		wchar_t Input;
 		std::wcin.clear();
 		std::wcin.get(Input).ignore(std::numeric_limits<std::streamsize>::max(), L'\n');
+
 		if (const auto Index = Choices.find(upper(Input)); Index != Choices.npos)
 			return Index;
 	}
@@ -1456,6 +1690,7 @@ bool ConsoleYesNo(string_view const Message, bool const Default, function_ref<vo
 TEST_CASE("interf.highlight")
 {
 	const auto np = string::npos;
+
 	static const struct
 	{
 		string_view Input;
@@ -1489,17 +1724,21 @@ TEST_CASE("interf.highlight")
 		{ L"&1&&&2"sv,       L"1&2"sv,       L'1',   0, {  0,  1 }, },
 		{ L"&1&2&3&"sv,      L"123"sv,       L'1',   0, {  2,  5 }, },
 	};
+
 	for (const auto& i: Tests)
 	{
 		size_t HotkeyPos{};
 		REQUIRE(HiText2Str(i.Input, &HotkeyPos) == i.Result);
 		REQUIRE(HotkeyPos == i.HotkeyVisualPos);
+
 		wchar_t Hotkey{};
 		HotkeyPos = np;
 		REQUIRE(HiTextHotkey(i.Input, Hotkey, &HotkeyPos) == (i.Hotkey != 0));
 		REQUIRE(Hotkey == i.Hotkey);
 		REQUIRE(HotkeyPos == i.HotkeyVisualPos);
+
 		REQUIRE(HiStrlen(i.Input) == i.Result.size());
+
 		REQUIRE(HiFindRealPos(i.Input, i.PosVisual) == i.PosReal);
 	}
 }
@@ -1516,7 +1755,7 @@ TEST_CASE("wide_chars")
 	Tests[]
 	{
 		{
-			{ }, // Baseline, half width
+			{}, // Baseline, half width
 			{ { 0, +0 }, { 1, +0 }, { 2, +0 }, { 3, +0 }, { 4, +0 }, },
 			{ { 0, +0 }, { 1, +0 }, { 2, +0 }, { 3, +0 }, { 4, +0 }, },
 		},
@@ -1558,18 +1797,27 @@ TEST_CASE("wide_chars")
 		{
 			L"残酷な天使のように少年よ神話になれ"sv,
 			{ {17, +17}, },
-			{ {34, -17} }
-		},
+			{ {34, -17} } },
+
 	};
+
 	char_width::enable(1);
+
 	for (const auto& i: Tests)
+	{
+		position_parser_state State[2];
+
+		for (const auto& [StringPos, VisualShift]: i.StringToVisual)
 		{
-			position_parser_state State[2];
-			for (const auto& [StringPos, VisualShift]: i.StringToVisual)
-				REQUIRE(string_pos_to_visual_pos(i.Str, StringPos, 1, &State[0]) == StringPos + VisualShift);
-			for (const auto& [VisualPos, StringShift] : i.VisualToString)
-				REQUIRE(visual_pos_to_string_pos(i.Str, VisualPos, 1, &State[1]) == VisualPos + StringShift);
+			REQUIRE(string_pos_to_visual_pos(i.Str, StringPos, 1, &State[0]) == StringPos + VisualShift);
 		}
+
+		for (const auto& [VisualPos, StringShift] : i.VisualToString)
+		{
+			REQUIRE(visual_pos_to_string_pos(i.Str, VisualPos, 1, &State[1]) == VisualPos + StringShift);
+		}
+	}
+
 	char_width::enable(0);
 }
 
@@ -1582,6 +1830,7 @@ TEST_CASE("tabs")
 		L"\t1\t12\t123\t1234\t"sv,
 		L"\t𐀀\t12\t𐀀天\t日本\t"sv,
 	};
+
 	static const struct
 	{
 		size_t Str, TabSize, VisualPos, RealPos;
@@ -1636,9 +1885,11 @@ TEST_CASE("tabs")
 		{ 2, 4, 24, 15, false, },
 		{ 2, 4, 25, 16, true,  },
 	};
+
 	for (const auto& i : Tests)
 	{
 		REQUIRE(i.RealPos == visual_pos_to_string_pos(Strs[i.Str], i.VisualPos, i.TabSize));
+
 		if (i.TestRealToVisual)
 			REQUIRE(i.VisualPos == string_pos_to_visual_pos(Strs[i.Str], i.RealPos, i.TabSize));
 	}
