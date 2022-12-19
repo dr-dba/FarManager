@@ -2933,7 +2933,6 @@ bool Editor::Search(bool Next)
 				ReCompileErrorMessage(e, strSearchStr);
 				return false; //BUGBUG
 			}
-			Match.resize(re.GetBracketsCount() * 2);
 		}
 		QuotedStr = quote_unconditional(strSearchStr);
 		searchers Searchers;
@@ -2977,7 +2976,7 @@ bool Editor::Search(bool Next)
 				ReverseSearch,
 				Regexp,
 				PreserveStyle,
-				&SearchLength,
+				SearchLength,
 				GetWordDiv()
 				))
 			{

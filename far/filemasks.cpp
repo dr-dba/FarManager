@@ -84,11 +84,15 @@ static auto extract_re(string_view& Str)
 {
 	if (!starts_with(Str, RE_start))
 		return extract_impl(Str, 0);
+
 	auto Iterator = Str.cbegin() + 1;
+
 	while (Iterator != Str.cend() && (*Iterator != RE_end || *(Iterator - 1) == L'\\'))
 		++Iterator;
+
 	if (Iterator != Str.cend() && *Iterator == RE_end)
 		++Iterator;
+
 	// options
 	const auto Size = std::find_if_not(Iterator, Str.cend(), is_alpha) - Str.cbegin();
 	return extract_impl(Str, Size);
@@ -107,6 +111,7 @@ private:
 		RegExp Regex;
 		mutable std::vector<RegExpMatch> Match;
 	};
+
 	std::variant<std::vector<string>, regex_data> m_Masks;
 };
 
@@ -119,16 +124,21 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 {
 	if (Str.empty())
 		return false;
+
 	bool Result = false;
+
 	clear();
+
 	string ExpandedGroups(Str);
 	unordered_string_set UsedGroups;
 	size_t LBPos, RBPos;
 	string MaskGroupValue;
+
 	while ((LBPos = ExpandedGroups.find(L'<')) != string::npos && (RBPos = ExpandedGroups.find(L'>', LBPos)) != string::npos)
 	{
 		const auto MaskGroupNameWithBrackets = string_view(ExpandedGroups).substr(LBPos, RBPos - LBPos + 1);
 		string MaskGroupName(MaskGroupNameWithBrackets.substr(1, MaskGroupNameWithBrackets.size() - 2));
+
 		if (contains(UsedGroups, MaskGroupName))
 		{
 			MaskGroupValue.clear();
@@ -140,13 +150,18 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 		}
 		replace(ExpandedGroups, MaskGroupNameWithBrackets, MaskGroupValue);
 	}
+
 	Str = ExpandedGroups;
+
 	if (!Str.empty())
 	{
 		string SimpleMasksInclude, SimpleMasksExclude;
+
 		auto DestContainer = &Include;
 		auto DestString = &SimpleMasksInclude;
+
 		Result = true;
+
 		while (!Str.empty())
 		{
 			extract_separators(Str);
@@ -164,12 +179,14 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 					break;
 				}
 			}
+
 			extract_separators(Str);
 			const auto Masks = extract_masks(Str);
 			if (!Masks.empty())
 			{
 				DestString->append(Masks);
 			}
+
 			if (starts_with(Str, ExcludeMaskSeparator))
 			{
 				if (DestContainer != &Exclude)
@@ -181,9 +198,11 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 				{
 					break;
 				}
+
 				Str.remove_prefix(1);
 			}
 		}
+
 		if (Result && !SimpleMasksInclude.empty())
 		{
 			masks m;
@@ -191,6 +210,7 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 			if (Result)
 				Include.push_back(std::move(m));
 		}
+
 		if (Result && !SimpleMasksExclude.empty())
 		{
 			masks m;
@@ -198,6 +218,7 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 			if (Result)
 				Exclude.push_back(std::move(m));
 		}
+
 		if (Result && Include.empty() && !Exclude.empty())
 		{
 			masks m;
@@ -205,8 +226,10 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 			if (Result)
 				Include.push_back(std::move(m));
 		}
+
 		Result = !empty();
 	}
+
 	if (!Result)
 	{
 		if (!(Flags & FMF_SILENT))
@@ -215,6 +238,7 @@ bool filemasks::assign(string_view Str, DWORD const Flags)
 		}
 		clear();
 	}
+
 	return Result;
 }
 
@@ -257,10 +281,13 @@ static void add_pathext(string& Masks)
 		{
 			if (i.empty())
 				continue;
+
 			append(FarPathExt, L'*', i, L',');
 		}
+
 		if (!FarPathExt.empty())
 			FarPathExt.pop_back();
+
 		replace_icase(Masks, PathExtName, FarPathExt);
 	}
 }
@@ -272,6 +299,7 @@ public:
 	{
 		m_InBrackets = false;
 	}
+
 	bool active(wchar_t i)
 	{
 		if (!m_InBrackets && i == L'[')
@@ -279,12 +307,14 @@ public:
 			m_InBrackets = true;
 			return true;
 		}
+
 		if (m_InBrackets)
 		{
 			if (i == L']')
 				m_InBrackets = false;
 			return true;
 		}
+
 		return false;
 	}
 
@@ -297,11 +327,14 @@ bool filemasks::masks::assign(string&& Masks, DWORD Flags)
 	if (Masks[0] != RE_start)
 	{
 		auto& MasksData = m_Masks.emplace<0>();
+
 		add_pathext(Masks);
+
 		for (const auto& Mask: enum_tokens_with_quotes_t<with_brackets, with_trim>(Masks, L",;"sv))
 		{
 			if (Mask.empty())
 				continue;
+
 			if (Mask == L"*.*"sv)
 			{
 				MasksData.emplace_back(L"*"sv);
@@ -317,22 +350,27 @@ bool filemasks::masks::assign(string&& Masks, DWORD Flags)
 				MasksData.emplace_back(Mask);
 			}
 		}
+
 		return !MasksData.empty();
 	}
+
 	auto& RegexData = m_Masks.emplace<1>();
+
 	try
 	{
 		RegexData.Regex.Compile(Masks, OP_PERLSTYLE | OP_OPTIMIZE);
 	}
 	catch (regex_exception const& e)
 	{
+		m_Masks.emplace<0>(); // Make it empty
+
 		if (!(Flags & FMF_SILENT))
 		{
 			ReCompileErrorMessage(e, Masks);
 		}
 		return false;
 	}
-	RegexData.Match.resize(RegexData.Regex.GetBracketsCount());
+
 	return true;
 }
 
@@ -361,9 +399,10 @@ bool filemasks::masks::empty() const
 		{
 			return Data.empty();
 		},
-		[](const regex_data& Data)
+		[](const regex_data&)
 		{
-			return Data.Match.empty();
+			// It holds regex_data only when compilation is successful
+			return false;
 		}
 	}, m_Masks);
 }
@@ -394,7 +433,9 @@ TEST_CASE("masks")
 		{ L"file.*"sv,      L"file..bin"sv,      true  },
 		{ L"file.*|*b*"sv,  L"file.bin"sv,       false },
 	};
+
 	filemasks Masks;
+
 	for (const auto& i: Tests)
 	{
 		REQUIRE(Masks.assign(i.Mask, FMF_SILENT));

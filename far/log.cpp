@@ -632,6 +632,11 @@ namespace logging
 		NONCOPYABLE(engine);
 		engine() = default;
 
+		~engine()
+		{
+			s_Destroyed = true;
+		}
+
 		void configure(string_view const Parameters)
 		{
 			initialise();
@@ -650,6 +655,9 @@ namespace logging
 		[[nodiscard]]
 		bool filter(level const Level)
 		{
+			if (s_Destroyed)
+				return false;
+
 			switch (m_Status)
 			{
 			case engine_status::incomplete:
@@ -793,6 +801,7 @@ namespace logging
 		level m_TraceLevel{ level::fatal };
 		size_t m_TraceDepth{ std::numeric_limits<size_t>::max() };
 		std::atomic<engine_status> m_Status{ engine_status::incomplete };
+		static inline bool s_Destroyed;
 	};
 
 	bool filter(level const Level)
