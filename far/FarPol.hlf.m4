@@ -248,7 +248,7 @@ dir, jak w przykładzie),
  Far będzie czekał na koniec strumienia danych dopóki nie zostaną wciśnięte Ctrl+Break.
 
  #-w[-]#
- Rozciąga do okna konsoli zamiast do bufora konsoli, lub na odwrót.
+ Pokazuje interfejs w obrębie okna konsoli zamiast bufora konsoli lub odwrotnie.
 
  #-t szablon_profilu#
  Położenie pliku konfiguracyjnego szablonu Far (nadpisuje ustawienia z pliku ini).
@@ -471,7 +471,7 @@ $ #Tryby sortowania#
 
 
 @PanelSortCriteria
-$ #Kryteria softowania#
+$ #Kryteria sortowania#
  Kiedy pliki są traktowane równoważnie używając wybranego trybu sortowania, pod uwagę brane są dodatkowe ktyteria sortowania.
  Na przykład, jeżeli pliki są sortowane wg wielkości i zarówno "a.txt" i "b.txt" mają tę samą wielkość, "a.txt"
  będzie wyświetlane pierwszy, tak jakby były posortowane według nazw.
@@ -2311,6 +2311,20 @@ Np. !^!.! oznacza nazwę bieżącego pliku w panelu aktywnym,
 !##!\\!^!.! - plik w panelu pasywnym z taką samą nazwą jak
 bieżący plik w aktywnym panelu.
 
+ #![#
+ Przedrostek "![" wymusza na wszystkich kolejnych symbolach
+specjalnych, aby odnosiły się do lewego panelu (zobacz uwaga
+nr 4). Np. ![!.! oznacza bieżącą nazwę pliku w lewym panelu,
+![!\\!^!.! - plik w lewym panelu o takiej samej nazwie jak
+nazwa bieżącego pliku w aktywnym panelu.
+
+ #!]#
+ Przedrostek "!]" wymusza na wszystkich kolejnych symbolach
+specjalnych, aby odnosiły się do prawego panelu (zobacz uwaga
+nr 4). Np. !]!.! oznacza bieżącą nazwę pliku w prawym panelu,
+!]!\\!^!.! - plik w prawym panelu o takiej samej nazwie jak
+nazwa bieżącego pliku w aktywnym panelu.
+
  Uwagi:
 
  1. ^<wrap>Podczas obsługi znaków specjalnych, Far podstawia tylko
@@ -2340,8 +2354,8 @@ plików, w kodowaniu ANSI, z pełnymi ścieżkami, każdy ujęty w cudzysłów".
  3. ^<wrap>Jeżeli określono wiele skojarzeń, meta-znaki !@@! oraz !$! są pokazywane w menu bez zmian.
 Znaki te są tłumaczone podczas wykonywania poleceń.
 
- 4. ^<wrap>Przedrostki "!##" oraz "!^" działają jako przełączniki. Efekt ich działania trwa
-aż do następnego podobnego przedrostka. Np.
+ 4. ^<wrap>Przedrostki "!##", "!^", "![" oraz "!]" działają jako przełączniki.
+Efekt ich działania trwa aż do następnego podobnego przedrostka, np.
 
     if exist !##!\\!^!.! diff -c -p !##!\\!^!.! !\\!.!
 
@@ -2557,8 +2571,8 @@ całkowitą liczbę plików.
 wyświetlona lista współdzielonych zasobów serwera.
 
  #Użyj Terminalu Wirtualnego do renderowania#
- Renderuj dane wyjściowe za pomocą sekwencji ANSI escape.
- Pozwala to na użycie 24-bitowych kolorów i pozwala (lub nie) pracować lepiej (lub gorzej) z niektórymi znakami Unicode.
+ Renderuj dane wyjściowe za pomocą sekwencji ANSI escape. Więcej informacji znajdziesz ~tutaj~@https://docs.microsoft.com/en-us/windows/console/classic-vs-vt@.
+ Pozwala to na użycie 8 i 24-bitowych kolorów, stylów tekstu, i pozwala (lub nie) pracować lepiej (lub gorzej) z niektórymi znakami Unicode.
  Wymaga Windows 10 lub nowszego.
 
  #Renderowanie na pełnej szerokości#
@@ -4293,27 +4307,32 @@ podczas przetwarzania plików Far zawsze używa oryginalnych wielkości znaków.
 
 
 @ColorGroups
-$ #Color groups#
+$ #Grupy kolorów#
  To menu pozwala na wybór kolorów dla różnych elementów ekranu lub ustawić domyślne kolory.
 
- #Set default colors#
- Set the colors to default values, expressed as indices in the console palette.
+ #Ustaw kolory domyślne#
+ Przywraca kolory do wartości domyślnych, wyrażonych jako indeksy w palecie kolorów.
 
- #Set default colors (RGB)#
- Set the colors to default values, expressed as colors in RGB space, normally used for the corresponding console palette indices.
- Unlike the indices in the console palette, the RGB values are device-independent and will look the same in any terminal.
- For example, the default #index# value of panels background is #1#, which is usually, but not necessarily, mapped to some unspecified shade of blue.
- The default #RGB# value of panels background, on the contrary, is always exactly #000080#.
+ #Ustaw kolory domyślne (RGB)#
+ Przyraca kolory do wartości domyślnych, wyrażonych jako kolory w przestrzeni barw RGB,
+normalnie używanych do odpowiednich indeksów palety konsoli.
+ W przeciwieństwie do indeksów palety konsoli, wartości RGB są niezleżne od urządzenia
+i zawsze będą tak samo wyglądać w dowolnym terminalu.
+ Na przykład, domyślna #indeksu# tła panelu jest #1#, który zwykle (ale nie zawsze),
+jest mapowany na jakiś nieokreślony odcień koloru niebieskiego.
+ Domyślną wartością #RGB# tła panelu jest zawsze wartość #000080#.
 
- #Note#: RGB colors require Virtual Terminal-based rendering, which can be enabled in ~Interface settings~@InterfSettings@.
-If it is not enabled or if your terminal does not support RGB colors, they will be approximated to the closest console palette indices.
+ #Uwaga#: kolory RGB wymagają renderowania opartego na Wirtualnym Terminalu, który można
+włączyć w ~Ustawieniach interfejsu~@InterfSettings@.
+Jeżeli nie jest włączony lub wybrany terminal nie obsługuje kolorów RGB, kolory będą ustawione
+na zbliżone do najbliższych indeksów palety konsoli.
 
- This is the current palette:
+ Oto bieżąca paleta:
 
  \00  \10  \20  \30  \40  \50  \60  \70  \-
  \80  \90  \A0  \B0  \C0  \D0  \E0  \F0  \-
 
- This is the default RGB representation:
+ Oto domyślna reprezentacja RGB:
 
  \(T0:T000000)  \(T0:T000080)  \(T0:T008000)  \(T0:T008080)  \(T0:T800000)  \(T0:T800080)  \(T0:T808000)  \(T0:TC0C0C0)  \-
  \(T0:T808080)  \(T0:T0000FF)  \(T0:T00FF00)  \(T0:T00FFFF)  \(T0:TFF0000)  \(T0:TFF00FF)  \(T0:TFFFF00)  \(T0:TFFFFFF)  \-
@@ -4329,7 +4348,7 @@ $ #Wybór kolorów#
  - jednym z 16 milionów kolorów z przestrzeni barw RGB.
 
  Standardowa 16-kolorowa paleta jest dostępna w oknie dialogowym.
- Aby skorzystać z ~256-kolorowej palety@ColorPicker256@ i przestrzeni barw RGB należy użyć odpowiednich przycisków.
+ Aby skorzystać z ~256-kolorowej palety~@ColorPicker256@ i przestrzeni barw RGB należy użyć odpowiednich przycisków.
 
  Wartość kolorów jest także przedstawiania w postaci szesnastkowej, gdzie:
  - #AA______# - kanał alfa, oznaczający stopień przezroczystości od pełnej przejrzystości (00) do pełnego koloru (FF).
@@ -4347,6 +4366,9 @@ $ #Wybór kolorów#
  #Uwaga#
  Tylko standardowa 16 kolorowa paleta jest gwarantem poprawnej pracy na wszystkich komputerach.
  Obsługa wszystkich innych jest warunkowa i definiowana przez Twój terminal.
+
+ Rozszerzone kolory i style wymagają Terminalu Wirtualnego, który można włączyć w ~Ustawieniach interfejsu~@InterfSettings@.
+Więcej informacji znajdziesz ~tutaj~@https://docs.microsoft.com/en-us/windows/console/classic-vs-vt@ (po angielsku).
 
 
 @ColorPicker256
@@ -4946,16 +4968,16 @@ do klasy, to nie może on być pierwszym znakiem lub musi być poprzedzony znaki
 samego miejsca, ale tylko gdy zgadza się wzorzec w nawiasach. Np. #\w+(?=\s)#
 dopasowuje słowo, po którym następuje spacja, a spacja nie jest uwzględniana w wynikach
 szukania.
- #(?!pattern)#  - ^<wrap>negacja wyszukiwania do przodu. Dopasowanie kontynuuje od tego
+ #(?!wzorzec)#  - ^<wrap>negacja wyszukiwania do przodu. Dopasowanie kontynuuje od tego
 samego miejsca, jeżeli wzorzec się nie zgadza. Np. #foo(?!bar)# dopasowuje dowolne
 "foo" bez następującego "bar". Należy pamiętać że wyrażenie ma wielkość zero, co oznacza
 że #a(?!b)d# pasuje do #ad#, ponieważ po #a# następuje znak który nie jest #b# (lecz #d#),
 a #d# następuje po wyrażeniu o zerowym rozmiarze.
- #(?<=pattern)# - ^<wrap>wyszukiwanie wstecz. Niestety, wzorzec musi mieć określoną długość.
- #(?<!pattern)# - ^<wrap>negacja wyszukiwania wstecz. Takie same ograniczenia jak przy negacji
+ #(?<=wzorzec)# - ^<wrap>wyszukiwanie wstecz. Niestety, wzorzec musi mieć określoną długość.
+ #(?<!wzorzec)# - ^<wrap>negacja wyszukiwania wstecz. Takie same ograniczenia jak przy negacji
 wyszukiwania do przodu.
 
- #(?{name}pattern)# - group with a name. The name must contain only word characters (#\w#) and spaces (#\s#).
+ #(?{nazwa}wzorzec)# - grupa z nazwą. Nazwa może zawierać tylko litery (#\w#) i spacje (#\s#).
 
  #Kwantyfikatory#
 
@@ -5583,17 +5605,23 @@ Jeżeli bieżąca wartość opcji jest inna niż domyślna, opcja jest oznaczona
 
 @Codepages.NoAutoDetectCP
 $ #far:config Codepages.NoAutoDetectCP#
- This parameter allows to exclude specific code pages from the heuristic code page detection results.
-Such detection is unreliable by definition: it depends on statistical data and could guess wrong, especially when the amount of input data is small.
+ Ten parametr tekstowy pozwala wykluczyć specyficzne strony kodowe z wyników
+heurystycznego wykrywania stron kodowych. Takie wykrywanie jest z definicji
+zawodne: zależy od danych statystycznych i może się mylić, zwłaszcza gdy
+ilość danych wejściowych jest mała.
 
- By default the parameter is empty and there are no restrictions which code pages could be detected heuristically.
+ Domyślnie parametr jest pusty i nie istnieją żadne ograniczenia, co do heurystycznego
+wykrywania stron kodowych.
 
- If this parameter is set to #-1#, only the code pages, currenltly visible in the ~Code pages~@CodePagesMenu@ menu, will be accepted.
-You can control which code pages are visible there with the #Ctrl+H# key combination and the #Favorites# section.
+ Jeżeli parametr jest ustawiony na #-1#, to tylko strony kodowe widoczne w menu
+~Strony kodowe~@CodePagesMenu@ zostaną zaakceptowane.
+Można kontrolować, które strony kodowe mają być widoczne w sekcji #Ulubione#
+za pomocą kombinacji klawiszy #Ctrl+H#.
 
- If this parameter contains a comma-separated list of code page numbers, all the specified code pages will be excluded from the heuristic detection.
+ Jeżeli parametr ten zawiera listę stron kodowych oddzieloną przecinkami, to wszystkie
+wymienione tutaj strony kodowe zostaną wykluczone z wykrywania heurystycznego.
 
- This parameter can be changed via ~far:config~@FarConfig@ only.
+ Ten parametr można zmienić tylko w ~far:config~@FarConfig@.
 
 
 @Help.ActivateURL
