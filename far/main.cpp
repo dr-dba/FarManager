@@ -147,6 +147,7 @@ static void show_help()
 		L"      buffer or vise versa.\n"
 		L" -x   Disable exception handling.\n"
 		L""sv;
+
 	std::wcout << HelpMsg << std::flush;
 }
 
@@ -163,6 +164,7 @@ static int MainProcess(
 		if (!console.GetTextAttributes(InitAttributes))
 			InitAttributes = colors::NtColorToFarColor(F_LIGHTGRAY | B_BLACK);
 		SetRealColor(colors::PaletteColorToFarColor(COL_COMMANDLINEUSERSCREEN));
+
 		string ename(EditName),vname(ViewName), apanel(DestName1),ppanel(DestName2);
 		if (ConfigProvider().ShowProblems())
 		{
@@ -172,79 +174,110 @@ static int MainProcess(
 			apanel = Global->Opt->ProfilePath;
 			ppanel = Global->Opt->LocalProfilePath;
 		}
+
 		if (!ename.empty() || !vname.empty())
 		{
 			Global->OnlyEditorViewerUsed = true;
+
 			Global->CtrlObject->CreateDummyFilePanels();
 			Global->WindowManager->PluginCommit();
+
 			Global->CtrlObject->Plugins->LoadPlugins();
 			Global->CtrlObject->Macro.LoadMacros(true, true);
+
 			if (!ename.empty())
 			{
 				const auto ShellEditor = FileEditor::create(ename, CP_DEFAULT, FFILEEDIT_CANNEWFILE | FFILEEDIT_ENABLEF6, StartLine, StartChar);
+
 				if (!ShellEditor->GetExitCode())  // ????????????
+				{
 					Global->WindowManager->ExitMainLoop(0);
+				}
 			}
 			// TODO: Этот else убрать только после разборок с возможностью задавать несколько /e и /v в ком.строке
 			else if (!vname.empty())
 			{
 				const auto ShellViewer = FileViewer::create(vname, true);
+
 				if (!ShellViewer->GetExitCode())
+				{
 					Global->WindowManager->ExitMainLoop(0);
+				}
 			}
+
 			Global->WindowManager->EnterMainLoop();
 		}
 		else
 		{
 			int DirCount=0;
+
 			// воспользуемся тем, что ControlObject::Init() создает панели
 			// юзая Global->Opt->*
+
 			const auto
 				IsFileA = !apanel.empty() && os::fs::is_file(apanel),
 				IsFileP = !ppanel.empty() && os::fs::is_file(ppanel);
+
 			const auto SetupPanel = [&](bool active)
 			{
 				++DirCount;
 				string strPath = active? apanel : ppanel;
 				if (active? IsFileA : IsFileP)
+				{
 					CutToParent(strPath);
+				}
+
 				bool Root = false;
 				const auto Type = ParsePath(strPath, nullptr, &Root);
 				if(Root && (Type == root_type::drive_letter || Type == root_type::win32nt_drive_letter || Type == root_type::volume))
+				{
 					AddEndSlash(strPath);
+				}
+
 				auto& CurrentPanelOptions = (Global->Opt->LeftFocus == active)? Global->Opt->LeftPanel : Global->Opt->RightPanel;
 				CurrentPanelOptions.m_Type = static_cast<int>(panel_type::FILE_PANEL);  // сменим моду панели
 				CurrentPanelOptions.Visible = true;     // и включим ее
 				CurrentPanelOptions.Folder = strPath;
 			};
+
 			if (!apanel.empty())
 			{
 				SetupPanel(true);
+
 				if (!ppanel.empty())
+				{
 					SetupPanel(false);
+				}
 			}
+
 			// теперь все готово - создаем панели!
 			Global->CtrlObject->Init(DirCount);
+
 			// а теперь "провалимся" в каталог или хост-файл (если получится ;-)
 			if (!apanel.empty())  // активная панель
 			{
 				const auto ActivePanel = Global->CtrlObject->Cp()->ActivePanel();
 				const auto AnotherPanel = Global->CtrlObject->Cp()->PassivePanel();
+
 				if (!ppanel.empty())  // пассивная панель
 				{
 					FarChDir(AnotherPanel->GetCurDir());
+
 					if (GetPluginPrefixPath(ppanel))
 					{
 						AnotherPanel->Parent()->SetActivePanel(AnotherPanel);
+
 						execute_info Info;
 						Info.DisplayCommand = ppanel;
 						Info.Command = ppanel;
+
 						Global->CtrlObject->CmdLine()->ExecString(Info);
 						ActivePanel->Parent()->SetActivePanel(ActivePanel);
 					}
 					else if (IsFileP)
 					{
 						const auto strPath = PointToName(ppanel);
+
 						if (!strPath.empty())
 						{
 							if (AnotherPanel->GoToFile(strPath))
@@ -252,36 +285,45 @@ static int MainProcess(
 						}
 					}
 				}
+
 				FarChDir(ActivePanel->GetCurDir());
+
 				if (GetPluginPrefixPath(apanel))
 				{
 					execute_info Info;
 					Info.DisplayCommand = apanel;
 					Info.Command = apanel;
+
 					Global->CtrlObject->CmdLine()->ExecString(Info);
 				}
 				else if (IsFileA)
 				{
 					const auto strPath = PointToName(apanel);
+
 					if (!strPath.empty())
 					{
 						if (ActivePanel->GoToFile(strPath))
 							ActivePanel->ProcessKey(Manager::Key(KEY_CTRLPGDN));
 					}
 				}
+
 				// !!! ВНИМАНИЕ !!!
 				// Сначала редравим пассивную панель, а потом активную!
 				AnotherPanel->Redraw();
 				ActivePanel->Redraw();
 			}
+
 			Global->WindowManager->EnterMainLoop();
 		}
+
 		TreeList::FlushCache();
+
 		// очистим за собой!
 		SetScreen({ 0, 0, ScrX, ScrY }, L' ', colors::PaletteColorToFarColor(COL_COMMANDLINEUSERSCREEN));
 		console.SetTextAttributes(InitAttributes);
 		Global->ScrBuf->ResetLockCount();
 		Global->ScrBuf->Flush();
+
 		return EXIT_SUCCESS;
 }
 
@@ -296,12 +338,15 @@ static void InitTemplateProfile(string &strTemplatePath)
 	{
 		strTemplatePath = GetFarIniString(L"General"sv, L"TemplateProfile"sv, path::join(L"%FARHOME%"sv, L"Default.farconfig"sv));
 	}
+
 	if (!strTemplatePath.empty())
 	{
 		strTemplatePath = full_path_expanded(strTemplatePath);
 		DeleteEndSlash(strTemplatePath);
+
 		if (os::fs::is_directory(strTemplatePath))
 			path::append(strTemplatePath, L"Default.farconfig"sv);
+
 		Global->Opt->TemplateProfilePath = strTemplatePath;
 	}
 }
@@ -310,6 +355,7 @@ static void InitProfile(string &strProfilePath, string &strLocalProfilePath)
 {
 	if (Global->Opt->ReadOnlyConfig < 0) // do not override 'far /ro', 'far /ro-'
 		Global->Opt->ReadOnlyConfig = GetFarIniInt(L"General"sv, L"ReadOnlyConfig"sv, 0);
+
 	if (!strProfilePath.empty())
 	{
 		strProfilePath = full_path_expanded(strProfilePath);
@@ -318,6 +364,7 @@ static void InitProfile(string &strProfilePath, string &strLocalProfilePath)
 	{
 		strLocalProfilePath = full_path_expanded(strLocalProfilePath);
 	}
+
 	if (strProfilePath.empty())
 	{
 		if (const auto UseSystemProfiles = GetFarIniInt(L"General"sv, L"UseSystemProfiles"sv, 1))
@@ -328,8 +375,10 @@ static void InitProfile(string &strProfilePath, string &strLocalProfilePath)
 				SHGetFolderPath(nullptr, Idl | (Global->Opt->ReadOnlyConfig? 0 : CSIDL_FLAG_CREATE), nullptr, SHGFP_TYPE_CURRENT, Buffer);
 				return path::join(Buffer, L"Far Manager"sv, L"Profile"sv);
 			};
+
 			// roaming data default path: %APPDATA%\Far Manager\Profile
 			Global->Opt->ProfilePath = GetShellProfilePath(CSIDL_APPDATA);
+
 			Global->Opt->LocalProfilePath = UseSystemProfiles == 2?
 				Global->Opt->ProfilePath :
 				// local data default path: %LOCALAPPDATA%\Far Manager\Profile
@@ -339,6 +388,7 @@ static void InitProfile(string &strProfilePath, string &strLocalProfilePath)
 		{
 			const auto strUserProfileDir = GetFarIniString(L"General"sv, L"UserProfileDir"sv, path::join(L"%FARHOME%"sv, L"Profile"sv));
 			const auto strUserLocalProfileDir = GetFarIniString(L"General"sv, L"UserLocalProfileDir"sv, strUserProfileDir);
+
 			Global->Opt->ProfilePath = full_path_expanded(strUserProfileDir);
 			Global->Opt->LocalProfilePath = full_path_expanded(strUserLocalProfileDir);
 		}
@@ -348,16 +398,23 @@ static void InitProfile(string &strProfilePath, string &strLocalProfilePath)
 		Global->Opt->ProfilePath = strProfilePath;
 		Global->Opt->LocalProfilePath = !strLocalProfilePath.empty()? strLocalProfilePath : strProfilePath;
 	}
+
 	Global->Opt->LoadPlug.strPersonalPluginsPath = path::join(Global->Opt->ProfilePath, L"Plugins"sv);
+
 	os::env::set(L"FARPROFILE"sv, Global->Opt->ProfilePath);
 	os::env::set(L"FARLOCALPROFILE"sv, Global->Opt->LocalProfilePath);
+
 	if (!Global->Opt->ReadOnlyConfig)
 	{
 		CreatePath(path::join(Global->Opt->ProfilePath, L"PluginsData"sv), false);
+
 		const auto SingleProfile = equal_icase(Global->Opt->ProfilePath, Global->Opt->LocalProfilePath);
+
 		if (!SingleProfile)
 			CreatePath(path::join(Global->Opt->LocalProfilePath, L"PluginsData"sv), false);
+
 		const auto RandomName = uuid::str(os::uuid::generate());
+
 		if (!os::fs::can_create_file(path::join(Global->Opt->ProfilePath, RandomName)) ||
 			(!SingleProfile && !os::fs::can_create_file(path::join(Global->Opt->LocalProfilePath, RandomName))))
 		{
@@ -377,10 +434,12 @@ static std::optional<int> ProcessServiceModes(span<const wchar_t* const> const A
 	{
 		return is_arg(Args[0]) && equal_icase(Args[0] + 1, Name);
 	};
+
 	if (Args.size() == 4 && IsElevationArgument(Args[0])) // /service:elevation {UUID} PID UsePrivileges
 	{
 		return ElevationMain(Args[1], std::wcstoul(Args[2], nullptr, 10), *Args[3] == L'1');
 	}
+
 	if (in_closed_range(2u, Args.size(), 5u) && (isArg(L"export"sv) || isArg(L"import"sv)))
 	{
 		const auto Export = isArg(L"export"sv);
@@ -391,6 +450,7 @@ static std::optional<int> ProcessServiceModes(span<const wchar_t* const> const A
 		ConfigProvider().ServiceMode(Args[1]);
 		return EXIT_SUCCESS;
 	}
+
 	if (in_closed_range(1u, Args.size(), 3u) && isArg(L"clearcache"sv))
 	{
 		string strProfilePath(Args.size() > 1? Args[1] : L""sv);
@@ -399,26 +459,31 @@ static std::optional<int> ProcessServiceModes(span<const wchar_t* const> const A
 		(void)config_provider{config_provider::clear_cache{}};
 		return EXIT_SUCCESS;
 	}
+
 	if (Args.size() == 2 && logging::is_log_argument(Args[0]))
 	{
 		return logging::main(Args[1]);
 	}
+
 	if (Args.size() == 1 && (isArg(L"?") || isArg(L"h")))
 	{
 		ControlObject::ShowVersion();
 		show_help();
 		return EXIT_SUCCESS;
 	}
+
 	return {};
 }
 
 static void UpdateErrorMode()
 {
 	Global->ErrorMode |= SEM_NOGPFAULTERRORBOX;
+
 	if (ConfigProvider().GeneralCfg()->GetValue<bool>(L"System.Exception"sv, L"IgnoreDataAlignmentFaults"sv))
 	{
 		Global->ErrorMode |= SEM_NOALIGNMENTFAULTEXCEPT;
 	}
+
 	os::set_error_mode(Global->ErrorMode);
 }
 
@@ -427,6 +492,7 @@ static void handle_exception(function_ref<bool()> const Handler)
 {
 	if (Handler())
 		os::process::terminate_by_user();
+
 	throw;
 }
 
@@ -442,6 +508,7 @@ static void log_hook_wow64_status()
 		Msg,
 		os::format_error(Error)
 	);
+
 	if (Error == ERROR_INVALID_DATA)
 	{
 		if (const auto NtDll = GetModuleHandle(L"ntdll"))
@@ -496,7 +563,9 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 {
 	if (Iterator == End)
 		return;
+
 	string_view const FullArgument = *Iterator++, Argument = FullArgument.substr(1);
+
 	switch (upper(Argument.front()))
 	{
 	case L'E':
@@ -506,19 +575,24 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 				size_t LineEnd;
 				if (!from_string(Argument.substr(1), *Context.E_Line, &LineEnd))
 					invalid_argument(FullArgument, args::number_expected);
+
 				if (LineEnd + 1 != Argument.size())
 				{
 					if (Argument[LineEnd + 1] != L':')
 						invalid_argument(FullArgument, args::invalid_format);
+
 					size_t PosEnd;
 					if (!from_string(Argument.substr(LineEnd + 2), *Context.E_Pos, &PosEnd))
 						invalid_argument(FullArgument, args::number_expected);
+
 					if (PosEnd + LineEnd + 2 != Argument.size())
 						invalid_argument(FullArgument, args::invalid_format);
 				}
 			}
+
 			if (Iterator == End)
 				invalid_argument(FullArgument, args::parameter_expected);
+
 			*Context.E_Param = *Iterator++;
 			return;
 		}
@@ -526,11 +600,14 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 		{
 			if (Argument.size() != 1)
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			if (Iterator == End)
 				invalid_argument(FullArgument, args::parameter_expected);
+
 			*Context.V_Param = *Iterator++;
 			return;
 		}
+
 	case L'M':
 		{
 			if (Argument.size() == 1)
@@ -538,24 +615,30 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 				*Context.MacroOptions |= MDOL_ALL;
 				return;
 			}
+
 			if (equal_icase(Argument.substr(1), L"A"))
 			{
 				*Context.MacroOptions |= MDOL_AUTOSTART;
 				return;
 			}
+
 			invalid_argument(FullArgument, args::unknown_argument);
 		}
+
 #ifndef NO_WRAPPER
 	case L'U':
 		{
 			if (Argument.size() != 1)
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			if (Iterator == End)
 				invalid_argument(FullArgument, args::parameter_expected);
+
 			*Context.U_Param = *Iterator++;
 			return;
 		}
 #endif // NO_WRAPPER
+
 	case L'S':
 		{
 			if (const auto SetParam = L"set:"sv; starts_with_icase(Argument, SetParam))
@@ -564,32 +647,42 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 				const auto& [Name, Value] = split(Tail);
 				if (Name.size() == Tail.size())
 					invalid_argument(FullArgument, args::invalid_format);
+
 				Context.Overrides->emplace(Name, Value);
 				return;
 			}
+
 			if (equal_icase(Argument, L"service"sv))
 			{
 				// Processed earlier
 				return;
 			}
+
 			if (Argument.size() != 1)
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			if (Iterator == End)
 				invalid_argument(FullArgument, args::parameter_expected);
+
 			*Context.S_Param1 = *Iterator++;
+
 			if (Iterator != End && !is_arg(*Iterator))
 				*Context.S_Param2 = *Iterator++;
+
 			return;
 		}
+
 	case L'T':
 		{
 			if (Argument.size() == 1)
 			{
 				if (Iterator == End)
 					invalid_argument(FullArgument, args::parameter_expected);
+
 				*Context.T_Param = *Iterator++;
 				return;
 			}
+
 			if (const auto Title = L"title"sv; starts_with_icase(Argument, Title))
 			{
 				if (Argument.size() == Title.size())
@@ -597,25 +690,32 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 					*Context.Title_Param = L""sv;
 					return;
 				}
+
 				if (Argument[Title.size()] != L':')
 					invalid_argument(FullArgument, args::unknown_argument);
+
 				*Context.Title_Param = Argument.substr(Title.size() + 1);
 				return;
 			}
+
 			invalid_argument(FullArgument, args::unknown_argument);
 		}
+
 	case L'P':
 		{
 			*Context.PluginsPersonal = false;
 			*Context.MainPluginDir = false;
+
 			// we can't expand it here - some environment variables might not be available yet
 			*Context.CustomPluginsPath = Argument.substr(1);
 			return;
 		}
+
 	case L'C':
 		{
 			if (!equal_icase(Argument.substr(1), L"O"sv))
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			*Context.PluginsCacheOnly = true;
 			*Context.PluginsPersonal = false;
 			return;
@@ -626,6 +726,7 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 		{
 			if (!equal_icase(Argument.substr(1), L"O"sv))
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			Global->DirectRT = true;
 			return;
 		}
@@ -637,36 +738,46 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 				*Context.WindowMode = true;
 				return;
 			}
+
 			if (Argument.substr(1) != L"-"sv)
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			*Context.WindowMode = false;
 			return;
 		}
+
 	case L'R':
 		{
 			if (Argument.size() == 1)
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			if (upper(Argument[1]) != L'O')
 				invalid_argument(FullArgument, args::unknown_argument);
+
 			if (Argument.size() == 2)
 			{
 				*Context.ReadOnlyConfig = true;
 				return;
 			}
+
 			if (Argument.size() == 3 && Argument[2] == L'-')
 			{
 				*Context.ReadOnlyConfig = false;
 				return;
 			}
+
 			invalid_argument(FullArgument, args::unknown_argument);
 		}
+
 	case L'X':
 		{
 			if (Argument.size() == 1)
 				// Processed earlier
 				return;
+
 			invalid_argument(FullArgument, args::unknown_argument);
 		}
+
 	default:
 		invalid_argument(FullArgument, args::unknown_argument);
 	}
@@ -675,6 +786,7 @@ static void parse_argument(span<const wchar_t* const>::const_iterator& Iterator,
 static void parse_command_line(span<const wchar_t* const> const Args, span<string> const SimpleArgs, args_context const& Context)
 {
 	size_t SimpleArgsCount{};
+
 	for (auto Iter = Args.cbegin(); Iter != Args.cend();)
 	{
 		if (is_arg(*Iter))
@@ -682,13 +794,16 @@ static void parse_command_line(span<const wchar_t* const> const Args, span<strin
 			parse_argument(Iter, Args.cend(), Context);
 			continue;
 		}
+
 		if (SimpleArgsCount == 2)
 			invalid_argument(*Iter, args::unknown_argument);
+
 		if (GetPluginPrefixPath(*Iter))
 		{
 			SimpleArgs[SimpleArgsCount++] = *Iter++;
 			continue;
 		}
+
 		SimpleArgs[SimpleArgsCount++] = full_path_expanded(*Iter++);
 	}
 }
@@ -696,10 +811,15 @@ static void parse_command_line(span<const wchar_t* const> const Args, span<strin
 static int mainImpl(span<const wchar_t* const> const Args)
 {
 	setlocale(LC_ALL, "");
+
 	SCOPED_ACTION(global);
+
 	std::optional<elevation::suppress> NoElevationDuringBoot(std::in_place);
+
 	os::set_error_mode(Global->ErrorMode);
+
 	RegisterTestExceptionsHook();
+
 	os::memory::enable_low_fragmentation_heap();
 
 #ifndef _WIN64
@@ -711,29 +831,41 @@ static int mainImpl(span<const wchar_t* const> const Args)
 		const BYTE ReserveAltEnter = 0x8;
 		imports.SetConsoleKeyShortcuts(TRUE, ReserveAltEnter, nullptr, 0);
 	}
+
 	os::fs::InitCurrentDirectory();
+
 	PrepareDiskPath(Global->g_strFarModuleName);
+
 	Global->g_strFarINI = concat(Global->g_strFarModuleName, L".ini"sv);
 	Global->g_strFarPath = Global->g_strFarModuleName;
 	CutToSlash(Global->g_strFarPath,true);
 	os::env::set(L"FARHOME"sv, Global->g_strFarPath);
 	AddEndSlash(Global->g_strFarPath);
+
 	if (const auto FarAdminMode = L"FARADMINMODE"sv; os::security::is_admin())
 		os::env::set(FarAdminMode, L"1"sv);
 	else
 		os::env::del(FarAdminMode);
+
 	if (const auto Result = ProcessServiceModes(Args))
 		return *Result;
+
 	SCOPED_ACTION(listener)(update_environment, &ReloadEnvironment);
 	SCOPED_ACTION(listener)(update_intl, [] { locale.invalidate(); });
 	SCOPED_ACTION(listener)(update_devices, &UpdateSavedDrives);
+
 	string strEditName;
 	string strViewName;
 	string DestNames[2];
 	int StartLine=-1,StartChar=-1;
+
 	string strProfilePath, strLocalProfilePath, strTemplatePath;
+
 	std::optional<string> CustomTitle;
+
 	Options::overrides Overrides;
+
+
 	args_context Context;
 	Context.E_Line = &StartLine;
 	Context.E_Pos = &StartChar;
@@ -752,43 +884,62 @@ static int mainImpl(span<const wchar_t* const> const Args)
 	Context.CustomPluginsPath = &Global->Opt->LoadPlug.strCustomPluginsPath;
 	Context.WindowMode = &Global->Opt->WindowMode;
 	Context.ReadOnlyConfig = &Global->Opt->ReadOnlyConfig;
+
 	parse_command_line(Args, DestNames, Context);
+
 	InitTemplateProfile(strTemplatePath);
 	InitProfile(strProfilePath, strLocalProfilePath);
 	Global->m_ConfigProvider = std::make_unique<config_provider>();
+
 	Global->Opt->Load(std::move(Overrides));
+
 	//Инициализация массива клавиш.
 	InitKeysArray();
+
 	if (!Global->Opt->LoadPlug.MainPluginDir) //если есть ключ /p то он отменяет /co
 		Global->Opt->LoadPlug.PluginsCacheOnly=false;
+
 	if (Global->Opt->LoadPlug.PluginsCacheOnly)
 	{
 		Global->Opt->LoadPlug.strCustomPluginsPath.clear();
 		Global->Opt->LoadPlug.MainPluginDir=false;
 		Global->Opt->LoadPlug.PluginsPersonal=false;
 	}
+
 	InitConsole();
+
 	SCOPE_EXIT
 	{
 		CloseConsole();
 	};
+
 	if (CustomTitle.has_value())
 		ConsoleTitle::SetUserTitle(CustomTitle->empty() ? Global->strInitTitle : *CustomTitle);
+
 	far_language::instance().load(Global->g_strFarPath, Global->Opt->strLanguage, static_cast<int>(lng::MNewFileName + 1));
+
 	os::env::set(L"FARLANG"sv, Global->Opt->strLanguage);
+
 	if (!Global->Opt->LoadPlug.strCustomPluginsPath.empty())
 		Global->Opt->LoadPlug.strCustomPluginsPath = full_path_expanded(Global->Opt->LoadPlug.strCustomPluginsPath);
+
 	UpdateErrorMode();
+
 	ControlObject CtrlObj;
 	Global->CtrlObject = &CtrlObj;
+
 	SCOPE_EXIT
 	{
 		// close() can throw, but we need to clear it anyway
 		SCOPE_EXIT { Global->CtrlObject = {}; };
+
 		CtrlObj.close();
 	};
+
 	NoElevationDuringBoot.reset();
+
 	const auto CurrentFunctionName = CURRENT_FUNCTION_NAME;
+
 	return cpp_try(
 	[&]
 	{
@@ -810,6 +961,7 @@ static void configure_exception_handling(int Argc, const wchar_t* const Argv[])
 	// _OUT_TO_STDERR is the default for console apps, but it is less convenient for debugging.
 	// Use -service to set it back to _OUT_TO_STDERR (e.g. for macro tests on CI).
 	_set_error_mode(_OUT_TO_MSGBOX);
+
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_WNDW);
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_WNDW);
 	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_WNDW);
@@ -819,18 +971,22 @@ static void configure_exception_handling(int Argc, const wchar_t* const Argv[])
 	{
 		if (!is_arg(i))
 			continue;
+
 		if (upper(i[1]) == L'X' && !i[2])
 		{
 			disable_exception_handling();
 			continue;
 		}
+
 		if (equal_icase(i + 1, L"service"sv))
 		{
 #ifdef _DEBUG
 			_set_error_mode(_OUT_TO_STDERR);
+
 			(void)_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
 			(void)_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 			(void)_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+
 			_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
 			_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
 			_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
@@ -846,6 +1002,7 @@ static void handle_exception_final(function_ref<bool()> const Handler)
 {
 	if (Handler())
 		os::process::terminate_by_user();
+
 	restore_system_exception_handler();
 	throw;
 }
@@ -856,6 +1013,14 @@ static int wmain_seh()
 	int Argc = 0;
 	const os::memory::local::ptr Argv(CommandLineToArgvW(GetCommandLine(), &Argc));
 
+	configure_exception_handling(Argc, Argv.get());
+
+	SCOPED_ACTION(unhandled_exception_filter);
+	SCOPED_ACTION(vectored_exception_handler);
+	SCOPED_ACTION(signal_handler);
+	SCOPED_ACTION(invalid_parameter_handler);
+	SCOPED_ACTION(new_handler);
+
 #ifdef ENABLE_TESTS
 	if (const auto Result = testing_main(Argc, Argv.get()))
 	{
@@ -863,13 +1028,12 @@ static int wmain_seh()
 	}
 #endif
 
-	configure_exception_handling(Argc, Argv.get());
-	SCOPED_ACTION(unhandled_exception_filter);
-	SCOPED_ACTION(vectored_exception_handler);
-	SCOPED_ACTION(signal_handler);
-	SCOPED_ACTION(invalid_parameter_handler);
-	SCOPED_ACTION(new_handler);
+#ifdef __SANITIZE_ADDRESS__
+	os::env::set(L"ASAN_VCASAN_DEBUGGING"sv, L"1"sv);
+#endif
+
 	const auto CurrentFunctionName = CURRENT_FUNCTION_NAME;
+
 	return cpp_try(
 	[&]
 	{
@@ -897,6 +1061,7 @@ static int wmain_seh()
 int main()
 {
 	os::debug::set_thread_name(L"Main Thread");
+
 	return seh_try_with_ui(
 	[]
 	{
@@ -932,7 +1097,9 @@ TEST_CASE("Args")
 	string CustomPluginsPath;
 	int WindowMode{};
 	int ReadOnlyConfig{};
+
 	args_context Context;
+
 	Context.E_Line = &E_Line;
 	Context.E_Pos = &E_Pos;
 	Context.E_Param = &E_Param;
@@ -950,6 +1117,7 @@ TEST_CASE("Args")
 	Context.CustomPluginsPath = &CustomPluginsPath;
 	Context.WindowMode = &WindowMode;
 	Context.ReadOnlyConfig = &ReadOnlyConfig;
+
 	static const struct
 	{
 		std::initializer_list<const wchar_t*> Args;
@@ -1017,9 +1185,11 @@ TEST_CASE("Args")
 		{ { L"-x1" },                    args::unknown_argument },
 		{ { L"-q" },                     args::unknown_argument },
 	};
+
 	for (const auto& i: Tests)
 	{
 		auto Iterator = i.Args.begin();
+
 		std::visit(overload
 		{
 			[&](std::function<bool()> const& Validator)
