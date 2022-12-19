@@ -85,6 +85,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "stddlg.hpp"
 
 // Platform:
+#include "platform.hpp"
 #include "platform.concurrency.hpp"
 #include "platform.debug.hpp"
 #include "platform.env.hpp"
@@ -954,7 +955,7 @@ bool background_searcher::LookForString(string_view const FileName)
 	// BUGBUG check result
 	if (!File.GetSize(FileSize))
 	{
-		LOGWARNING(L"GetSize({}): {}"sv, File.GetName(), last_error());
+		LOGWARNING(L"GetSize({}): {}"sv, File.GetName(), os::last_error());
 	}
 	if (SearchInFirst)
 	{
@@ -1234,7 +1235,7 @@ bool background_searcher::IsFileIncluded(PluginPanelItem* FileItem, string_view 
 				// BUGBUG check result
 				if (!os::fs::remove_directory(strTempDir))
 				{
-					LOGWARNING(L"remove_directory({}): {}"sv, strTempDir, last_error());
+					LOGWARNING(L"remove_directory({}): {}"sv, strTempDir, os::last_error());
 				}
 				return false;
 			}
@@ -1566,7 +1567,7 @@ intptr_t FindFiles::FindDlgProc(Dialog* Dlg, intptr_t Msg, intptr_t Param1, void
 								// BUGBUG check result
 								if (!os::fs::remove_directory(strTempDir))
 								{
-									LOGWARNING(L"remove_directory({}): {}"sv, strTempDir, last_error());
+									LOGWARNING(L"remove_directory({}): {}"sv, strTempDir, os::last_error());
 								}
 								return FALSE;
 							}
