@@ -1,4 +1,35 @@
 --------------------------------------------------------------------------------
+drkns 10.10.2022 18:06:05 +0100 - build 6039
+
+1. Use the real window handle when running in Windows Terminal.
+   This should fix some scenarios like taskbar progress, flashing, icon setting, Alt+F9 etc.
+   It also may or may not break your Terminal, who knows.
+
+--------------------------------------------------------------------------------
+drkns 07.10.2022 23:13:59 +0100 - build 6038
+
+1. gh-551: Screen scrambled when pressing Alt-F9 under Windows 11 22H2
+
+--------------------------------------------------------------------------------
+drkns 06.10.2022 17:43:00 +0100 - build 6037
+
+1. Fix string replace when pattern and/or replacement are views into the same string.
+
+--------------------------------------------------------------------------------
+drkns 05.10.2022 23:47:54 +0100 - build 6036
+
+1. Remove "Colors - Black and white mode".
+
+2. Add "Colors - Set default colors (RGB)" - same as "Set default colors", but fixed RGB values instead of indices.
+
+--------------------------------------------------------------------------------
+drkns 05.10.2022 17:15:46 +0100 - build 6035
+
+1. far:regex: include offsets into match information.
+
+2. Fix 6030.1.
+
+--------------------------------------------------------------------------------
 drkns 04.10.2022 21:56:22 +0100 - build 6034
 
 1. Use IMultiLanguage2 for codepage detection.
